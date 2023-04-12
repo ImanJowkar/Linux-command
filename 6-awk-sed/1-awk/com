@@ -1,0 +1,23 @@
+BEGIN{
+	FS=","   # intput file seperator
+	OFS="*"	 # output filed seperator
+	
+
+
+	printf "This is the begining of the file\n"
+	a=20
+	number_of_row=0
+}
+{
+	print $1, $2
+	#print $2, $1, "\t" $0
+	number_of_row++
+	#print env_var
+
+}
+END{
+	printf "THis is the end of the file\n"
+	print a
+	printf "Total row length: %s\n", number_of_row
+	printf "use env variable in file: %s\n", env_var
+}

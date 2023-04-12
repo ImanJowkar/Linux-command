@@ -14,6 +14,19 @@ e           # jump forwards to the end of a word
 ge          # jump backward to the end of a word
 ```
 
+### vim Configuration:
+```
+vim ~/.vimrc
+# paste
+set number
+syntax enable
+set autoindent
+set cursorline
+
+
+```
+
+
 #### vim option
 
 ```
