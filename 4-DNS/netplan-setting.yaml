@@ -1,0 +1,10 @@
+## configure netplan in clients
+network:
+    version: 2
+    ethernets:
+        eth1:                                    # Private network interface
+            nameservers:
+                addresses:
+                - 10.128.10.11                # Private IP for ns1
+                - 10.132.20.12                # Private IP for ns2
+                search: [ nyc3.example.com ]    # DNS zone

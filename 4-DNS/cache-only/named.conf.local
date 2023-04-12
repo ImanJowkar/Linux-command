@@ -1,0 +1,24 @@
+//
+// Do any local configuration here
+//
+
+// Consider adding the 1918 zones here, if they are not used in your
+// organization
+//include "/etc/bind/zones.rfc1918";
+
+zone "example.com" {
+
+	type forward;
+	forwarders	{ 172.16.12.30; 172.16.12.31; 172.16.12.15; };
+	forward only;
+
+};
+
+
+zone "12.16.172.in-addr.arpa" {
+
+	type forward;
+	forwarders	{ 172.16.12.30; 172.16.12.31; 172.16.12.15; };
+	forward only;
+
+};

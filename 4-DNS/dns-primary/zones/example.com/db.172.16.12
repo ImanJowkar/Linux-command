@@ -1,0 +1,31 @@
+;
+; BIND reverse data file for local loopback interface
+;
+$TTL    604800
+@       IN      SOA     ns1.example.com. admin.example.com. (
+                              12         ; Serial
+                         604800         ; Refresh
+                          86400         ; Retry
+                        2419200         ; Expire
+                         604800 )       ; Negative Cache TTL
+;
+
+
+; name servers - NS records
+        IN      NS      ns1.example.com.
+        IN      NS      ns2.example.com.
+	IN	NS	ns3.example.com.
+; PTR Records
+
+30      IN      PTR     ns1.example.com.
+31      IN      PTR     ns2.example.com.
+15	IN	PTR	ns3.example.com.
+32      IN      PTR     web.example.com.
+33      IN      PTR     client2.example.com.
+40      IN      PTR     dhcp.example.com.
+50      IN      PTR     fw.example.com.
+81	IN	PTR	ff.example.com.
+82	IN	PTR	fff.example.com.
+83	IN	PTR	ffff.example.com.
+84	IN	PTR	test1.example.com.
+85	IN	PTR	test2.example.com.

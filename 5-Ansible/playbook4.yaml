@@ -1,0 +1,30 @@
+---
+- name: Install and configure webservers 
+  hosts: servers
+  become: true
+  tasks:
+
+  - name: update repository index
+    apt: 
+      update_cache: yes
+
+  - name: Install nginx webserver and git
+    apt:
+      name: nginx
+      state: latest
+    
+  - name: Install net-tools
+    apt:
+      name: net-tools
+      state: latest
+
+  - name: Copy index.html file
+    copy:
+      src: files/index.html
+      dest: /var/www/html/index.html
+
+  - name: restarted nginx webserver
+    service: 
+      name: nginx
+      enabled: yes
+      state: restarted

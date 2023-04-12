@@ -1,0 +1,22 @@
+---
+
+- hosts: all
+  become: true
+  tasks:
+
+  - name: update repository index
+    apt: 
+      update_cache: yes
+    when: ansible_distribution == "Ubuntu"
+  - name: Install apache2
+    apt:
+      name: apache2
+      state: absent
+    when: ansible_distribution == "Ubuntu"
+    
+  - name: Install net-tools
+    apt:
+      name: net-tools
+      state: absent
+    when: ansible_distribution == "Ubuntu"
+

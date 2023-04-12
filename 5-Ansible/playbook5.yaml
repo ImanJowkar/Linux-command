@@ -1,0 +1,46 @@
+---
+- name: Install and configure webservers 
+  hosts: servers
+  become: true
+  tasks:
+
+  - name: update repository index
+    apt: 
+      update_cache: yes
+
+  - name: Install nginx webserver and git
+    apt:
+      name: nginx
+      state: latest
+    
+  - name: Install net-tools
+    apt:
+      name: net-tools
+      state: latest
+
+  - name: Copy index.html file
+    copy:
+      src: files/index.html
+      dest: /var/www/html/index.html
+
+  - name: Copy ssl certificate
+    copy: 
+      src: ssl/private.key
+      dest: /etc/nginx/conf.d/private.key
+  
+  - name: Copy ssl public key
+    copy:
+      src: ssl/public.crt
+      dest: /etc/nginx/conf.d/public.key
+    
+  - name: Copy configuration file for nginx
+    copy:
+      src: files/site.conf
+      dest: /etc/nginx/conf.d/site.conf
+
+
+  - name: restarted nginx webserver
+    service: 
+      name: nginx
+      enabled: yes
+      state: restarted
