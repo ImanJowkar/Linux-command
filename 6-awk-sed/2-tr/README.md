@@ -26,3 +26,5 @@ cat domain | tr -s ' '
 cat domain | tr -s ' ' | tr -d ' '
 
 ```
+
+
