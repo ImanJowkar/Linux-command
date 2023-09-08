@@ -25,6 +25,10 @@ cat domain | tr -s ' '
 
 cat domain | tr -s ' ' | tr -d ' '
 
+cat test  | tr -s ' '   # delete multiple space and replace with one space
+
+cat domain | tr -d ' ' | sed '/^$/d'  
+
 ```
 
 

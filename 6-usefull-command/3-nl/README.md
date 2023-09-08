@@ -5,4 +5,8 @@ nl -w1 test
 
 nl test | tr -s [:space:] > test1
 
+
+time docker ps
+
+
 ```

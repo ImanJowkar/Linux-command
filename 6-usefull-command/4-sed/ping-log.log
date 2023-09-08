@@ -1,0 +1,12 @@
+PING google.com (216.239.38.120) 56(84) bytes of data.
+64 bytes from any-in-2678.1e100.net (216.239.38.120): icmp_seq=1 ttl=50 time=81.9 ms
+64 bytes from any-in-2678.1e100.net (216.239.38.120): icmp_seq=2 ttl=50 time=114 ms
+64 bytes from any-in-2678.1e100.net (216.239.38.120): icmp_seq=3 ttl=50 time=63.7 ms
+64 bytes from any-in-2678.1e100.net (216.239.38.120): icmp_seq=4 ttl=50 time=398 ms
+64 bytes from any-in-2678.1e100.net (216.239.38.120): icmp_seq=5 ttl=50 time=48.2 ms
+64 bytes from any-in-2678.1e100.net (216.239.38.120): icmp_seq=6 ttl=50 time=78.9 ms
+64 bytes from any-in-2678.1e100.net (216.239.38.120): icmp_seq=7 ttl=50 time=165 ms
+
+--- google.com ping statistics ---
+7 packets transmitted, 7 received, 0% packet loss, time 5994ms
+rtt min/avg/max/mdev = 48.207/135.548/397.797/112.750 ms
