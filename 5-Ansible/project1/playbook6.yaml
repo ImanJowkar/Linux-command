@@ -2,13 +2,18 @@
 - name: Install and configure webservers 
   hosts: servers
   become: true
+  vars:
+    pub_cert: /etc/nginx/conf.d/public.crt
+    private_key: /etc/nginx/conf.d/private.key
+    nginx_config_path: /etc/nginx/conf.d/site.conf
+    index_html_path: /var/www/html/index.html
   tasks:
 
   - name: update repository index
     apt: 
       update_cache: yes
 
-  - name: Install nginx webserver and git
+  - name: Install nginx webserver
     apt:
       name: nginx
       state: latest
@@ -21,22 +26,22 @@
   - name: Copy index.html file
     copy:
       src: files/index.html
-      dest: /var/www/html/index.html
+      dest: "{{ index_html_path }}"
 
   - name: Copy ssl certificate
     copy: 
       src: ssl/private.key
-      dest: /etc/nginx/conf.d/private.key
+      dest: "{{ private_key }}"
   
   - name: Copy ssl public key
     copy:
       src: ssl/public.crt
-      dest: /etc/nginx/conf.d/public.key
+      dest: "{{ pub_cert }}"
     
   - name: Copy configuration file for nginx
     copy:
       src: files/site.conf
-      dest: /etc/nginx/conf.d/site.conf
+      dest: "{{ nginx_config_path }}"
 
 
   - name: restarted nginx webserver

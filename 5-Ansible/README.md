@@ -5,13 +5,13 @@
 
 ## Ansible Config file location 
 * define a variable called ANSIBLE_CONFIG
-* Ansible.cfg
+* ansible.cfg
 * ~/.ansible.cfg
 * /etc/ansible/ansible.cfg
 
 
 
-## Ansible basics
+## Ansible installation
 ```
 sudo apt install python3.10-venv
 
@@ -20,7 +20,10 @@ python3 -m venv venv
 source venv/bin/activate
 pip install ansible
 
+```
 
+## ## Ansible basics
+```
 ansible-doc service
 ansible-doc apt
 
@@ -38,9 +41,11 @@ ansible servers -m command -a uptime
 ansible servers -m command -a who
 ansible servers -m command -a "apt install nginx" --become --ask-become-pass
 
+ansible all -m command -a "cat /etc/os-release" --user=iman --become --ask-become-pass --become-user=root
 
 # gathering facts
 ansible servers -m setup
+ansible servers -m setup -a "filter=ansible_all_ipv4_addresses"
 
 
 

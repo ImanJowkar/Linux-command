@@ -8,9 +8,9 @@
     apt: 
       update_cache: yes
 
-  - name: Install apache2
+  - name: Install nginx
     apt:
-      name: apache2
+      name: nginx
       state: latest
     
   - name: Install net-tools

@@ -8,7 +8,7 @@
     apt: 
       update_cache: yes
 
-  - name: Install nginx webserver and git
+  - name: Install nginx webserver
     apt:
       name: nginx
       state: latest
@@ -22,6 +22,22 @@
     copy:
       src: files/index.html
       dest: /var/www/html/index.html
+
+  - name: Copy ssl certificate
+    copy: 
+      src: ssl/private.key
+      dest: /etc/nginx/conf.d/private.key
+  
+  - name: Copy ssl public key
+    copy:
+      src: ssl/public.crt
+      dest: /etc/nginx/conf.d/public.crt
+    
+  - name: Copy configuration file for nginx
+    copy:
+      src: files/site.conf
+      dest: /etc/nginx/conf.d/site.conf
+
 
   - name: restarted nginx webserver
     service: 

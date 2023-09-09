@@ -1,0 +1,7 @@
+packages:
+  - nginx
+  - net-tools
+
+username: iman
+
+password: iman

@@ -1,0 +1,45 @@
+---
+- name: Install and configure webservers 
+  hosts: servers
+  become: true
+  tasks:
+  - name: Install nginx webserver
+    apt:
+      name: nginx
+      state: latest
+
+  - name: Copy index.html file
+    copy:
+      src: files/index.html
+      dest: /var/www/html/index.html
+    notify:
+      - "restarted nginx webserver"
+
+  - name: Copy ssl certificate
+    copy: 
+      src: ssl/private.key
+      dest: /etc/nginx/conf.d/private.key
+    notify:
+      - "restarted nginx webserver"
+
+  - name: Copy ssl public key
+    copy:
+      src: ssl/public.crt
+      dest: /etc/nginx/conf.d/public.crt
+    notify:
+      - "restarted nginx webserver"
+
+  - name: Copy configuration file for nginx
+    copy:
+      src: files/site.conf
+      dest: /etc/nginx/conf.d/site.conf
+    notify:
+      - "restarted nginx webserver"
+
+
+  handlers:
+  - name: restarted nginx webserver
+    service: 
+      name: nginx
+      enabled: yes
+      state: restarted
