@@ -1,0 +1,30 @@
+---
+- name: Install and configure webservers 
+  hosts: servers
+  become: true
+  vars:
+    name: iman
+  tasks:
+  - name: debug module
+    debug:
+      var: name
+
+  - name: print custom message with variable
+    debug:
+      msg: this is my variable value "{{ name }}"
+
+  - name: using the if condition
+    debug:
+      msg: >
+        {% if ansible_hostname == "server1" %}
+        hello "server1"
+        {% else %}
+        hostname is not "server1" 
+        {% endif %}
+
+  - name: copy index.js
+    template:
+      src: files/index.j2
+      dest: /var/www/html/index.html
+
+
