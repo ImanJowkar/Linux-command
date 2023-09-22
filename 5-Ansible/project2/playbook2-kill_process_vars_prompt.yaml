@@ -1,0 +1,25 @@
+---
+- name: Install and configure webservers 
+  hosts: servers
+  become: true
+  vars_prompt:
+    - name: process_name
+    - name: signal
+  tasks:
+  - name: get pid
+    shell: ps -aux | grep "{{ process_name }}" | tr -s ' ' |  cut -d' ' -f2
+    register: pid
+    ignore_errors: True
+  
+  - name: list pid
+    debug:
+      var: pid.stdout_lines
+
+  - name: kill pid
+    shell: kill -"{{ signal }}" "{{ pid.stdout_lines.0 }}"
+
+
+
+
+
+

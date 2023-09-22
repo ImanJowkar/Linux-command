@@ -3,15 +3,15 @@
   hosts: servers
   become: true
   vars:
-    name: iman
+    username: iman
   tasks:
   - name: debug module
     debug:
-      var: name
+      var: username
 
   - name: print custom message with variable
     debug:
-      msg: this is my variable value "{{ name }}"
+      msg: this is my variable value "{{ username }}"
 
   - name: using the if condition
     debug:

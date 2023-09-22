@@ -1,0 +1,45 @@
+---
+- name: Install and configure webservers 
+  hosts: servers
+  become: true
+  vars_files:
+    - vars/main.yaml
+  # vars:
+  #   packages:
+  #     - nginx
+  #     - net-tools
+  vars:
+    users:
+      - user1-iman
+      - user2-sam
+      - user3-jack
+    families: [family1-iman, family2-sam, family3-jack]
+  tasks:
+
+  # - name: update repository
+  #   apt: 
+  #     update_cache: yes
+
+  - name: Install nginx webserver
+    apt:
+      name: "{{ packages }}"
+      state: latest
+    # vars:
+    #   packages:
+    #   - nginx
+    #   - net-tools
+  - name: debug module1
+    debug:
+      var: var1
+
+  - name: debug module2
+    debug:
+      var: var2
+
+  - name: msg form debug
+    debug:
+      msg: username is {{ var1 }} and password is {{ var2 }} 
+
+  - name: list local variable
+    debug:
+      msg: username1 is {{ users.0 }} and username2 is {{ users.1 }} . family1 is {{families.0}}

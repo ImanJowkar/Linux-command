@@ -2,6 +2,6 @@ packages:
   - nginx
   - net-tools
 
-username: iman
+var1: imanuser
 
-password: iman
+var2: imanpass
