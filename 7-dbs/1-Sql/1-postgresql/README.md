@@ -73,5 +73,50 @@ psql -U postgres -d mydb   # connect to specific database
 ```
 
 
+## Set up pgadmin with docker
+
+```
+version: '3.8'
+services:
+ pgadmin:
+   container_name: pgadmin4_container
+   image: dpage/pgadmin4:7.7
+   restart: always
+   environment:
+     PGADMIN_DEFAULT_EMAIL: admin@admin.com
+     PGADMIN_DEFAULT_PASSWORD: secret
+     PGADMIN_LISTEN_PORT: 80
+   ports:
+     - "8080:80"
+   volumes:
+     - pgadmin-data:/var/lib/pgadmin
+volumes:
+ pgadmin-data:
 
 
+
+```
+ 
+for connect to your postgres instance with pgadmin, go to the `sudo vim /etc/postgresql/16/main/pg_hba.conf` and change the below line 
+
+```
+comment below line 
+# host    all             all             127.0.0.1/32            scram-sha-256
+
+# add below line instaed of above line
+host    all             all             all            scram-sha-256
+#
+
+```
+and restart your server
+```
+ sudo systemctl restart postgresql.service
+```
+
+remmeber to change the listen address to a pingable IP address instead of loopback interface in ` sudo vim /etc/postgresql/16/main/postgresql.conf`
+
+```
+listen_addresses = '192.168.5.6'            # what IP address(es) to listen on;
+
+
+```
