@@ -120,3 +120,33 @@ listen_addresses = '192.168.5.6'            # what IP address(es) to listen on;
 
 
 ```
+
+
+## Create Table
+```
+
+CREATE TABLE IF NOT EXISTS public.movie
+(
+    id bigint NOT NULL,
+    name character varying(255) NOT NULL,
+    description text,
+    release_date date NOT NULL,
+    PRIMARY KEY (id)
+);
+
+CREATE TABLE IF NOT EXISTS public.category
+(
+    id bigint NOT NULL,
+    name character varying(256) NOT NULL,
+    PRIMARY KEY (id)
+);
+
+CREATE TABLE IF NOT EXISTS public.movie_category
+(
+    id integer NOT NULL,
+    film_id integer NOT NULL,
+    category_id integer NOT NULL,
+    CONSTRAINT files_category_pkey PRIMARY KEY (id)
+);
+
+```
