@@ -150,3 +150,23 @@ CREATE TABLE IF NOT EXISTS public.movie_category
 );
 
 ```
+
+
+# Query
+
+```
+select * from film limit 15;
+
+select * from film where id=4;
+
+select * from film where id=4 or id=6;
+
+select col1, col2 from file where id=4 or id=6;
+
+
+select first_name || ' ' || last_name as full_name from name;
+
+
+
+
+```
