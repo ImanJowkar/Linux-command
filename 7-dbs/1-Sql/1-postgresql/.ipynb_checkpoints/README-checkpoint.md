@@ -177,31 +177,9 @@ select col1, col2 from file where id=4 or id=6;
 
 select first_name || ' ' || last_name as full_name from name;
 
-SELECT count(*) from categories;
+
 
 
 ```
 
-# WAL
-In PostgreSQL, WAL stands for Write-Ahead Logging. It is a critical component of the database's durability and crash recovery mechanisms. Here's what WAL is and how it works:
 
-1. **Write-Ahead Logging (WAL)**: WAL is a method used by PostgreSQL to ensure that changes made to the database are durable, meaning they are permanent and survive system crashes or failures. Instead of writing data directly to the database files, PostgreSQL first writes changes to a transaction log, and then it applies these changes to the database itself.
-
-2. **Transaction Logs**: The transaction log is a sequential file where all changes (inserts, updates, and deletes) made to the database are recorded in a detailed and sequential manner. Each record in the transaction log represents a change or action.
-
-3. **Durability and Crash Recovery**: The use of WAL ensures that even if a crash occurs (e.g., a power failure or a system crash), PostgreSQL can recover the database to a consistent state by replaying the transactions recorded in the log. This guarantees that no committed transactions are lost and the database remains in a consistent state.
-
-4. **Performance Benefits**: Writing changes to the transaction log is typically faster than writing directly to the database files because it involves sequential writes rather than random access writes. This can lead to improved database write performance.
-
-5. **Archiving and Replication**: WAL logs can also be used for other purposes like database replication and point-in-time recovery. They can be archived and shipped to other servers for replication, backup, or other purposes.
-
-In summary, Write-Ahead Logging (WAL) is a fundamental mechanism in PostgreSQL that enhances the durability, reliability, and performance of the database system. It helps ensure data consistency and recoverability in the face of system failures.
-
-
-# MVCC
-MVCC stands for Multi-Version Concurrency Control, and it is a critical feature of PostgreSQL and other relational database management systems (RDBMS). MVCC is used to manage concurrent access to data in a way that allows multiple transactions to read and write data without interfering with each other while maintaining data consistency and integrity.
-
-
-MVCC in PostgreSQL allows for high levels of concurrency in database operations, as multiple transactions can read and write data simultaneously without waiting for locks. It also provides strong data consistency and isolation between transactions, allowing them to work independently without interfering with each other.
-
-Different database systems implement MVCC in their own ways, but the fundamental principle of managing concurrent access through versioning data and transaction snapshots is common to most modern RDBMS, including PostgreSQL.
