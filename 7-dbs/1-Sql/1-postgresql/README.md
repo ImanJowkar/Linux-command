@@ -75,10 +75,77 @@ psql -U postgres -d mydb   # connect to specific database
 
 
 # Create a database and user and restore database
+[ref](https://www.w3schools.com/postgresql/postgresql_insert_into.php)
 ```
-create database retail_db;
-create user iman with encrypted password 'iman';
-grant all  ON database retail_db to iman;
+create database store;
+\c store;
+
+
+CREATE TABLE cars (
+  brand VARCHAR(255),
+  model VARCHAR(255),
+  year INT
+);
+
+INSERT INTO cars (brand, model, year)
+VALUES
+  ('Volvo', 'p1800', 1968),
+  ('BMW', 'M1', 1978),
+  ('Toyota', 'Celica', 1975);
+
+
+\dt
+select * from cars;
+
+
+
+# pg_dump     # allows you to backup from  a database
+# pg_dumpall  # allows you to backup from all database
+# pg_restore  # for restore
+
+pg_dump -U <user> <database>
+
+pg_dump -U test store > store-backup.sql
+# or you can use bellow option
+pg_dump -U test -f store-backup.sql store
+
+
+
+# for restore, you have two option:
+# 1) go to the postgres console: 
+
+psql -U <user>
+\i store-backup.sql
+
+
+
+#### store output with another format
+pg_dump -U <user> -Fc -f store-backup.backup <db_name>  # store in binary format
+
+
+pg_restore -U test -C -d postgres store-backup.backup
+
+
+
+pg_dump -U <user> -Ft -f store-backup.tar <db_name>  # store in tar format
+
+
+
+
+
+
+pg_dump -U <user> -Fd -f store-backup-directory <db_name>  # store in directory format
+
+pg_restore -U test -C -d postgres store-backup-directory/ # -C means create database , -d means connect to database and create database
+
+
+
+
+
+
+
+
+
 
 ```
 
