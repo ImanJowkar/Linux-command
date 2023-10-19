@@ -129,7 +129,7 @@ pg_restore -U test -C -d postgres store-backup.backup
 
 pg_dump -U <user> -Ft -f store-backup.tar <db_name>  # store in tar format
 
-
+pg_restore -U test -C -d postgres store-backup.tar
 
 
 
