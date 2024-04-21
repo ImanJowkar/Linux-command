@@ -1,7 +1,8 @@
 servers: 
   hosts:
-    192.168.229.128:
+    192.168.229.218:
       ansible_port: 22
     
-    # 192.168.56.102:
-    #   ansible_port: 2222
+
+    192.168.229.232:
+      ansible_port: 22
