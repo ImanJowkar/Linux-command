@@ -3,8 +3,16 @@
 * Netfilter and iptables are often combind with single expression netfilter/iptables
 * iptables belongs to user-space used to configure Netfilter
 
+![pic](./picture/1.png)
+
+![pic](./picture/2.png)
 
 
+![pic](./picture/3.png)
+
+![pic](./picture/4.png)
+
+![pic](./picture/5.png)
 
 iptables use tables to organize its rules.\
  wihtin each tables, rules are further organize  with in seprate chains. \
@@ -69,7 +77,7 @@ iptables -t filter -A INPUT -p tcp --dport 22 -s 172.16.2.166 -j ACCEPT
 iptables -t filter -A INPUT -p tcp --dport 22 -j DROP
 
 #####
-
+# insert rule to specific line
 iptables -I INPUT 3 -p tcp --dport 80 -j DROP
 
 
