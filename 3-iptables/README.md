@@ -55,9 +55,11 @@ mangle table has all 5 build-in chain.
 ## raw table:
 used for stateful firewall
 
+
+# Tables
 ![pic](./picture/tables-chains.png)
 
-
+![pic](./picture/6.png)
 # iptables-command
 
 ```
@@ -78,14 +80,20 @@ iptables -t filter -A INPUT -p tcp --dport 22 -j DROP
 
 #####
 # insert rule to specific line
-iptables -I INPUT 3 -p tcp --dport 80 -j DROP
+iptables -I INPUT 3 -p tcp --dport 80 -j DROP # add in line 4
+
+iptables -I INPUT -p tcp --dport 81 -j DROP # add in first line
 
 
+# list in specific table
+iptables -L -t filter
+iptables -L -t mangle
 
 
 # flush a specific chain of table
 iptables -t filter -F INPUT
 iptables -t mangle -F
+iptables -t nat -F
 
 iptables -Z             # reset byte and counters
 
