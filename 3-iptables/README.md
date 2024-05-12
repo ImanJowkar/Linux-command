@@ -133,8 +133,11 @@ iptables-save > /etc/iptables/rules.v4
 
 ```
 iptables -A INPUT -s 192.168.0.20 -j DROP
-iptables -t filter -A INPUT -d 178.16.0.0/16 -j DROP
+iptables -A OUTPUT -d 8.0.0.0/8 -j DROP
+iptables -A OUTPUT -d a.com -j DROP
+iptables -t filter -A FORWARD -d 178.16.0.0/16 -j DROP
 
+iptables -t filter -A INPUT -s 0/0 -j DROP
 
 
 # range 
@@ -147,6 +150,18 @@ iptables -A INPUT -p tcp -m multiport --dport 80,443 -j DROP
 
 
 ```
+![pic](./picture/7.png)
+![pic](./picture/8.png)
+
+## filter by protocols:
+```
+
+cat /etc/protocols
+
+
+```
+
+
 ## Interface
 ```
 iptables -A INPUT -i enp0s3 -j ACCEPT
@@ -156,14 +171,10 @@ iptables -A INPUT -i lo -j ACCEPT
 iptables -A INPUT ! -s 172.16.0.5 -p tcp --dport 443 -j DROP  # close 443 over any IP but not 172.16.0.5
 
 
-
-
-
-
-
-
-
-
-
 ```
 
+## drop from all source but not a specific ip
+```
+iptables -t filter -A INPUT ! -s 10.10.10.1 -p tcp --dport 443 -j DROP
+
+```
