@@ -178,3 +178,26 @@ iptables -A INPUT ! -s 172.16.0.5 -p tcp --dport 443 -j DROP  # close 443 over a
 iptables -t filter -A INPUT ! -s 10.10.10.1 -p tcp --dport 443 -j DROP
 
 ```
+
+
+# Statefull Firewall
+
+
+![pic](./picture/9.png)
+![pic](./picture/10.png)
+
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+```
