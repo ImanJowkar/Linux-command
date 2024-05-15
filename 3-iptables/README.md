@@ -188,16 +188,59 @@ iptables -t filter -A INPUT ! -s 10.10.10.1 -p tcp --dport 443 -j DROP
 
 
 
+
+![pic](./picture/11.png)
+![pic](./picture/12.png)
+# filter by date and time
+
+```
+
+#!/bin/bash
+
+
+iptables -F
+
+iptables -t filter -A INPUT -p tcp --dport 22 -m time --timestart 9:00 --timestop 21:00 -j ACCEPT
+
+iptables -t filter -A INPUT -p tcp --dport 22 -j DROP
+
+iptables -t filter -A FORWARD -p tcp --dport 443 -m time --timestart 9:00 --timestop 21:00
+
+
+
 ```
 
 
+# Ipset
+
+![pic](./picture/13.png)
+
+```
+apt install ipset
+dnf install ipset
 
 
 
+ ipset -N myset hash:ip   === ipset create myset hash:ip
+ ipset -A myset 10.10.10.20  === ipset add myset 10.10.10.20
+ ipset -A myset 10.10.10.30
+ ipset -A myset 10.10.10.40
+ ipset add myset 10.0.0.0/8
+
+ipset create myset maxelem 4096
+
+iptables -A INPUT -m set --match-set myset src -j DROP
+
+ipset list myset
+ipset -L myset
 
 
+ipset del myset 10.0.0.0/8  === ipset -D myset 10.0.0.0/8
 
+ipset -F  === ipset flush
 
+ipset destroy myset
 
+ipset list
 
 ```
