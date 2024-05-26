@@ -39,7 +39,10 @@ WantedBy=multi-user.target
 
 ```
 
+```
 
 systemctl daemon-reload
 systemctl start my-service.service
 systemctl status my-service.service
+
+```
