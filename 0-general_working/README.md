@@ -398,6 +398,23 @@ namp -sU localhost
 
 
 ```
+
+# Disk
+
+```
+dd if=/dev/zero of=file1 bs=1M count=5000
+dd if=/dev/urandom of=file1 bs=1M count=5000
+
+
+fdisk /dev/sdb   # used for MBR partition table.
+gdisk /dev/sdb   # used for GPT partition table.
+
+```
+
+
+
+
+
 # lvm (logical volume management)
 [ref](https://www.tecmint.com/create-lvm-storage-in-linux/)
 ```
