@@ -368,9 +368,10 @@ scp user@172.16.2.2:/home/user/backup/backup.tar user1@172.16.2.4:/home/user1/ba
 # you can use WinSCP for transfer file between linux and Windows 
 
 
+rsync -avz  /path/to/local/directory username@remote_host:/path/to/remote/directory
 
 
-sudo rsync -av /etc/ /home/user/etc-backup              # if target directory does not exist, rsync will be create for us
+sudo rsync -avzh /etc/ /home/user/etc-backup              # if target directory does not exist, rsync will be create for us
 
 
 
