@@ -9,6 +9,7 @@ crontab -e      # add new crontab
 
 ########
 
+chmod +x main.py
 
 
 ```
