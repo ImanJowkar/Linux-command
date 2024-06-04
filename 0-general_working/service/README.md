@@ -14,7 +14,7 @@ uvicorn main:app --reload
 ## How to write a service for running this app on linux
 
 ```
- vim /etc/systemd/system/my-service.service
+vim /etc/systemd/system/my-service.service
 # add below config
 ### 
 
@@ -45,4 +45,5 @@ systemctl daemon-reload
 systemctl start my-service.service
 systemctl status my-service.service
 journalctl -u my-service.service
+journalctl -f -u my-service.service
 ```
