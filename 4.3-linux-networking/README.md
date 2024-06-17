@@ -223,6 +223,10 @@ ip route add 10.10.10.0/24 dev enp0s8
 
 ip route del 10.10.10.0/24
 
+
+
+
+ip -6 route list
 ```
 
 
@@ -231,7 +235,32 @@ ip route del 10.10.10.0/24
 
 ```
 
+ping -c 100 10.10.5.3  # send 100 icmp echo
 
+ping -s 1000 10.10.5.3  # size of packet
+
+
+traceroute 8.8.8.8
+
+
+
+whois google.com
+
+whois google.com -H -I
+
+
+
+dig google.com
+dig -x google.com
+
+nslookup google.com
+
+
+nmap 10.10.10.10
+
+nmap -sn 10.10.10.0/24
+
+nmap -sP 172.16.2.0/24
 
 
 
@@ -239,3 +268,42 @@ ip route del 10.10.10.0/24
 
 ```
 
+# DNS
+![img](img/7.png)
+
+```
+
+hostnamectl set-hostname test.local
+
+
+
+```
+
+# nmcli
+
+
+```
+
+nmcli connection show
+nmcli connection down enp0s3
+nmcli connection up enp0s3
+
+nmcli connection edit enp0s3
+
+
+
+# static ip addressing
+nmcli connection modify enp0s8 ipv4.method manual ipv4.addresses 10.10.10.1/24 ipv4.gateway 10.10.10.254 ipv4.dns 8.8.8.8 ipv4.dns-search "xample.com"
+nmcli connection down enp0s8 && nmcli connection up enp0s8
+
+
+
+# dhcp ip addressing
+nmcli connection modify enp0s8 ipv4.method auto
+
+
+# scan wifi
+nmcli device wifi
+nmcli device wifi connect "ssid" password pass  name "wifi1-profile"
+
+```

@@ -14,3 +14,24 @@ chmod +x main.py
 
 ```
 
+
+
+# Crontab example
+
+min, hour , days of month, month, days of week
+
+```
+# each friday on 2 PM  
+00 14 * * 5
+
+
+
+echo day on 22 PM
+
+0 22 * * * 
+
+
+
+
+
+```
