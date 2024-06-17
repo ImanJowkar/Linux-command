@@ -160,3 +160,82 @@ journalctl -u NetworkManager.service  | tail -10 | column -t
 
 
 ![img](img/5.png)
+
+
+# ip command
+
+```
+
+ ip link show   === ip l  # show layer 2 of OSI-model
+
+ ip address show === ip a  # show layer3 of OSI-model
+
+
+ ip address show | sed -ne 's,^ *inet6* \([^ /]*\)/.*$,\1,p' | sort -u
+
+
+ip -j address show # output json
+ip -j -p address show # json pretty output
+
+ip -j -p address show | jq
+
+ip a | grep inet | sort -n
+
+ip a | grep inet | sort -n | column -t
+
+
+ip -o -4 a
+
+ip -o -4 a | awk '{print $4}'
+
+
+
+cd /sys/class/net/
+cat /sys/class/net/enp0s3/statistics/tx_bytes
+
+cat /sys/class/net/enp0s3/statistics/tx_errors
+
+cat /sys/class/net/enp0s3/statistics/rx_errors
+
+
+
+
+# ip route
+
+ip route show
+
+ip -c route show | column -t
+
+ip -c route | grep default
+
+# delete default route
+
+sudo ip route del default
+
+
+# add default route
+
+ip route add default via 10.10.5.1
+
+
+# add route
+ip route add 10.10.10.0/24 dev enp0s8
+
+ip route del 10.10.10.0/24
+
+```
+
+
+# Network testing command
+![img](img/6.png)
+
+```
+
+
+
+
+
+
+
+```
+
