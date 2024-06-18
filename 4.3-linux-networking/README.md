@@ -307,3 +307,74 @@ nmcli device wifi
 nmcli device wifi connect "ssid" password pass  name "wifi1-profile"
 
 ```
+
+
+# scp and rsync
+
+```
+# scp
+
+scp <source> <destination>
+
+scp Rocky-9.1-x86_64-minimal.iso iman@10.10.56.200:/home/iman
+
+
+scp iman@10.10.56.11:/home/iman/Rocky-9.1-x86_64-minimal.iso .
+
+
+
+# rsync
+
+rsync <source> <destination>
+
+rsync -a Rocky-9.1-x86_64-minimal.iso iman@10.10.56.200:/home/iman
+
+
+rsync -a iman@10.10.56.200:/home/iman/Rocky-9.1-x86_64-minimal.iso .
+
+
+
+
+mkdir test1
+mkdir test2
+
+touch test1/file{1..10}
+
+rsync test1/* test2/
+
+# -a === incrimental copy 
+# -P === progress bar
+# -v === verbose
+
+rsync -avP test1/* test2/
+
+
+rsync -avP test1/* -e "ssh -p 22" iman@10.10.56.101:/home/iman/test1
+
+
+
+rsync -avP {dir1,dire2} -e "ssh -p 22" iman@10.10.56.101:/home/iman/test1
+```
+
+
+# SFTP
+![img](img/8.png)
+
+```
+sftp user@10.10.10.1 
+
+
+ls # list content of sftp server
+get file.tar  # download from sftp server
+reget file.tar
+mkdir dir1 # create directory on sftp server
+?
+
+
+
+
+lls # list context of local server
+put file.tar # upload to the sftp server
+lmkdir # create directory on local server
+
+```
