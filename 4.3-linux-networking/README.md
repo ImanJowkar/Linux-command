@@ -378,3 +378,46 @@ put file.tar # upload to the sftp server
 lmkdir # create directory on local server
 
 ```
+
+
+# Additional network tools
+
+```
+# neofetch
+
+apt install neofetch
+neofetch
+
+vim .config/neofetch/config.conf
+
+
+
+# wget
+
+wget google.com
+wget -r site.com
+
+
+# btop
+apt install btop
+btop
+
+
+# bmon
+apt install bmon
+bmon
+
+
+arp 
+arp -a
+arp --help
+
+
+apt install speedtest-cli
+speedtest-cli 
+
+
+
+
+
+```
