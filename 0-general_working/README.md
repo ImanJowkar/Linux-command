@@ -581,6 +581,34 @@ df -TH
 lsblk
 ```
 
+# pvmove
+
+```
+fdisk /dev/sdf
+
+pvcreate /dev/sdf1
+vgextend myvg /dev/sdf1
+pvmove /dev/sdb1 /dev/sdf1
+sync
+
+
+# You don't need to specify the destination PV; in this case, LVM will move the data to any available space within the VG. like this:
+pvmove /dev/sdb1
+sync
+
+# now you can remove /dev/sdb1 
+vgreduce myvg /dev/sdb1
+
+
+
+# finally remove the pv
+pvremove /dev/sdb1 
+
+# You can now safely remove the disk physically.
+```
+
+
+
 
 # lvm snapshot
 ```
