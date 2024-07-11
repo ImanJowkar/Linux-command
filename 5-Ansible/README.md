@@ -1,6 +1,21 @@
 # Ansible
-[ref](https://www.youtube.com/watch?v=VANub3AhZpI&list=PLT98CRl2KxKEUHie1m24-wkyHpEsa4Y70&index=6)
 
+![img](img/1.png)
+
+
+```
+
+# install ansible on ansible server
+dnf update && dnf install python3-venv
+
+
+
+
+# create ssh-keygen and copy it to the remote server
+
+
+
+```
 
 
 ## Ansible Config file location 
