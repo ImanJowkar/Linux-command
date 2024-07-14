@@ -18,9 +18,6 @@ apt install postgresql postgresql-client
 
 
 
-# install on rockey linux
-
-
 # in debain config file stored in `/etc/postgresql/...`
 
 ```
@@ -48,9 +45,9 @@ psql
 ```
 
 
-
 ## Work with postgresql
 
+### Basic configuration
 ```
 
 psql
@@ -58,26 +55,54 @@ pg_isready
 pg_lsclusters
 
 sudo su postgres
-psql -U postgres
+psql
+psql -U <username> -P <port> -h <IP-address> -d <db-name>  -W
 
-alter user postgres with password 'iman'; # change postgres password for user postgres
+help
+\q                  # for quit
+\conninfo           # show to connection information
+\l                  # list databases
+\dt                 # list tables
+\c <database-name>  # connect to database
 
 
 
-
-
-
-\l          # list database
-create database mydb1;
+create database mydb;
 drop database mydb1;
-
-psql -U postgres -d mydb   # connect to specific database
 
 
 
 
 ```
+`template0` is a pristine template that is read-only and should not be modified.
 
+`template1` is a template database that can be modified. It is used as a base for creating new databases and can include common schema objects or settings that you want to be present in all new databases.
+
+
+```
+
+create database test template template0;
+
+create database mydb;
+\c mydb;
+create table users(id integer not null , username varchar(40), lastnme varchar(64));
+
+\d users;
+
+
+select * from users;
+```
+
+
+
+### User Management
+```
+
+
+
+alter user postgres with password 'iman'; # change postgres password for user postgres
+
+```
 
 
 # Create a database and user and restore database
