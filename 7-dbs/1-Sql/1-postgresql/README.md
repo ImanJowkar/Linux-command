@@ -48,6 +48,7 @@ psql
 ## Work with postgresql
 
 ### Basic configuration
+
 ```
 
 psql
@@ -97,12 +98,35 @@ select * from users;
 
 ### User Management
 ```
+\du     # list all roles in postgres
+create role iman with login ;
+create role iman1 with login superuser;
 
 
 
-alter user postgres with password 'iman'; # change postgres password for user postgres
+alter user iman with password 'pass'; # change user password for user iman
+
+\password iman1   # another way to change password for a user
+
+alter user iman1 with nosuperuser ;
+
+
+psql -U iman1 -h localhost  -d postgres -W
+
+
+# change the pg_hba.conf
+
+host    all             iman1           192.168.56.1/32         md5
+
+
 
 ```
+
+
+
+###
+
+
 
 
 # Create a database and user and restore database
@@ -127,6 +151,9 @@ VALUES
 
 \dt
 select * from cars;
+
+
+
 
 
 
