@@ -63,7 +63,7 @@ PASS_WARN_AGE   7
 
 
 
-# security Grub
+## security of Grub
 
 ```
 # when your system is booting up , press c to go to the grub
@@ -98,5 +98,24 @@ grub2-mkconfig -o /boot/grub2/grub.cfg
 
 ```
 
+
+
+## PKI
+
+```
+
+# genrate Private key
+openssl genrsa -aes128 -out private.pem 2048
+
+# generate public key
+openssl req -utf8 -new -key private.pem -x509 -days 1000 -out certifacte.crt
+
+# show public key
+openssl x509 -in certifacte.crt -text -noout
+
+
+
+
+```
 
 
