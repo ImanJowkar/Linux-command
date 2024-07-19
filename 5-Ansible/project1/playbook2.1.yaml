@@ -1,0 +1,33 @@
+---
+
+- hosts: all
+  become: true
+  tasks:
+
+
+  - name: Determine the OS family
+    ansible.builtin.setup:
+      filter: ansible_os_family
+
+  - name: update repository index
+    apt:
+      update_cache: yes
+    when: ansible_facts['os_family'] == "Debian"
+
+  - name: Install apache2
+    apt:
+      name: apache2
+      state: absent
+    when: ansible_facts['os_family'] == "Debian"
+
+  - name: unInstall net-tools-ubuntu
+    apt:
+      name: net-tools
+      state: absent
+    when: ansible_facts['os_family'] == "Debian"
+
+  - name: Install net-tools-rockey
+    dnf:
+      name: net-tools
+      state: present
+    when: ansible_facts['os_family'] == "RedHat"

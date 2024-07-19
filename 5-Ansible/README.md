@@ -18,14 +18,16 @@ dnf update && dnf install python3-venv
 ```
 
 
-## Ansible Config file location 
+### Ansible Config file location priority
 * define a variable called ANSIBLE_CONFIG
 * ansible.cfg
 * ~/.ansible.cfg
 * /etc/ansible/ansible.cfg
 
 
+ ansible --version # you can see the location of ansible-config
 
+ 
 ## Ansible installation
 ```
 sudo apt install python3.10-venv
