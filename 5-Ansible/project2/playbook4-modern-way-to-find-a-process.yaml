@@ -1,0 +1,25 @@
+- name: find and kill given process
+  hosts: servers
+  become: true
+  vars_prompt:
+    - name: process_name
+    - name: signal
+  tasks:
+    - name: find the pid of given process
+      shell:  ps -ax --sort=-%mem --format pid,ppid,%cpu,%mem,cmd,user | grep {{ process_name }} | grep -v grep | awk '{ print $1 }'
+      register: pid
+      ignore_errors: true
+
+    - name: list finded pid
+      debug:
+        var: pid.stdout_lines
+
+    - name: Send signal to process
+      shell: |
+        if [ -n "{{ pid.stdout_lines | join(' ') }}" ]; then
+          kill -{{ signal }} {{ pid.stdout_lines | join(' ') }}
+        else
+          echo "No processes found to kill"
+        fi
+      when: pid.stdout_lines | length > 0
+      ignore_errors: true

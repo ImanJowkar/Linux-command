@@ -1,0 +1,14 @@
+- name: find and kill given process
+  hosts: servers
+  become: true
+  vars_prompt:
+    - name: threshold
+  tasks:
+    - name: find most cpu usage by process
+      shell:  ps -ax --sort=-%cpu --format pid,ppid,%cpu,%mem,cmd,user | grep -v grep | awk -v threshold={{ threshold }} '{if ($4 >= threshold ) print $0}'
+      register: pid
+      ignore_errors: true
+
+    - name: list finded pid
+      debug:
+        var: pid.stdout_lines

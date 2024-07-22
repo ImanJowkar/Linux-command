@@ -1,0 +1,10 @@
+---
+
+- hosts: all
+  become: true
+  tasks:
+
+  - name: copy files into the servers
+    template:
+      src: files/hostname
+      dest: /home/iman/hostname
