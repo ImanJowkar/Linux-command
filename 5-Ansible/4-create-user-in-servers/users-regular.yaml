@@ -1,0 +1,7 @@
+users:
+  - username: user50
+    password: "password50"
+  - username: user51
+    password: "password51"
+  - username: user52
+    password: "password52"

@@ -1,0 +1,13 @@
+- name: Create users on Debian and Rocky Linux
+  hosts: all
+  become: yes
+  vars_files:
+    - users.yaml
+
+  tasks:
+    - name: Ensure user is present
+      debug:
+        msg: >
+          {{ item.username }}, {{ item.password }}
+
+      loop: "{{ users }}"

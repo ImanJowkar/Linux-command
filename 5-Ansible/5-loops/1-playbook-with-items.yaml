@@ -1,0 +1,13 @@
+- name: with_item
+  hosts: all
+  become: yes
+
+  tasks:
+    - name: Ensure user is present
+      debug:
+        msg: >
+          {{ item }}
+      with_items:
+        - test
+        - docker
+        - kubernetes

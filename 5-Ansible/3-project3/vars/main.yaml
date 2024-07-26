@@ -1,0 +1,10 @@
+username: iman
+lastname: jowkar
+
+packages:
+  - nginx
+  - net-tools
+
+var1: imanuser
+
+var2: imanpass

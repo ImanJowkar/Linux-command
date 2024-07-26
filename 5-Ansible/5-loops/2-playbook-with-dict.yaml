@@ -1,0 +1,19 @@
+- name: with_dict
+  hosts: all
+  become: yes
+
+  tasks:
+    - name: Ensure user is present
+        name: {{ item.key }}
+        comment: {{ item.key.comment }}
+        uid: {{ item.key.uid }}
+      with_dict:
+        iman:
+          comment: "this is iman comment"
+          uid: 1540
+        sa:
+          comment: "this is sa comment"
+          uid: 1541
+        ho:
+          comment: "this is ho comment"
+          uid: 1542

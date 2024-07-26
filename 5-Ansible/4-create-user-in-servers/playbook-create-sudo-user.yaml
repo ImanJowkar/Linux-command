@@ -1,0 +1,26 @@
+---
+- name: Create users on Debian and Rocky Linux
+  hosts: all
+  become: yes
+  vars_files:
+    - user-with-sudo-flag.yaml
+
+  tasks:
+    - name: Determine the OS family
+      setup:
+        gather_subset:
+          - 'os_family'
+    
+    - name: Set sudo group variable based on OS family
+      set_fact:
+        sudo_group: "{{ 'sudo' if ansible_facts['os_family'] == 'Debian' else 'wheel' }}"
+
+    - name: Ensure user is present
+      user:
+        name: "{{ item.username }}"
+        password: "{{ item.password | password_hash('sha512') }}"
+        state: present
+        groups: "{{ sudo_group if item.sudo else '' }}"
+        append: yes
+      loop: "{{ users }}"
+
