@@ -684,32 +684,119 @@ echo "- - -" | tee /sys/class/scsi_host/host*/scan
 ```
 
 
-
-# How to install PostgreSQL on ubuntu22
-(ref)[https://computingforgeeks.com/install-postgresql-14-on-ubuntu-jammy-jellyfish/]
-```
-apt update
-
-sudo apt install vim curl wget gpg gnupg2 software-properties-common apt-transport-https lsb-release ca-certificates
-
-# add postgresql repo: 
-
-curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc|sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/postgresql.gpg
-sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
-apt update
-
-apt install postgresql-14
-
-systemctl status postgresql@14-main.service
-
-
-sudo -u postgres psql -c "SELECT version();"  # get postgres version
-
-su postgres # switch to postgres user
-psql
-
-
-
-
+# ufw 
 
 ```
+
+sudo ufw enable
+
+sudo ufw disable
+
+sudo ufw status
+
+sudo ufw reset
+
+
+
+sudo ufw allow 80/tcp
+sudo ufw deny 80/tcp
+
+
+# Allow a Port Range:
+sudo ufw allow 6000:7000/tcp
+
+
+# Allow from a Specific IP Address:
+sudo ufw allow from 10.10.1.10
+
+
+# Allow from a Specific IP Address to a Specific Port:
+sudo ufw allow from 10.10.1.10 to any port 22
+
+
+# Delete a Rule:
+
+sudo ufw delete allow 80/tcp
+
+
+# Default Policies:
+By default, ufw denies all incoming connections and allows all outgoing connections. You can change these policies using:
+
+sudo ufw default allow incoming
+sudo ufw default deny outgoing
+
+
+
+# Logging:
+
+sudo ufw logging on
+sudo ufw logging off
+
+
+
+# Application Profiles:
+ufw comes with predefined profiles for common applications, which you can use to simplify rule creation. List available application profiles:
+
+sudo ufw app list
+sudo ufw allow [application_name]
+
+
+
+
+
+
+
+
+
+
+```
+
+
+# firewalld
+
+
+```
+
+sudo firewall-cmd --state
+
+sudo firewall-cmd --get-zones
+
+sudo firewall-cmd --get-active-zones
+
+sudo firewall-cmd --zone=public --list-all
+
+
+
+# Allow a Service:
+sudo firewall-cmd --zone=public --add-service=http --permanent
+
+
+
+# Remove a Service:
+sudo firewall-cmd --zone=public --remove-service=http --permanent
+
+
+# Allow a Port:
+sudo firewall-cmd --zone=public --add-port=8080/tcp --permanent
+
+# Remove a Port:
+sudo firewall-cmd --zone=public --remove-port=8080/tcp --permanent
+
+# Reload firewalld Configuration:
+sudo firewall-cmd --zone=public --change-interface=eth0 --permanent
+
+
+
+
+# Add an Interface to a Zone:
+sudo firewall-cmd --zone=public --change-interface=eth0 --permanent
+
+
+# Remove an Interface from a Zone:
+sudo firewall-cmd --zone=public --remove-interface=eth0 --permanent
+
+
+```
+
+
+
