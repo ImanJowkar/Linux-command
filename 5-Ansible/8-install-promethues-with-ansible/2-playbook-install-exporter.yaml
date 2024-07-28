@@ -1,0 +1,85 @@
+- hosts: node_exporters
+  become: yes
+  tasks:
+
+    - name: Install Node Exporter
+      block:
+        - name: Create Node Exporter user
+          user:
+            name: node_exporter
+            shell: /bin/false
+            system: yes
+
+
+        #- name: Download Node Exporter
+        #  get_url:
+        #    url: https://github.com/prometheus/node_exporter/releases/download/v1.5.0/node_exporter-1.5.0.linux-amd64.tar.gz
+        #    dest: /tmp/node_exporter.tar.gz
+
+
+        - name: copy node exporter zip file to clients
+          copy:
+            src: node_exporter-1.8.2.linux-amd64.tar.gz 
+            dest: /tmp/node_exporter.tar.gz
+
+        - name: Extract Node Exporter
+          unarchive:
+            src: /tmp/node_exporter.tar.gz
+            dest: /tmp
+            remote_src: yes
+
+        - name: Move Node Exporter binary
+          command: mv /tmp/node_exporter-1.8.2.linux-amd64/node_exporter /usr/local/bin/
+
+        - name: Set Node Exporter binary ownership
+          file:
+            path: /usr/local/bin/node_exporter
+            owner: node_exporter
+            group: node_exporter
+
+
+        - name: Create Node Exporter systemd service file
+          copy:
+            dest: /usr/lib/systemd/system/node_exporter.service
+            content: |
+              [Unit]
+              Description=Node Exporter
+              Wants=network-online.target
+              After=network-online.target
+
+              [Service]
+              User=node_exporter
+              Group=node_exporter
+              Type=simple
+              ExecStart=/usr/local/bin/node_exporter
+
+              [Install]
+              WantedBy=multi-user.target
+
+        - name: Reload systemd and start Node Exporter service
+          systemd:
+            daemon_reload: yes
+            name: node_exporter
+            state: started
+            enabled: yes
+
+        - name: Open Node Exporter port in firewalld (RHEL)
+          when: ansible_os_family == "RedHat"
+          firewalld:
+            port: 9100/tcp
+            permanent: yes
+            state: enabled
+
+        - name: Reload firewalld (RHEL)
+          when: ansible_os_family == "RedHat"
+          command: firewall-cmd --reload
+
+        - name: Allow Node Exporter port in UFW (Debian)
+          when: ansible_os_family == "Debian"
+          ufw:
+            rule: allow
+            port: '9100'
+            proto: tcp
+            state: enabled
+
+

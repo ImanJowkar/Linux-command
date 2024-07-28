@@ -1,0 +1,129 @@
+- hosts: prometheus_server
+  become: yes
+  tasks:
+    - name: Install Prometheus
+      block:
+        - name: Create Prometheus user
+          user:
+            name: prometheus
+            shell: /bin/false
+            system: yes
+
+        - name: Install tar and vim commad
+          yum:
+           name: "{{ packages }}"
+           state: latest
+          vars:
+           packages:
+           - vim 
+           - tar
+           - net-tools
+           - bash-completion
+              
+        - name: Create Prometheus directories
+          file:
+            path: "{{ item }}"
+            state: directory
+            owner: prometheus
+            group: prometheus
+          loop:
+            - /etc/prometheus
+            - /var/lib/prometheus
+
+
+        #- name: Download Prometheus
+        #  get_url:
+        #    url: https://github.com/prometheus/prometheus/releases/download/v2.43.0/prometheus-2.43.0.linux-amd64.tar.gz
+        #    dest: /tmp/prometheus.tar.gz
+        
+        - name: copy promethes server binaries to prometheus server
+          copy:
+            src: prometheus-2.53.1.linux-amd64.tar.gz
+            dest: /tmp/prometheus.tar.gz
+
+        - name: Extract Prometheus
+          unarchive:
+            src: /tmp/prometheus.tar.gz
+            dest: /tmp
+            remote_src: yes
+        
+        - name: Move Prometheus binary
+          command: mv /tmp/prometheus-2.53.1.linux-amd64/prometheus /usr/local/bin/
+
+        - name: Move Promtool binary
+          command: mv /tmp/prometheus-2.53.1.linux-amd64/promtool /usr/local/bin/
+ 
+        - name: Set Prometheus binaries ownership
+          file:
+            path: /usr/local/bin/{{ item }}
+            owner: prometheus
+            group: prometheus
+            mode: '0755'
+          loop:
+            - prometheus
+            - promtool
+
+
+        - name: Move Prometheus console  files
+          command: mv /tmp/prometheus-2.53.1.linux-amd64/consoles /etc/prometheus/
+
+        - name: Move Prometheus console_libraries files
+          command: mv /tmp/prometheus-2.53.1.linux-amd64/console_libraries /etc/prometheus/
+
+        - name: Move Prometheus prometheus.yml files
+          command: mv /tmp/prometheus-2.53.1.linux-amd64/prometheus.yml /etc/prometheus/
+
+        
+
+        - name: Set Prometheus configuration files ownership
+          file:
+            path: /etc/prometheus/
+            owner: prometheus
+            group: prometheus
+            recurse: yes
+
+        - name: Create Prometheus systemd service file
+          copy:
+            dest: /usr/lib/systemd/system/prometheus.service
+            content: |
+              [Unit]
+              Description=Prometheus
+              Wants=network-online.target
+              After=network-online.target
+
+              [Service]
+              User=prometheus
+              Group=prometheus
+              Type=simple
+              ExecReload=/usr/bin/kill -HUP $MAINPID
+
+              ExecStart=/usr/local/bin/prometheus \
+                --config.file=/etc/prometheus/prometheus.yml \
+                --storage.tsdb.path=/var/lib/prometheus/ \
+                --web.console.templates=/etc/prometheus/consoles \
+                --web.console.libraries=/etc/prometheus/console_libraries \
+                --web.listen-address=0.0.0.0:9090
+
+
+              SyslogIdentifier=prometheus
+              Restart=on-failure
+              RestartSec=60s
+
+              [Install]
+              WantedBy=multi-user.target
+
+        - name: Reload systemd and start Prometheus service
+          systemd:
+            daemon_reload: yes
+            name: prometheus
+            state: started
+            enabled: yes
+
+        - name: Open Prometheus port in firewalld
+          firewalld:
+            port: 9090/tcp
+            permanent: yes
+            state: enabled
+    
+        - name: Reload firewalld to apply changes
+          command: firewall-cmd --reload

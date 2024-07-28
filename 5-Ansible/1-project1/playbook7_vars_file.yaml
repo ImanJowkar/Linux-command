@@ -24,10 +24,10 @@
     apt:
       name: "{{ packages }}"
       state: latest
-    # vars:
-    #   packages:
-    #   - nginx
-    #   - net-tools
+    vars:
+      packages:
+      - nginx
+      - net-tools
   - name: debug module1
     debug:
       var: var1
