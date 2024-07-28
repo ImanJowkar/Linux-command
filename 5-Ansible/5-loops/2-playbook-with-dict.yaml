@@ -3,10 +3,9 @@
   become: yes
 
   tasks:
-    - name: Ensure user is present
-        name: {{ item.key }}
-        comment: {{ item.key.comment }}
-        uid: {{ item.key.uid }}
+    - name: show vars
+      debug:
+        msg: " {{ item.key }}  {{ item.value.comment }} {{ item.value.uid }}"
       with_dict:
         iman:
           comment: "this is iman comment"

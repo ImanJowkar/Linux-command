@@ -1,0 +1,10 @@
+users:
+  - username: user50
+    password: "password50"
+    sudo: true
+  - username: user51
+    password: "password51"
+    sudo: false
+  - username: user52
+    password: "password52"
+    sudo: true

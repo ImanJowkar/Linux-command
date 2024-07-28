@@ -1,0 +1,34 @@
+- name: Create users on Debian and Rocky Linux
+  hosts: all
+  become: yes
+  vars_files:
+    - users.yaml
+
+  tasks:
+    - name:
+      debug:
+        msg: "this is variable  {{ ansible_facts['os_family']  }}"
+
+
+    - name: Set sudo group variable based on OS family
+      set_fact:
+        sudo_group: "{{ 'sudo' if ansible_facts['os_family'] == 'Debian' else 'wheel' }}"
+
+    - name: Ensure user is present
+      user:
+        name: "{{ item.username }}"
+        password: "{{ item.password | password_hash('sha512') }}"
+        state: present
+        groups: "{{ sudo_group if item.sudo else '' }}"
+        append: yes
+      loop: "{{ users }}"
+
+    - name: create specific directory for users
+      file:
+        dest: "/home/{{ item.0 }}/{{ item.1 }}"
+        owner: "{{ item.0 }}"
+        group: "{{ item.0 }}"
+        state: directory
+      with_nested:
+        - [user50,user51,user52]
+        - [test50,test51,test52]
