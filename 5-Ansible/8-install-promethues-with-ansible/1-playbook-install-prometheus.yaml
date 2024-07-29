@@ -9,7 +9,7 @@
             shell: /bin/false
             system: yes
 
-        - name: Install tar and vim commad
+        - name: Install some package on Redhat
           yum:
            name: "{{ packages }}"
            state: latest
@@ -19,6 +19,22 @@
            - tar
            - net-tools
            - bash-completion
+          when: ansible_os_family == "RedHat"
+
+        - name: Install some package on Debain
+          apt:
+           name: "{{ packages }}"
+           state: latest
+           update_cache: yes
+          vars:
+           packages:
+           - vim 
+           - tar
+           - net-tools
+           - bash-completion
+          when: ansible_os_family == "Debian"
+
+
               
         - name: Create Prometheus directories
           file:
@@ -124,6 +140,16 @@
             port: 9090/tcp
             permanent: yes
             state: enabled
+          when: ansible_os_family == "RedHat"
     
         - name: Reload firewalld to apply changes
           command: firewall-cmd --reload
+          when: ansible_os_family == "RedHat"
+
+        - name: Open Prometheus port in firewalld
+          ufw:
+            rule: allow
+            port: '9090'
+            proto: tcp
+            state: enabled
+          when: ansible_os_family == "Debian"

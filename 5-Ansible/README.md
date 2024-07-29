@@ -119,3 +119,27 @@ ansible-playbook --ask-become-pass playbook1.yaml --start-at-task="task name"
 
 
 
+## Ansible Vault
+
+```
+ansible-vault create playbook1.yaml
+ansible-vault edit playbook1.yaml
+ansible-vault encrypt playbook1.yaml
+ansible-vault encrypt playbook1.yaml
+ansible-vault encrypt --vault-id devops@prompt  playbook1.yaml
+ansible-vault encrypt --vault-id devops@pass  playbook1.yaml  # we have to have a file called pass which stored passowrd on it.
+
+ansible-vault decrypt --vault-id devops@prompt  playbook1.yaml
+
+
+
+ansible-vault rekey playbook-install-node-exporter.yaml
+ansible-vault view playbook1.yaml
+
+ansible-playbook playbook1.yaml --ask-vault-pass
+
+
+
+
+
+```
