@@ -800,3 +800,23 @@ sudo firewall-cmd --zone=public --remove-interface=eth0 --permanent
 
 
 
+## distory all data in a disk
+
+```
+sudo dd if=/dev/zero of=/dev/sdX bs=64K status=progress
+
+```
+
+## creating a bootable usb-drive
+
+```
+sudo dd if=/path/to/your.iso of=/dev/sdX bs=4M status=progress
+
+
+```
+
+## create a big file
+```
+dd if=/dev/zero of=bigfile bs=1M count=1024 status=progress
+
+```
