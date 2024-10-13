@@ -60,17 +60,7 @@ chronyc sourcestats
 
 
 
-# systemd
 
-```
-
-
-
-
-
-
-
-```
 
 
 
@@ -403,12 +393,34 @@ namp -sU localhost
 # Disk
 
 ```
+echo "- - -" | tee /sys/class/scsi_host/host*/scan
+
+
+
 dd if=/dev/zero of=file1 bs=1M count=5000
 dd if=/dev/urandom of=file1 bs=1M count=5000
 
 
+
+## distory all data in a disk
+sudo dd if=/dev/zero of=/dev/sdX bs=64K status=progress
+
+
+## creating a bootable usb-drive
+sudo dd if=/path/to/your.iso of=/dev/sdX bs=4M status=progress
+
+
+# create a big file
+dd if=/dev/zero of=bigfile bs=1M count=1024 status=progress
+
+
+
+
 fdisk /dev/sdb   # used for MBR partition table.
 gdisk /dev/sdb   # used for GPT partition table.
+
+
+
 
 ```
 
@@ -424,6 +436,8 @@ bc      # terminal calculator
 
 cat /proc/swaps
 swapon -s
+
+
 pvcreate /dev/sd[bc][12]
 pvs
 vgcreate myvg /dev/sd[bc][12]
@@ -477,7 +491,7 @@ resize2fs /dev/myvg/lv1
 ## Reducing Logical Volume (LV)
 
 * Before starting, it is always good to backup the data, so that it will not be a headache if something goes wrong.
-* To Reduce a logical volume there are 5 steps needed to be done very carefully.
+* To Reduce a logical volume there are 6 steps needed to be done very carefully.
 * While extending a volume we can extend it while the volume under mount status (online), but for reduce we must need to unmount the file system before reducing.
 
 Let’s see what are the 5 steps below: \
@@ -676,12 +690,7 @@ nmap -sP 172.16.2.0/24
 
 
 
- add disk without restart 
-```
 
-echo "- - -" | tee /sys/class/scsi_host/host*/scan
-
-```
 
 
 # ufw 
@@ -795,28 +804,5 @@ sudo firewall-cmd --zone=public --change-interface=eth0 --permanent
 # Remove an Interface from a Zone:
 sudo firewall-cmd --zone=public --remove-interface=eth0 --permanent
 
-
-```
-
-
-
-## distory all data in a disk
-
-```
-sudo dd if=/dev/zero of=/dev/sdX bs=64K status=progress
-
-```
-
-## creating a bootable usb-drive
-
-```
-sudo dd if=/path/to/your.iso of=/dev/sdX bs=4M status=progress
-
-
-```
-
-## create a big file
-```
-dd if=/dev/zero of=bigfile bs=1M count=1024 status=progress
 
 ```
