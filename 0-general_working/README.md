@@ -1156,10 +1156,17 @@ By default, ufw denies all incoming connections and allows all outgoing connecti
 sudo ufw default allow incoming
 sudo ufw default deny outgoing
 
+# firewalld
+
+
+
+
+
 
 ```
 
 ## SFTP
+
 
 ```
 sftp user@10.10.10.1 
@@ -1216,9 +1223,6 @@ arp --help
 
 apt install speedtest-cli
 speedtest-cli 
-
-
-
 
 
 ```
