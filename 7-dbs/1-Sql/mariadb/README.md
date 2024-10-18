@@ -31,7 +31,20 @@ alter user 'root'@'localhost' identified by 'root';
  select host,user,password from user;
 
 
-# resoter data: 
+
+# how to backup a database from mariadb
+mysqldump  testdb -u root -p > testdb.db
+
+
+# resoter a database: 
+mariadb -u root -p
+create database testdb;
+quit
+mariadb testdb -u root -p < testdb.db
+
+
+
+
 mariadb -u root -p < Chinook.sql
 
 
