@@ -358,14 +358,20 @@ diff -y a b                 # pretty output
 
 
 ## hard link and soft link
-
+![img](img/1.png)
 ```
 # hard link, hard link only used for files
+* hardlink only work with files
+* hardlink only work on the same partition
+* hardlink is a pointer to the inode on the disk
 ln file1.txt file2.txt          
 
 
-
+# sof link(symbol link)
 # soft link, soft link can be used for both file and directory
+* work on both file and directory
+* can be use on multiple partitions
+* softlink is a pointer to the file or directory not direct to the inode
 ls -s file1.txt file2.txt       
 
 
@@ -461,9 +467,9 @@ scp user@172.16.2.2:/home/user/backup/backup.tar user1@172.16.2.4:/home/user1/ba
 # you can use WinSCP for transfer file between linux and Windows 
 
 
+
+
 rsync -avz  /path/to/local/directory username@remote_host:/path/to/remote/directory
-
-
 sudo rsync -avzh /etc/ /home/user/etc-backup              # if target directory does not exist, rsync will be create for us
 
 
