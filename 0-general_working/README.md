@@ -15,10 +15,14 @@ gg          # go to the begining of the file
 G           # go to the end of the file
 shift+A     # go to the end of a specefic line
 0           # go to the begining of a specific line
-5G          # go to line 5
-ctrl + r    # redo
-e           # jump forwards to the end of a word
-ge          # jump backward to the end of a word
+:%s/find/replace/g  # find and replace globally
+
+:set number         # enable line number
+:%s/foo/xxx         # find "foo" and replace with "xxx"
+
+
+
+
 ```
 
 ### vim Configuration:
@@ -32,36 +36,6 @@ set cursorline
 
 
 ```
-
-
-#### vim option
-
-```
-:set number         # enable line number
-:%s/foo/xxx         # find "foo" and replace with "xxx"
-
-```
-
-# ntp
-```
-dnf install chrony
-
-
-vim /etc/chrony.conf
-# add
-pool 10.10.10.1 iburst
-
-systemctl enable chronyd --now
-timedatectl set-ntp true
-chronyc  sources -v
-chronyc sourcestats
-
-```
-
-
-
-
-
 
 
 # User Permissions
@@ -192,19 +166,27 @@ locate -i file_name                             # it isn't case sensetive
 
 
 # find ----> find search in realtime, therefor it is more slower than locate
-
-find . -name file.txt                           # search "file.txt" in . directory
+find / -type f                                  # find all files
+find / -type d                                  # find all directoris
 find . -iname file.txt                          # case insensetive
+sudo find /etc -type f -name "*.conf"
+
 find . -name "file.*" -delete                   # find "file.*" and delete all of them
 find /etc/ -name shadow                         # search for "shadow" in /etc/ directory
+
 
 
 find /etc/ -type d                              # show all directory in /etc
 find /etc/ -type d -maxdepth 2                  # show directory in /etc/ which have depth=2
 find /etc/ -type d -maxdepth 2 -perm 755        # find by permision
-find /etc/ -type d -size +100K -ls              # find the dirctory more than 100K size
-find /etc/ -type d -size +10M -ls
-find /etc/ -type f -size +5M -size -10M
+
+
+
+find /var/ -type f -size +100K -ls              # find the dirctory more than 100K size
+find /var/ -type f -size +10M -ls
+find /var/ -type f -size +5M -size -10M
+
+find / -type f -perm 777
 
 find /var/ -type f -mtime 0 -ls                 # show file which modified in one day past
 find /var/ -type f -mtime 1 -ls                 # show file which modified in two day past
@@ -213,10 +195,129 @@ find /var/ -type f -user iman -ls
 find /etc/ -type f -not -group root -ls
 
 
+
+
+# find and execute a comand on each element 
+
+sudo find / -type f -size +5M -exec ls -lah {} \;
+find . -type f -name "text*"  -exec rm -rf {} \;
+
+
+find / -type f -name "*.logs" -exec grep 'iman' {} \;
+
 ```
 
-# grep (text configurations)
 
+# Text Processing
+### cat, cut, sed
+
+```
+cat file
+cat -E file
+cat -n file     # show line number
+
+cat file | wc -l
+
+
+# cut
+
+file
+-------------------------------------
+hello this is my course on linux
+linux is very good
+-------------------------------------
+
+cut -c 2-4 file                 # give the character 2-4
+cut -c 2-4,6,7,9-11 file        # give the character 
+
+
+
+data.csv
+----------------------------------
+name,age,city
+user1,32,city1
+user2,22,city2
+----------------------------------
+cat data.csv | cut -d"," -f 2
+cat data.csv | cut -d"," -f 1
+
+
+data
+----------------------------------
+name age city
+user1 32 city1
+user2 22 city2
+----------------------------------
+cat data | cut -d" " -f 2
+cat data | cut -d" " -f 1
+
+
+
+
+data
+----------------------------------
+name-age-city
+user1-32-city1
+user2-22-city2
+----------------------------------
+cat data | cut -d"-" -f 2
+cat data | cut -d"-" -f 1
+
+
+
+data
+----------------------------------
+name;age;city
+user1;32;city1
+user2;22;city2
+----------------------------------
+cat data | cut -d";" -f 2
+cat data | cut -d";" -f 1
+
+
+
+
+
+# Show all users in linux
+cat /etc/passwd | cut -d":" -f 1
+
+
+## sed
+
+--------------------------------
+hello this is my course on linux
+linux is very good
+--------------------------------
+sed -e 's/find/replace/g' file
+
+sed -e 's/linux/LPIC/g' file
+
+# this is the ouput
+--------------------------------
+hello this is my course on LPIC
+LPIC is very good
+--------------------------------
+
+
+## tr 
+
+file
+----------------------------
+this is test
+----------------------------
+
+cat file | tr a-z A-Z
+
+----------------------------
+THIS IS TEST
+----------------------------
+
+
+```
+
+
+
+### grep (text configurations)
 ```
 grep iman /etc/passwd
 grep "pattern" /etc/shadow
@@ -259,11 +360,13 @@ diff -y a b                 # pretty output
 ## hard link and soft link
 
 ```
-ln file1.txt file2.txt          # hard link
+# hard link, hard link only used for files
+ln file1.txt file2.txt          
 
-# hard link only used for files
 
-ls -s file1.txt file2.txt       # soft link
+
+# soft link, soft link can be used for both file and directory
+ls -s file1.txt file2.txt       
 
 
 ```
@@ -367,6 +470,17 @@ sudo rsync -avzh /etc/ /home/user/etc-backup              # if target directory 
 
 ```
 
+
+## iftop
+
+```
+sudo apt install iftop
+iftop # show the network send and recived
+
+sudo apt install iotop
+iotop   # show the disk R/W status
+
+```
 
 # Nmap
 nmap is a network discovery and security auditing tool, there are a variety scans that can be perform nmap, TCP SYN scan is the default and most popular scan option for good reason
