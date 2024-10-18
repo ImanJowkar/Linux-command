@@ -3,6 +3,9 @@
 ```
 sudo apt install figlet
 figlet imanjowkar
+
+bc      # terminal calculator
+
 ```
 
 
@@ -381,7 +384,6 @@ ls -s file1.txt file2.txt
 # Process management
 
 ```
-
 ps
 ps -e
 ps -f
@@ -515,8 +517,6 @@ namp -sU localhost
 ```
 echo "- - -" | tee /sys/class/scsi_host/host*/scan
 
-
-
 dd if=/dev/zero of=file1 bs=1M count=5000
 dd if=/dev/urandom of=file1 bs=1M count=5000
 
@@ -535,25 +535,16 @@ dd if=/dev/zero of=bigfile bs=1M count=1024 status=progress
 
 
 
-
-fdisk /dev/sdb   # used for MBR partition table.
-gdisk /dev/sdb   # used for GPT partition table.
-
-
-
-
 ```
 
 
 
 
 
-# lvm (logical volume management)
+# LVM (logical volume management)
 [ref](https://www.tecmint.com/create-lvm-storage-in-linux/)
 ```
-bc      # terminal calculator
-
-
+cat /proc/sys/vm/swappiness
 cat /proc/swaps
 swapon -s
 
@@ -575,7 +566,7 @@ mkfs.ext4 /dev/myvg/lv2
 mkfs.ext4 /dev/myvg/lv3
 
 
-# open in  vim /etc/fstab
+vim /etc/fstab
 /dev/myvg/lv1   /LVM1   ext4    defaults        0       1
 /dev/myvg/lv2   /LVM2   ext4    defaults        0       1
 /dev/myvg/lv3   /LVM3   ext4    defaults        0       1
@@ -623,18 +614,27 @@ Let’s see what are the 5 steps below: \
 * Remount the file-system back to stage
 
 df -TH
+# 1
 umount -v /LVM1
-e2fsck -ff /dev/myvg/mylv1
+
+# 2
+e2fsck -f /dev/myvg/mylv1
 echo $?
 
+#3
 resize2fs /dev/myvg/mylv1 10G
 echo $?
-lvreduce -L 2G /dev/myvg/lv1 # reduce to 2GB
+
+#4 
+lvreduce -L 10G /dev/myvg/lv1 # reduce to 10GB
 echo $?
+
+#5 
 resize2fs /dev/myvg/mylv1
 # xfs_growfs /dev/myvg/lv1	# if file system is xfs
-
 echo $?
+
+# 6
 mount -a
 lvs 
 vgs
@@ -844,7 +844,6 @@ sudo ufw allow from 10.10.1.10 to any port 22
 
 
 # Delete a Rule:
-
 sudo ufw delete allow 80/tcp
 
 
@@ -855,29 +854,6 @@ sudo ufw default allow incoming
 sudo ufw default deny outgoing
 
 
-
-# Logging:
-
-sudo ufw logging on
-sudo ufw logging off
-
-
-
-# Application Profiles:
-ufw comes with predefined profiles for common applications, which you can use to simplify rule creation. List available application profiles:
-
-sudo ufw app list
-sudo ufw allow [application_name]
-
-
-
-
-
-
-
-
-
-
 ```
 
 
@@ -886,43 +862,6 @@ sudo ufw allow [application_name]
 
 ```
 
-sudo firewall-cmd --state
-
-sudo firewall-cmd --get-zones
-
-sudo firewall-cmd --get-active-zones
-
-sudo firewall-cmd --zone=public --list-all
-
-
-
-# Allow a Service:
-sudo firewall-cmd --zone=public --add-service=http --permanent
-
-
-
-# Remove a Service:
-sudo firewall-cmd --zone=public --remove-service=http --permanent
-
-
-# Allow a Port:
-sudo firewall-cmd --zone=public --add-port=8080/tcp --permanent
-
-# Remove a Port:
-sudo firewall-cmd --zone=public --remove-port=8080/tcp --permanent
-
-# Reload firewalld Configuration:
-sudo firewall-cmd --zone=public --change-interface=eth0 --permanent
-
-
-
-
-# Add an Interface to a Zone:
-sudo firewall-cmd --zone=public --change-interface=eth0 --permanent
-
-
-# Remove an Interface from a Zone:
-sudo firewall-cmd --zone=public --remove-interface=eth0 --permanent
 
 
 ```
