@@ -302,7 +302,7 @@ LPIC is very good
 --------------------------------
 
 
-## tr 
+## tr (translate)
 
 file
 ----------------------------
@@ -310,10 +310,31 @@ this is test
 ----------------------------
 
 cat file | tr a-z A-Z
-
 ----------------------------
 THIS IS TEST
 ----------------------------
+
+
+cat file | tr 'i' 'I'               # convert `i` to `I`
+cat test | tr [:lower:] [:upper:]   # this not work on zsh
+cat file | tr -d 't'                # remove 't' 
+cat file | tr -d 'test'             # remove 't' , 'e', 's'  
+cat test | tr -d [:digit:]          # remove all digits in a file
+cat test | tr -d [:space:]          # remove all spaces
+cat test | tr -d ' '                # remove all spaces
+cat test | tr -d [:blank:]          # remove all blank
+cat test  | tr -s ' '               # delete multiple space and replace with one space
+
+iman@iman:~$ cat file
+this is               test
+iman@iman:~$ cat file | tr -s ' '
+this is test
+
+
+
+
+
+
 
 
 ```
