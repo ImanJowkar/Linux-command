@@ -1,15 +1,32 @@
-
-# figlet
-```
-sudo apt install figlet
-figlet imanjowkar
-
-bc      # terminal calculator
-
-```
+# Linux Engineering:
 
 
-# vim
+## two main Linux ditributions
+* debain based(ubuntu(18.20,22,24), debain(10,11,12))
+* rhel based(centos(dead), fedora, rockey(8,9))
+
+
+
+
+
+## file system hierarchy
+![img](img/file-system-hierarchy.png)
+
+* `/ `: The root directory / is the starting point for the entire Linux filesystem hierarchical tree
+* `/boot`:  is where the kernel is stored.
+user account
+* `/etc`: configuration files information
+* `/root`:  home directory for administrator account 
+* `/home`: personal directories for each 
+* `/proc`: system processes/resources 
+* `/tmp`: temporary files purged on reboot
+* `/bin`: common binary executables
+* `/var`: variable and log files
+
+
+
+
+## text editor (vim)
 ```
 dd          # delete a line 
 d5          # delete line 5
@@ -21,15 +38,10 @@ shift+A     # go to the end of a specefic line
 :%s/find/replace/g  # find and replace globally
 
 :set number         # enable line number
-:%s/foo/xxx         # find "foo" and replace with "xxx"
 
 
 
-
-```
-
-### vim Configuration:
-```
+# vim Configuration:
 vim ~/.vimrc
 # paste
 set number
@@ -37,11 +49,12 @@ syntax enable
 set autoindent
 set cursorline
 
-
 ```
 
 
-# User Permissions
+
+
+## User Permissions
 
 ```
 adduser         # more intractive for create a user
@@ -117,7 +130,7 @@ StickyBit
 
 ```
 
-# modules 
+## modules 
 ```
 lsmod                               # print all modules which already added to kernel
 modprobe module_name                # add module and requiremnt modules to kernel
@@ -135,7 +148,7 @@ modinfo module_name                 # get info of modules
 
 
 
-# file system
+## file system
 
 ```
 du -hs /etc/                         # how to size of /etc/ directory
@@ -150,7 +163,7 @@ who | tee -a who.txt                   # show in terminal and append to a file
 
 ```
 
-# finding file and directories
+## finding file and directories
 
 ```
 # we have two option for finding a file in linux: 1-locate, 2-find
@@ -211,7 +224,7 @@ find / -type f -name "*.logs" -exec grep 'iman' {} \;
 ```
 
 
-# Text Processing
+## Text Processing
 ### cat, cut, sed
 
 ```
@@ -330,13 +343,6 @@ this is               test
 iman@iman:~$ cat file | tr -s ' '
 this is test
 
-
-
-
-
-
-
-
 ```
 
 
@@ -357,7 +363,7 @@ grep -A 3 -B 4 "pattern" /etc/..            # show 3 line after match and 4 line
 
 ```
 
-# comparing files
+### comparing files
 
 ```
 
@@ -402,7 +408,7 @@ ls -s file1.txt file2.txt
 ```
 
 
-# Process management
+## Process management
 
 ```
 ps
@@ -448,7 +454,7 @@ nohub ./app.sh                          # or we can use tmux
 
 
 ```
-# tar and zip
+## tar and zip
 
 ```
 tar -cvf backup.tar file1 file2 file3                   # tar the files
@@ -462,7 +468,7 @@ tar -zxvf backup.tar.gz
 
 ```
 
-# compression
+## compression
 [refrence](https://www.rootusers.com/gzip-vs-bzip2-vs-xz-performance-comparison/) for comparing these three method for compress files.
 **tip**: before compres any file, first use tar and then use compres method
 ```
@@ -480,7 +486,7 @@ xz -d file.xz
 
 ```
 
-# SCP (Secure COPY)
+## SCP (Secure COPY)
 ```
 scp -p 22 file.tar user@172.16.2.2:/home/user/backup/                           # for scp a file or tar file
 scp -r -p 22 dirctory user@172.16.2.2:/home/user/backup/                        # for scp a dirctory
@@ -531,27 +537,9 @@ iotop   # show the disk R/W status
 
 ```
 
-# Nmap
-nmap is a network discovery and security auditing tool, there are a variety scans that can be perform nmap, TCP SYN scan is the default and most popular scan option for good reason
-
-```
-sudo apt install nmap  # if you want to install nmap in windows you can install zenmap which is a GUI for nmap
-
-sudo nmap IP_address
-sudo nmap -sS IP_address
-
-# by default nmap scan most common 1000 port for each protocol
-nmap -p 22,50000 -sV IP_address
-
-# if you want to sacn all port
-nmap -p- IP_address
 
 
-# for UDP scan
-namp -sU localhost
 
-
-```
 
 # Disk
 
@@ -787,8 +775,6 @@ pvremove /dev/sdb1
 
 # lvm snapshot
 ```
-
-
 lvcreate --size 1G --snapshot --name lv1-snapshot /dev/myvg/lv1
 
 # lvcreate -L 1GB -s -n lv1-snapshot /dev/myvg/lv1
@@ -815,16 +801,6 @@ df -TH
 
 lvconvert --merge /dev/myvg/lv1-snapshot
 # After the merge is completed, the snapshot volume will be removed automatically.
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -1089,6 +1065,29 @@ dig -x google.com
 nslookup google.com
 
 
+### Nmap
+nmap is a network discovery and security auditing tool, there are a variety scans that can be perform nmap, TCP SYN scan is the default and most popular scan option for good reason
+
+
+
+sudo apt install nmap  # if you want to install nmap in windows you can install zenmap which is a GUI for nmap
+
+sudo nmap IP_address
+sudo nmap -sS IP_address
+
+# by default nmap scan most common 1000 port for each protocol
+nmap -p 22,50000 -sV IP_address
+
+# if you want to sacn all port
+nmap -p- IP_address
+
+
+# for UDP scan
+namp -sU localhost
+
+
+
+
 nmap 10.10.10.10
 
 nmap -sn 10.10.10.0/24
@@ -1096,6 +1095,109 @@ nmap -sn 10.10.10.0/24
 nmap -sP 172.16.2.0/24
 
 ```
+## Iptables
+* Iptables,  Netfilter is a packet filtering inside a linux kernel
+
+![netfilter](img/netfilter.png)
+![tables](img/iptables-tables.png)
+![chains](img/iptables-chains.png)
+
+```
+iptables -L             # list rules in filter table
+
+# list in specific table
+iptables -t filter -L   # list rules in filter table
+iptables -t mangle -L   # list rules in mangle table
+
+iptables -t filter -nvL           # list rules with packets details
+
+
+# flush a specific chain of table
+iptables -t filter -F INPUT
+iptables -t mangle -F
+iptables -t nat -F
+
+iptables -Z             # reset byte and counters
+
+iptables -N custom-chain        # Create Custom chain
+iptables -X custom-chain        # delete chain
+
+
+
+
+iptables -t filter -A INPUT -p icmp --icmp-type echo-request -j DROP
+iptables -t filter -A OUTPUT -p tcp --dport 80 -d 8.8.8.8 -j DROP
+
+
+
+iptables -t filter -A INPUT -p tcp --dport 22 -s 10.10.10.1 -j ACCEPT
+iptables -t filter -A INPUT -p tcp --dport 22 -s 10.10.10.0/24 -j DROP
+iptables -t filter -A INPUT -p tcp --dport 22 -s 0/0 -j DROP
+iptables -t filter -A INPUT  -s 0/0 -j DROP
+
+
+# multi-port
+
+iptables -t filter -A INPUT -p tcp -m multiport --dport 22,80,3306 -s 192.168.56.0/24 -j ACCEPT
+iptables -t filter -A INPUT -p tcp -m multiport --dport 22,80,3306 -s 0/0 -j DROP
+
+
+
+# ip-range
+iptables -t filter -A INPUT -p tcp --dport 80 -m iprange  --src-range 10.10.10.1-10.10.10.10 -j ACCEPT
+iptables -t filter -A INPUT -p tcp --dport 80 -m iprange  --src-range 10.10.10.11-10.10.10.100 -j DROP
+
+
+# DROP all outgoing multicast address
+iptables -t filter -A OUTPUT -m addrtype --dst-type MULTICAST -j DROP
+
+
+
+
+iptables -t filter -A INPUT -p tcp --dport 22 ! -s 10.10.10.1 -j DROP
+
+
+
+# change default policy
+
+iptables -P INPUT DROP
+iptables -P FORWARD DROP
+iptables -P OUTPUT DROP
+iptables -t filter -i enp0s3 -A INPUT -p tcp --dport 22 -s 172.16.2.0/24 -m state --state NEW,ESTABLISHED -j ACCEPT
+iptables -t filter -o enp0s3 -A OUTPUT -p tcp --sport 22 -m state --state ESTABLISHED -j ACCEPT
+
+
+
+
+
+
+
+
+
+
+
+
+
+# iptables-save
+iptables rules are stored in memory, so they are not persistent, because when the system is shutting down all rules will be deleted.
+
+
+1) first option
+iptables-save > rules
+iptables-restore rules
+
+
+2) second option
+sudo apt install iptables-persistent
+iptables-save > /etc/iptables/rules.v4
+
+```
+
+* ufw 
+* firewalld
+
+
+
 
 ## DNS
 ![img](img/dns.png)
@@ -1245,5 +1347,16 @@ arp --help
 apt install speedtest-cli
 speedtest-cli 
 
+
+```
+
+
+
+# figlet
+```
+sudo apt install figlet
+figlet imanjowkar
+
+bc      # terminal calculator
 
 ```

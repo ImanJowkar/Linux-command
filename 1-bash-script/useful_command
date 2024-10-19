@@ -1,0 +1,36 @@
+# for command substitutions
+
+# 1- now="`date`" 
+# 2- now="$(date)"
+
+# 1 and 2 are the same
+
+
+#######################################
+# proc="$(ps -ef | grep bash)"
+#
+# DATE="`date +%F_%H_%M`"
+#
+# tar -czvf etc-$(date +%F_%H_%M).tar.gz /etc/
+#
+#
+#
+############################################
+# Arithmatic operations
+# a=4
+# b=5
+# c=((a+b))
+#
+#
+# a=7
+# b=9
+# let c=a+b
+#
+#
+#
+# #####################################
+# while true; do echo "infinite loop"; sleep 1; done
+
+
+
+# echo $$   # get PID of running script.
