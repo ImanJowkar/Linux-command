@@ -1,9 +1,10 @@
 # Linux Engineering:
-
+- [ ] basic linux command
+- [ ] text editor
 
 ## two main Linux ditributions
-* debain based(ubuntu(18.20,22,24), debain(10,11,12))
-* rhel based(centos(dead), fedora, rockey(8,9))
+* debain based(ubuntu(18.20,22,24), debain(10,11,12)) -->  pakage manager apt
+* rhel based(centos(dead), fedora, rockey(8,9)) --> package manager yim, dnf
 
 
 
@@ -14,16 +15,91 @@
 
 * `/ `: The root directory / is the starting point for the entire Linux filesystem hierarchical tree
 * `/boot`:  is where the kernel is stored.
-user account
-* `/etc`: configuration files information
+* `/etc`: configuration files information.
+* `/dev`: its a location of a device files like: /dev/sda, /dev/sdb , /dev/nvme
 * `/root`:  home directory for administrator account 
-* `/home`: personal directories for each 
+* `/home`: personal directories for each user account 
 * `/proc`: system processes/resources 
 * `/tmp`: temporary files purged on reboot
 * `/bin`: common binary executables
 * `/var`: variable and log files
+* `/usr`: user related program
+* `/lib`: library files (A library file in Linux is a collection of precompiled functions that programs can use to perform tasks without having to code them from scratch.)
 
 
+
+lests start: 
+download and install putty.
+
+## basic linux command  
+
+```
+ls 
+ls -lah             # long-list, hidden, human-readable
+pwd
+touch file1.txt     # create a file
+touch .file         # create hidden file
+echo "Hello world" > file1.txt
+echo "Hello world" >> file1.txt
+touch file{1..3}
+cat file1.txt
+
+cd ~                  # ~ is home directory for user
+cd .                  # . is current working directory
+cd ..                 # change the current directory to the parent directory
+cd                    # go to home directory
+
+cd /home/test         # absolute pass
+cd test               # relative path
+
+mkdir dir1            # create a directory(folder)
+mkdir dir{1..5} 
+mkdir -p dire1/dire2
+
+
+ls -lah /dev/        # block device: hard disk ,cd-rom, flash.  character device: mouse, keyboard
+
+d > directory
+l > link
+c > character device
+b > block device
+- > regular file 
+
+ls -li                # inode number(Each file or directory has an inode number that indicates its location on the hard disk.)
+
+sudo apt install tree
+tree .
+
+stat file
+file {directory, file-name}  # give you the type of the file or dirctory or zip or ....
+which pwd
+
+tail /var/log/file.txt
+head /var/log/file.txt
+cat /var/log/file.txt
+
+
+cat file.txt | wc    # show line, word, char
+cat file.txt | wc -l # show only the number of line
+
+cp <src> <dest>       # copy file and directory
+cp file1 /etc/file.conf     
+cp /etc/nginx/nginx.conf ~
+
+mkdir ~/backup
+cp -r /etc/ ~/backup
+cp -r /etc/* ~/backup
+
+mv <src> <dest>
+
+rm file
+rm -r directory
+rm -rf directory
+
+
+```
+![img](img/ls-detail.png)
+![img](img/ls-lah-detail.png)
 
 
 ## text editor (vim)
