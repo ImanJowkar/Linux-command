@@ -1,6 +1,9 @@
 # Linux Engineering:
-- [ ] basic linux command
-- [ ] text editor
+- [ ] Introduction
+- [ ] Basic linux command
+- [ ] Text editor
+- [ ] User management and Permission
+
 
 ## two main Linux ditributions
 * debain based(ubuntu(18.20,22,24), debain(10,11,12)) -->  pakage manager apt
@@ -66,6 +69,13 @@ b > block device
 - > regular file 
 
 ls -li                # inode number(Each file or directory has an inode number that indicates its location on the hard disk.)
+```
+![img](img/ls-detail.png)
+![img](img/ls-lah-detail.png)
+
+
+```
+
 
 sudo apt install tree
 tree .
@@ -98,8 +108,21 @@ rm -rf directory
 
 
 ```
-![img](img/ls-detail.png)
-![img](img/ls-lah-detail.png)
+## User management and Permission
+
+```
+adduser iman    # This is a low-level command that creates a user account without any additional setup.
+useradd iman    # This is a higher-level command, typically a script that uses useradd under the hood. It simplifies the process by providing a more interactive experience, often prompting for details like the password and home directory
+
+cat /etc/passwd
+
+```
+![img](img/passwd.png)
+```
+
+
+
+```
 
 
 ## text editor (vim)
