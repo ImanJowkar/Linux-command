@@ -1,8 +1,10 @@
 # Linux Engineering:
 - [ ] Introduction
 - [ ] Basic linux command
-- [ ] Text editor
 - [ ] User management and Permission
+- [ ] Text editor
+- [ ] Basic Linux permision
+
 
 
 ## two main Linux ditributions
@@ -16,7 +18,7 @@
 ## file system hierarchy
 ![img](img/file-system-hierarchy.png)
 
-* `/ `: The root directory / is the starting point for the entire Linux filesystem hierarchical tree
+* `/`: The root directory / is the starting point for the entire Linux filesystem hierarchical tree
 * `/boot`:  is where the kernel is stored.
 * `/etc`: configuration files information.
 * `/dev`: its a location of a device files like: /dev/sda, /dev/sdb , /dev/nvme
@@ -44,7 +46,7 @@ touch file1.txt     # create a file
 touch .file         # create hidden file
 echo "Hello world" > file1.txt
 echo "Hello world" >> file1.txt
-touch file{1..3}
+touch file{1..3}      # {} curly Brace, curly Braket
 cat file1.txt
 
 cd ~                  # ~ is home directory for user
@@ -107,19 +109,64 @@ rm -r directory
 rm -rf directory
 
 
-```
-## User management and Permission
+md5sum file
+sha256sum file.tar
+
+
+echo "hi" > file              # standard output   STDOUT
+caaat file 2> /dev/null       # standard error    STDERR
+caaaat file &2> /dev/null     # stdout, stderr
+echo $?
 
 ```
-adduser iman    # This is a low-level command that creates a user account without any additional setup.
-useradd iman    # This is a higher-level command, typically a script that uses useradd under the hood. It simplifies the process by providing a more interactive experience, often prompting for details like the password and home directory
+## User management and Permission
+`we have to main method for authenticating our user:`
+* local database
+* domain controller: Openldap, Active-Directory
+
+
+```
+adduser iman                      # This is a low-level command that creates a user account without any additional setup.
+useradd iman   --> user-friendly  # This is a higher-level command, typically a script that uses useradd under the hood. It simplifies the process by providing a more interactive experience, often prompting for details like the password and home directory
 
 cat /etc/passwd
 
+which passwd      # a binary file for changing the user password
+passwd iman
 ```
 ![img](img/passwd.png)
-```
 
+```
+gid, uid
+id -u     # show user uid
+id -g     # show user gid
+addgroup
+delgroup
+
+cat /etc/groups
+
+
+usermod -aG <group> <user>
+usermod -aG sudo iman
+groups <user>   # show groups which this user joind 
+
+
+usermod -L <user>   # lock(disable) a user
+usermod -U <user>   # unlock a user
+
+cat /etc/shadow
+
+su <user>     # switch to another user but don't run scripts (.bashrc, ...) 
+su - <user>   # run script (.bashrc, ...) when switch to user
+
+```
+![hidden file](img/hidden-file-home-user.png)
+
+```
+cd /etc/skel
+touch /etc/skel/info.text
+adduser iman1
+ls -lah /home/iman1
 
 
 ```
@@ -153,27 +200,9 @@ set cursorline
 
 
 
-## User Permissions
+## Basic Linux permision
 
 ```
-adduser         # more intractive for create a user
-deluser         # more intractive for delete a user
-addgroup
-delgroup
-
-
-
-useradd         # low-level utilities for create user
-userdel
-groupadd
-groupdel
-
-
-usermod -aG group_name user_name    # for adding a user to a group
-groups                              # show the list of groups which user are join to it
-
-
-
 
 
 chown user:group file.txt   # change ownership of a file
@@ -191,15 +220,20 @@ chmod g-rwx file.txt
 chmod o+rw file.txt
 chmod a-x file.txt
 
+sudo -H -u <user> bash -c 'cat /etc/add-route.sh'
+sudo -H -u ansible bash -c 'echo "fsdf" >>  /etc/add-route.sh'
+
 chmod g=rx file.txt
 
-
+chmod -R 444 directory
 
 R       W       X
-
 2^2     2^1     2^0
 
+
 chmod 724 file > user: RWX, group: W, Other: R
+
+
 
 
 
@@ -225,7 +259,6 @@ umask 113 dirctory_1   >>   RW-RW-R--
 SUID
 SGID
 StickyBit
-
 
 ```
 
@@ -397,23 +430,20 @@ cat data | cut -d";" -f 1
 cat /etc/passwd | cut -d":" -f 1
 
 
-## sed
-
+sed       # a way to search and replace
 --------------------------------
 hello this is my course on linux
 linux is very good
 --------------------------------
-sed -e 's/find/replace/g' file
 
-sed -e 's/linux/LPIC/g' file
+sed -i 's/find/replace/' file
+sed -i 's/find/replace/g' file
 
-# this is the ouput
---------------------------------
-hello this is my course on LPIC
-LPIC is very good
---------------------------------
+# -i = inplace
+# s  = substitute 
 
-
+sed -i '/^$/d' file    # remove empty line from file
+sed 's/.*/\U&/' file
 ## tr (translate)
 
 file
@@ -507,19 +537,31 @@ ls -s file1.txt file2.txt
 ```
 
 
+## Package manager
+
+```
+rpm -qa  # show all program which is installed 
+rpm -qa | grep nginx
+
+apt list --installed
+dpkg -l
+
+
+```
+
+
 ## Process management
 
 ```
-ps
-ps -e
-ps -f
-ps -ef
-
+ps       
+ps -ef        # show pid and ppid
+ps -aux
 ps -f -u root           # only show root process
 
 ps aux --sort=%mem
 ps aux --sort=-%cpu
 
+ps -A -o stat,pid,ppid | grep -e '[zZ]'
 
 pgrep python3
 pgrep sshd                  # get process id
@@ -643,6 +685,10 @@ iotop   # show the disk R/W status
 # Disk
 
 ```
+Buffer + Cache    # part of RAM, for speed the application performace
+Swap              # part of disk, act as a RAM
+
+
 echo "- - -" | tee /sys/class/scsi_host/host*/scan
 
 dd if=/dev/zero of=file1 bs=1M count=5000
