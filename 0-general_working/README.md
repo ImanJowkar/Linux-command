@@ -2,8 +2,10 @@
 - [ ] Introduction
 - [ ] Basic linux command
 - [ ] User management and Permission
-- [ ] Text editor
+- [ ] text editor (vim)
 - [ ] Basic Linux permision
+- [ ] finding file and directories
+- [ ] Text Processing
 
 
 
@@ -87,6 +89,7 @@ file {directory, file-name}  # give you the type of the file or dirctory or zip 
 which pwd
 
 tail /var/log/file.txt
+tail -f /var/log/file.txt
 head /var/log/file.txt
 cat /var/log/file.txt
 
@@ -113,6 +116,7 @@ md5sum file
 sha256sum file.tar
 
 
+# redirect output and input
 echo "hi" > file              # standard output   STDOUT
 caaat file 2> /dev/null       # standard error    STDERR
 caaaat file &2> /dev/null     # stdout, stderr
@@ -174,16 +178,35 @@ ls -lah /home/iman1
 
 ## text editor (vim)
 ```
+set cursorline
+:5          $ go to line 5
+
 dd          # delete a line 
 d5          # delete line 5
+
 u           # undo change
+
 gg          # go to the begining of the file
-G           # go to the end of the file
+shift + g   # go to the end of the file
+
 shift+A     # go to the end of a specefic line
-0           # go to the begining of a specific line
+$           # go to the end of a specefic line
+
+0                   # go to the begining of a specific line
+
+/text               # search text in the file
+
+:s/find/replace/    # find first word in the current line (not in all line)
+:%s/find/replace/   # find and replace first match in any line
 :%s/find/replace/g  # find and replace globally
 
-:set number         # enable line number
+
+yy          # copy the line 
+p           # paste the line
+
+ggVG        # highlight all 
+
+:set number         # show line number
 
 
 
@@ -191,12 +214,10 @@ shift+A     # go to the end of a specefic line
 vim ~/.vimrc
 # paste
 set number
-syntax enable
-set autoindent
 set cursorline
 
 ```
-
+[document](https://devhints.io/vim)
 
 
 
@@ -206,6 +227,7 @@ set cursorline
 
 
 chown user:group file.txt   # change ownership of a file
+
 chgrp group_name file.txt   # change group of a file
 
 
@@ -260,40 +282,29 @@ SUID
 SGID
 StickyBit
 
-```
-
-## modules 
-```
-lsmod                               # print all modules which already added to kernel
-modprobe module_name                # add module and requiremnt modules to kernel
-modprobe -r module_name             # remove a modlue and all dependencies
-insmod module_name                  # only add module and can't load requirement modules
-rmmod module_name                   # remove a module from a kernel
-modinfo module_name                 # get info of modules
-
-# if you want to permenent loaded modules, add modules to "/etc/modules-load.d"
 
 
-```
+# stickeyBit   # only apply on directory
+mkdir /test
+chmod 1777 /test
+# chmod o+t  /test
+touch /test/file1
+chmod 777 /test/file1
+
+su user2
+cd /test
+rm -rf file1
 
 
-
-
-
-## file system
+# by default stickyBit is enable on /tmp
 
 ```
-du -hs /etc/                         # how to size of /etc/ directory
-stat /etc/passwd                     # give an information about the /etc/passwd file 
-
-
-# tee
-who | tee who.txt                      # show in terminal and save to a file
-who | tee -a who.txt                   # show in terminal and append to a file
 
 
 
-```
+
+
+
 
 ## finding file and directories
 
@@ -361,24 +372,13 @@ find / -type f -name "*.logs" -exec grep 'iman' {} \;
 
 ```
 cat file
-cat -E file
+cat -E file     # show \n too
 cat -n file     # show line number
 
 cat file | wc -l
 
-
 # cut
-
 file
--------------------------------------
-hello this is my course on linux
-linux is very good
--------------------------------------
-
-cut -c 2-4 file                 # give the character 2-4
-cut -c 2-4,6,7,9-11 file        # give the character 
-
-
 
 data.csv
 ----------------------------------
@@ -430,6 +430,8 @@ cat data | cut -d";" -f 1
 cat /etc/passwd | cut -d":" -f 1
 
 
+
+
 sed       # a way to search and replace
 --------------------------------
 hello this is my course on linux
@@ -443,7 +445,10 @@ sed -i 's/find/replace/g' file
 # s  = substitute 
 
 sed -i '/^$/d' file    # remove empty line from file
-sed 's/.*/\U&/' file
+sed 's/.*/\U&/' file   # transfer lower case to UPPER CASE
+
+
+
 ## tr (translate)
 
 file
@@ -581,6 +586,25 @@ nohub ./app.sh                          # or we can use tmux
 
 
 ```
+
+
+
+## modules 
+```
+lsmod                               # print all modules which already added to kernel
+modprobe module_name                # add module and requiremnt modules to kernel
+modprobe -r module_name             # remove a modlue and all dependencies
+insmod module_name                  # only add module and can't load requirement modules
+rmmod module_name                   # remove a module from a kernel
+modinfo module_name                 # get info of modules
+
+# if you want to permenent loaded modules, add modules to "/etc/modules-load.d"
+
+
+```
+
+
+
 
 ## how to secure ssh
 
