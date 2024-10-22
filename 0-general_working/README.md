@@ -259,32 +259,51 @@ chmod 724 file > user: RWX, group: W, Other: R
 
 
 
-# umask denfine default permision for a file, umask apply to a directory and after that any file we create on that directory got the umask permision
+# umask
+
+# umask denfine default permision for a directory content, umask apply to a directory and after that any file we create on that directory got the umask permision
+
+!!! with umas we can't set execute permision 
 
 
-R       W       X
-0       0       0
+      user                    group                      other
+-----------------         --------------           -----------------
+R       W       X         R       W       X        R       W       X    
+1       1       0         1       1       0        0       0       0
 
+0 0 2^0=1                  0 0 2^1=1                2^2, 2^1,2^0=7
 
-R       -       -
-0       2^1     2^0     >> 3
+umask 117 dirctory_1   >>   RW- RW- ---
 
-umask 113 dirctory_1   >>   RW-RW-R--
+# for security reasons it cannot be set excute permision with umask
+umask only apply to new file which we create on the directory
 
-# for security reasons it cannot be set x permision with umask
 
 
 
 
 
 # Special Permission: 
-SUID
-SGID
-StickyBit
+SUID            4
+SGID            2
+StickyBit       1
+
+# SUID
+ls -lah /usr/bin/passwd
+chmod 4644 /usr/bin/passwd
+chmod u+s /usr/bin/passwd
+
+
+# SGID
+chmod 2644 file
+chmod g+s file
+
 
 
 
 # stickeyBit   # only apply on directory
+when stickeyBit is enable on a dirctory , only the owner of file can delete the file but other and gourp can't delete.
+
 mkdir /test
 chmod 1777 /test
 # chmod o+t  /test
@@ -622,13 +641,15 @@ modinfo module_name                 # get info of modules
 ## tar and zip
 
 ```
+tar gather all file to a single tar file
+
 tar -cvf backup.tar file1 file2 file3                   # tar the files
 tar -tvf backup.tar                                     # only show which file is in the backup.tar
 tar -xvf backup.tar                                     # untar the file
 
+sudo tar -cvf archive.tar /etc/*
 
-tar -zcvf backup.tar.gz file2 file3
-tar -zxvf backup.tar.gz
+
 
 
 ```
@@ -637,8 +658,21 @@ tar -zxvf backup.tar.gz
 [refrence](https://www.rootusers.com/gzip-vs-bzip2-vs-xz-performance-comparison/) for comparing these three method for compress files.
 **tip**: before compres any file, first use tar and then use compres method
 ```
-gzip -c file.tar > file.tar.gz                  # compression rate 60~70 %  > 100GB > 40 ~ 30 GB
-gzip -d file.tar.gz                             # uncompress the file
+gzip -c file  > file.gz
+file file.gz
+gzip -d file.gz       # uncompress the file
+
+
+tar -zcvf backup.tar.gz file2 file3
+tar -zcfv backup-etc.tar.gz /etc/*
+tar -zxvf backup-etc.tar.gz
+
+tar -zxvf backup-etc.tar.gz -c /data
+
+
+
+
+
 
 
 sudo apt install bzip2
@@ -712,20 +746,91 @@ iotop   # show the disk R/W status
 Buffer + Cache    # part of RAM, for speed the application performace
 Swap              # part of disk, act as a RAM
 
+sync              # this command write buffer to disk
+
+
+file system       # A program that manages reading and writing to the disk; 
+                    when we say format the hard disk,we mean installing a new file system on it. 
+
+
+1) Linux Based File system
+
+Name                  MaxFsSize       MaxFileSize         journaling      
+ext2                  2 TiB               2 TiB              no
+ext3                  2 TiB               16 TiB             yes
+ext4                  1 EiB               1 EiB              yes
+
+
+
+
+2) non-linux file system
+
+Name                  MaxFsSize       MaxFileSize         journaling      
+NTFS                  2 TiB               256 TiB              no
+XFS                   8 EiB               8 EiB                yes
+
+
+
+bit 
+Byte = 8 bit
+
+
+KB    -> * 10^3               KiB    -> * 2^10 = 1024 
+MB    -> * 10^6               MiB    -> * 2^20 = 1024 * 1024
+GB    -> * 10^9               GiB    -> * 2^30 = 1024 * 1024 * 1024 
+TB    -> * 10^12              TiB    -> * 2^40 = 1024 * 1024 * 1024 * 1024
+PB    -> * 10^15              PiB    -> * 2^50 
+EB    -> * 10^18              EiB    -> * 2^60 
+ZB    -> * 10^21              ZiB    -> * 2^70 
+YB    -> * 10^24              YiB    -> * 2^80 
+
+
+fdisk /dev/sdb
+mkfs.ext4 /dev/sdb1
+echo $?
+lsblk -f
+
+mount /dev/sdb1 /data
+mount -r /dev/sdb1 /data    # read-only mount
+
+
+# open /etc/fstab
+/dev/sdb1 /data ext4  defaults  0 0
+
+/dev/sdb1 /data ext4  ro,noexec 0 0
+
+
+df -TH
+df -hi
+
+
+
+umount /dev/sdb1
+fsck.ext4 /dev/sdb1      # file system repair
+xfs_repair  /dev/sdc1
+
+
 
 echo "- - -" | tee /sys/class/scsi_host/host*/scan
+
+
+
 
 dd if=/dev/zero of=file1 bs=1M count=5000
 dd if=/dev/urandom of=file1 bs=1M count=5000
 
 
-
 ## distory all data in a disk
-sudo dd if=/dev/zero of=/dev/sdX bs=64K status=progress
-
+sudo dd if=/dev/zero of=/dev/sdb1 status=progress
 
 ## creating a bootable usb-drive
-sudo dd if=/path/to/your.iso of=/dev/sdX bs=4M status=progress
+sudo dd if=/path/to/iso of=/dev/sdX bs=4M status=progress && sync
+
+
+# backup /boot
+lsblk
+dd if=/dev/sda2 of=/data/boot status=progress
+dd if=/data/boot of=/dev/sda2 status=progress
 
 
 # create a big file
