@@ -442,6 +442,14 @@ cat data | cut -d";" -f 2
 cat data | cut -d";" -f 1
 
 
+data (tab)
+----------------------------------
+name    age     city
+user1   32      city1
+user2   22      city2
+----------------------------------
+cat data | cut -d$'\t' -f 2
+cat data | cut -d$'\t' -f 1
 
 
 
@@ -495,6 +503,25 @@ iman@iman:~$ cat file
 this is               test
 iman@iman:~$ cat file | tr -s ' '
 this is test
+
+
+
+ip 
+----------------
+1.1.1.1
+192.168.1.1
+1.1.1.1
+192.168.1.2
+192.168.1.1
+
+sort ip | uniq
+
+sort ip | uniq -c     # count the duplicate 
+sort ip | uniq -d5    # show only duplicate
+
+
+
+
 
 ```
 
@@ -649,9 +676,6 @@ tar -xvf backup.tar                                     # untar the file
 
 sudo tar -cvf archive.tar /etc/*
 
-
-
-
 ```
 
 ## compression
@@ -674,7 +698,7 @@ tar -zxvf backup-etc.tar.gz -c /data
 
 
 
-
+-----------------------------------
 sudo apt install bzip2
 bzip2 file.tar
 bzip2 -d file.tar.bz2
@@ -682,7 +706,7 @@ bzip2 -d file.tar.bz2
 
 xz file.tar
 xz -d file.xz
-
+----------------------------------------
 ```
 
 ## SCP (Secure COPY)
@@ -795,14 +819,24 @@ mount -r /dev/sdb1 /data    # read-only mount
 
 
 # open /etc/fstab
+-----------------------------------------------
 /dev/sdb1 /data ext4  defaults  0 0
 
 /dev/sdb1 /data ext4  ro,noexec 0 0
-
-
+------------------------------------------------
+sudo systemctl daemon-reload
+sudo mount -a
 df -TH
 df -hi
 
+du -sh .
+du -sh ./* | sort -h
+
+
+
+blkid
+lsblk
+lsblk -f
 
 
 umount /dev/sdb1
