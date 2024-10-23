@@ -6,7 +6,6 @@
 - [ ] Basic Linux permision
 - [ ] finding file and directories
 - [ ] Text Processing
-
 - [ ] compression and tar
 - [ ] Disk management
 - [ ] SCP (Secure COPY)
@@ -175,6 +174,12 @@ touch /etc/skel/info.text
 adduser iman1
 ls -lah /home/iman1
 
+
+
+who
+last      # last login
+lastb     # last bad password
+zcat      # decompress and cat a file
 
 ```
 
@@ -1493,7 +1498,11 @@ modinfo module_name                 # get info of modules
 4 - enable iptables from specific IP
 5 - use ssh version2
 6 - ClientAliveInterval 300 and clientAliveCountMax 0
+7 - Banner 
 
+
+
+Banner /etc/banner.txt
 
 ```
 
