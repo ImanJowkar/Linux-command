@@ -10,6 +10,7 @@
 - [ ] compression and tar
 - [ ] Disk management
 - [ ] SCP (Secure COPY)
+- [ ] Package manager
 - [ ] Networking
 ## two main Linux ditributions
 * Debina Based(ubuntu(18.20,22,24), debain(10,11,12)) -->  pakage manager apt
@@ -613,6 +614,8 @@ ps -f -u root           # only show root process
 
 ps aux --sort=%mem
 ps aux --sort=-%cpu
+
+
 
 ps -A -o stat,pid,ppid | grep -e '[zZ]'
 
