@@ -417,7 +417,12 @@ sudo find / -type f -size +5M -exec ls -lah {} \;
 find . -type f -name "text*"  -exec rm -rf {} \;
 
 
+
 find / -type f -name "*.logs" -exec grep 'iman' {} \;
+find /path/to/start/directory -depth -type d -empty -exec rmdir {} \;   # remove all epmty director
+
+
+
 
 ```
 
@@ -665,6 +670,7 @@ ps -f -u root           # only show root process
 
 ps aux --sort=%mem
 ps aux --sort=-%cpu
+ps aux --sort=-%cpu | head -n 10 
 
 pidof docker
 
@@ -1307,6 +1313,8 @@ iptables-restore rules
 2) second option
 sudo apt install iptables-persistent
 iptables-save > /etc/iptables/rules.v4
+
+
 
 ```
 
