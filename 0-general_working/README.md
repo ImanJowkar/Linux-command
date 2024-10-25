@@ -1318,6 +1318,7 @@ iptables-save > /etc/iptables/rules.v4
 ## linux as a router 
 
 ```
+echo 1 >  /proc/sys/net/ipv4/ip_forward
 
 
 
@@ -1763,6 +1764,14 @@ speedtest-cli
 
 ```
 
+
+## NIC Bonding
+NIC Bonding like ether-channel in cisco devices
+```
+
+
+
+```
 
 
 # figlet
