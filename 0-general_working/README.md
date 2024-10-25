@@ -11,6 +11,7 @@
 - [ ] SCP (Secure COPY)
 - [ ] Package manager
 - [ ] Networking
+- [ ] Iptables
 ## two main Linux ditributions
 * Debina Based(ubuntu(18.20,22,24), debain(10,11,12)) -->  pakage manager apt
 * RHEL Based(centos(dead), fedora, rockey(8,9)) --> package manager yum, dnf
@@ -164,6 +165,11 @@ cat /etc/shadow
 
 su <user>     # switch to another user but don't run scripts (.bashrc, ...) 
 su - <user>   # run script (.bashrc, ...) when switch to user
+
+vim .bashrc       # you can add some env var to this file
+
+
+
 
 ```
 ![hidden file](img/hidden-file-home-user.png)
@@ -325,6 +331,27 @@ rm -rf file1
 
 
 # by default stickyBit is enable on /tmp
+
+
+
+
+# change and show file attributes
+lsattr file
+
+
+chattr +i file      # immutable file
+rm -rf file
+echo 3 >> file
+lsattr file
+
+
+chattr +a file      # append only
+rm -rf file
+echo 3 >> file
+lsattr file
+
+
+
 
 ```
 
@@ -605,6 +632,25 @@ rpm -qa | grep nginx
 apt list --installed
 dpkg -l
 
+sudo apt-key list    # list of gpg keys , gpg is used for preventing man in the middle, gpg is a key
+                     # between you and repositroy server.
+
+sudo dpkg -i file.deb
+
+
+
+# how to set apt proxy
+
+sudo vim /etc/apt/apt.conf.d/01proxy
+-----------------------------
+Acquire::http::Proxy "http://127.0.0.1:8080"
+Acquire::https::Proxy "http://127.0.0.1:8080"
+-----------------------------
+
+or we can set these two env variable in terminal
+
+export HTTP_PROXY=http://127.0.0.1:8080
+export HTTP_PROXY=https://127.0.0.1:8080
 
 ```
 
@@ -620,7 +666,7 @@ ps -f -u root           # only show root process
 ps aux --sort=%mem
 ps aux --sort=-%cpu
 
-
+pidof docker
 
 ps -A -o stat,pid,ppid | grep -e '[zZ]'
 
@@ -641,6 +687,21 @@ pidof chrome
 nohub ./app.sh                          # or we can use tmux
 
 
+
+sleep 1000 &
+sleep 1000 &
+sleep 1000 &
+sleep 1000 &
+sleep 1000 &
+
+pidof sleep
+
+pidof sleep | xargs sudo kill -9
+
+
+
+
+
 ```
 
 
@@ -653,7 +714,11 @@ gzip -c file  > file.gz
 file file.gz
 gzip -d file.gz       # uncompress the file
 
-
+c: compress
+v: verbose
+f: file-name
+x: extract
+z: zip
 
 
 tar gather all file to a single tar file
@@ -753,6 +818,7 @@ df -hi
 du -sh .
 du -sh ./* | sort -h
 
+ncdu          # graphical way to see the disk sizes
 
 
 blkid
@@ -791,6 +857,11 @@ dd if=/data/boot of=/dev/sda2 status=progress
 # create a big file
 dd if=/dev/zero of=bigfile bs=1M count=1024 status=progress
 
+
+
+# monitoring I/O in disk
+sudo apt  install iotop
+sudo iptop         # show disk i/o statistics
 
 
 ```
@@ -1164,6 +1235,8 @@ iptables -t filter -A INPUT -p tcp --dport 22 -s 0/0 -j DROP
 iptables -t filter -A INPUT  -s 0/0 -j DROP
 
 
+iptables -t filter -A INPUT -p tcp --dport 22 ! -s 10.10.10.1 -j DROP
+
 # multi-port
 
 iptables -t filter -A INPUT -p tcp -m multiport --dport 22,80,3306 -s 192.168.56.0/24 -j ACCEPT
@@ -1182,7 +1255,7 @@ iptables -t filter -A OUTPUT -m addrtype --dst-type MULTICAST -j DROP
 
 
 
-iptables -t filter -A INPUT -p tcp --dport 22 ! -s 10.10.10.1 -j DROP
+
 
 
 
@@ -1190,18 +1263,34 @@ iptables -t filter -A INPUT -p tcp --dport 22 ! -s 10.10.10.1 -j DROP
 
 iptables -P INPUT DROP
 iptables -P FORWARD DROP
-iptables -P OUTPUT DROP
+iptables -P OUTPUT ACCEPT
+
+
+# statefull
+
 iptables -t filter -i enp0s3 -A INPUT -p tcp --dport 22 -s 172.16.2.0/24 -m state --state NEW,ESTABLISHED -j ACCEPT
-iptables -t filter -o enp0s3 -A OUTPUT -p tcp --sport 22 -m state --state ESTABLISHED -j ACCEPT
 
 
 
 
 
+#!/bin/bash
+iptables -F
+iptables -t filter -A INPUT -p tcp --dport 22 -s 0/0 -m state --state ESTABLISHED,RELATED -j ACCEPT
+iptables -t filter -A INPUT -p tcp --dport 22 -s 0/0 -m state --state NEW -j DROP
+
+
+
+## filter by date and time ( time module for in UTC time)
+
+iptables -A INPUT -p tcp --dport 22 -m time --timestart 14:00 --timestop 20:00 -j ACCEPT
+iptables -A INPUT -p tcp --dport 22 -j DROP
 
 
 
 
+## prevent DDOS attack with connlimit module
+iptables -A INPUT -p tcp --dport 22 -syn -m connlimit --connlimit-above 5 -j REJECT
 
 
 
@@ -1223,6 +1312,19 @@ iptables-save > /etc/iptables/rules.v4
 
 * ufw 
 * firewalld
+
+
+
+## linux as a router 
+
+```
+
+
+
+
+
+
+```
 
 
 

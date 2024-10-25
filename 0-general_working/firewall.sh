@@ -4,6 +4,12 @@
 iptables -t filter -A INPUT -i lo -j ACCEPT
 iptables -t filter -A OUTPUT -o lo -j ACCEPT
 
+# deny invalid connection
+iptables -A INPUT -m state --state INVALID -j DROP
+iptables -A OUTPUT -m state --state INVALID -j DROP
+
+
+
 # Flush All Tables
 iptables -t filter -F
 iptables -t mangle -F

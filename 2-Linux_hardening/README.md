@@ -23,7 +23,7 @@ PermitRootLogin no
 # before this add public-key
 PasswordAuthentication no
 
-AllowUsers kuber ali jack
+AllowUsers iman ali jack
 ----
 
 iptables -A INPUT -p tcp --dport 2278 -s IP_Allowd -j ACCEPT
