@@ -134,7 +134,17 @@ echo $?
 
 ```
 adduser iman                      # This is a low-level command that creates a user account without any additional setup.
+
 useradd iman   --> user-friendly  # This is a higher-level command, typically a script that uses useradd under the hood. It simplifies the process by providing a more interactive experience, often prompting for details like the password and home directory
+
+useradd prometheus -r -s /sbin/nologin -u 8000 -d /prom-data/ 
+
+-r : system account
+-s : default shell
+-d : home directory
+-u : uid and gid
+
+
 
 cat /etc/passwd
 
@@ -185,7 +195,7 @@ ls -lah /home/iman1
 who
 last      # last login
 lastb     # last bad password
-zcat      # decompress and cat a file
+
 
 ```
 
@@ -353,6 +363,10 @@ lsattr file
 
 
 
+shutdown -r 23:00     # reboot on 23:00
+shutdown -r +15       # reboot in 15 minute
+shutdown -r now       # reboot now
+
 ```
 
 
@@ -435,6 +449,8 @@ cat -E file     # show \n too
 cat -n file     # show line number
 
 cat file | wc -l
+
+zcat      # decompress and cat a file
 
 # cut
 file
@@ -640,7 +656,7 @@ dpkg -l
 sudo apt-key list    # list of gpg keys , gpg is used for preventing man in the middle, gpg is a key
                      # between you and repositroy server.
 
-sudo dpkg -i file.deb
+sudo dpkg -i file.deb  # install .deb file 
 
 
 
@@ -672,9 +688,22 @@ ps aux --sort=%mem
 ps aux --sort=-%cpu
 ps aux --sort=-%cpu | head -n 10 
 
-pidof docker
+ps -eo user,pid,pcpu,pmem,state,command
+ps -eo user,pid,pcpu,pmem,state,command --sort=-%cpu
+ps -eo user,pid,pcpu,pmem,state,command --sort=-pcpu          # pcpu = percentage cpu 
 
+ps -eo user,pid,pcpu,pmem,state,command --sort=-%mem | head  
+ps -eo user,pid,pcpu,pmem,state,command --sort=-pmem | head   # pmem = percentage memory
+
+
+
+pidof docker
+pgrep docker
+pgrep zabbix_server     # get the pid of zabbix_server
 ps -A -o stat,pid,ppid | grep -e '[zZ]'
+
+
+
 
 pgrep python3
 pgrep sshd                  # get process id
@@ -703,7 +732,7 @@ sleep 1000 &
 pidof sleep
 
 pidof sleep | xargs sudo kill -9
-
+pidof zabbix_server | xargs sudo kill -9
 
 
 
@@ -899,7 +928,8 @@ rsync test1/* test2/
 # -a === incrimental copy 
 # -P === progress bar
 # -v === verbose
-
+# -z === compress
+# -h ==== human readable
 rsync -avP test1/* test2/
 
 
@@ -1148,6 +1178,10 @@ ip -6 route list
 ## Network testing command
 
 ```
+
+# how to disable ping 
+
+echo 1 > /proc/sys/net/ipv4/icmp-echo-ignore-all
 
 ping -c 100 10.10.5.3  # send 100 icmp echo
 
@@ -1768,6 +1802,13 @@ arp --help
 
 apt install speedtest-cli
 speedtest-cli 
+
+
+
+
+netstat -ntlp
+lsof -i :3306
+lsof -i :22
 
 
 ```
