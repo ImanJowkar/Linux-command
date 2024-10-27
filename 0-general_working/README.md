@@ -179,7 +179,7 @@ su - <user>   # run script (.bashrc, ...) when switch to user
 vim .bashrc       # you can add some env var to this file
 
 
-
+sudo chage -d 0 <username>   # force a user to change its password
 
 ```
 ![hidden file](img/hidden-file-home-user.png)
@@ -702,6 +702,7 @@ pgrep docker
 pgrep zabbix_server     # get the pid of zabbix_server
 ps -A -o stat,pid,ppid | grep -e '[zZ]'
 
+ps -A -o stat,pid,ppid | grep -e '[zZ]' | awk '{print $3}' | xargs sudo kill -9
 
 
 
@@ -1829,5 +1830,15 @@ sudo apt install figlet
 figlet imanjowkar
 
 bc      # terminal calculator
+
+```
+
+
+## fail2ban
+
+```
+fail2ban-client status sshd
+fail2ban-client set sshd unbanip 192.168.1.1
+
 
 ```
