@@ -433,9 +433,15 @@ find . -type f -name "text*"  -exec rm -rf {} \;
 
 
 find / -type f -name "*.logs" -exec grep 'iman' {} \;
+
 find /path/to/start/directory -depth -type d -empty -exec rmdir {} \;   # remove all epmty director
 
+find /etc/ -mtime 7 -type f -exec cp {} /backup \;
 
+mtime: 
+      -7: from now to 7 days past
+       7: exactly 7 days past
+      +7: more that 7 days past
 
 
 ```
