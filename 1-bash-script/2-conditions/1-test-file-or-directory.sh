@@ -2,8 +2,6 @@
 
 if [[ $# -eq 1 ]]
 then
-
-
 	if [[ -f $1 ]]
 	then
 		echo "The argument is a file, displaying its contents..."

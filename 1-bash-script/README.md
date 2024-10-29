@@ -8,7 +8,7 @@ This [refrence](https://www.cyberithub.com/category/scripting/bash/) have useful
 ```
 # Auther: x
 # Date: 2021
-# description: sdfds
+# description: ssss
 # usage: ./app.sh
 ```
 
