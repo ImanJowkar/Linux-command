@@ -113,11 +113,6 @@ cd ~
 ~ # This is home user directory
 
 
-echo ~$USER
-echo ~root
-echo ~+     # this is simillar to pwd
-echo ~-     # this is oldpwd
-
 
 ```
 
@@ -142,7 +137,6 @@ ping -c 6 ${ip:-4.2.2.4}    # if the ip varaable is not set, use 4.2.2.4 as a de
 echo $ip
 ping -c 6 ${ip:=4.2.2.4}    # if the ip varaable is not set, set 4.2.2.4 as a default value for ip
 echo $ip
-
 
 ```
 
@@ -203,42 +197,6 @@ bc <<< "scale=4; 5/3.5"
 
 
 
-# Process substitution
-
-```
-
-echo <(ls)
-cat <(ls)
-
-echo <(pwd)
-cat <(pwd)
-
-
-```
-
-
-# World spliting
-
-```
-
-# IFS(Internal Field sepreator
-
-echo $IFS
-echo ${IFS@Q}
-
-
-dirs="dir1 dir2 dir3"
-mkdir $dirs
-
-
-
-IFS=":"
-dirs="d1:d2:d3"
-echo $dirs
-mkdir $dirs
-
-
-```
 
 # Globbing Character
 
