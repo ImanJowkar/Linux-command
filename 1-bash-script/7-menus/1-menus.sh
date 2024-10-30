@@ -20,7 +20,7 @@ do
 			echo "you love y"
 			;;
 		5)
-			echo "you love sdf"
+			echo "you love kk"
 			;;
 		6)
 			echo "Quitting"
@@ -31,4 +31,4 @@ do
 			echo "bad input!!!"
 			;;
 	esac
-done 
+done

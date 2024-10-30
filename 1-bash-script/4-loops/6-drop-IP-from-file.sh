@@ -1,8 +1,10 @@
 #!/bin/bash
 
-for ip in $(cat ips.txt)
+read -p "Which port you want to restirct it? " port
+sudo iptables -F
+for ip in `cat ip`
 do
-	echo "Dropping packets form $ip"
-	iptables -I INPUT -s $ip -j DROP
+        sudo iptables -t filter -A INPUT -p tcp --dport $port -s $ip -j DROP
 done
 
+sudo iptables -nvL INPUT
