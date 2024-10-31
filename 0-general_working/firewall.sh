@@ -1,23 +1,25 @@
 #!/bin/bash
 
-# allow loopback
-iptables -t filter -A INPUT -i lo -j ACCEPT
-iptables -t filter -A OUTPUT -o lo -j ACCEPT
+iptables -P INPUT ACCEPT
+iptables -P FORWARD ACCEPT
+iptables -P OUTPUT ACCEPT
 
-# deny invalid connection
-iptables -A INPUT -m state --state INVALID -j DROP
-iptables -A OUTPUT -m state --state INVALID -j DROP
+iptables -F
 
-
-
-# Flush All Tables
-iptables -t filter -F
-iptables -t mangle -F
-iptables -t nat -F
-iptables -t raw -F
+# INPUT
+iptables -t filter -A INPUT -i ens33 -p tcp --dport 22 -s 192.168.229.1 -j ACCEPT
+iptables -t filter -A INPUT -i ens33 -p tcp --dport 22 -m time --timestart 18:00 --timestop 19:02 -s 192.168.229.167 -j ACCEPT
 
 
-# Configure SSH
-iptables -t filter -A INPUT -p tcp --dport 22 -s 172.16.2.166 -j ACCEPT
-iptables -t filter -A INPUT -p tcp --dport 22 -j DROP
+
+
+
+# OUTPUT
+iptables -t filter -A OUTPUT -o ens33 -p tcp --sport 22 -d 192.168.229.1 -j ACCEPT
+iptables -t filter -A OUTPUT -o ens33 -p tcp --sport 22 -m time --timestart 18:00 --timestop 19:02 -d 192.168.229.167 -j ACCEPT
+
+
+iptables -P INPUT DROP
+iptables -P FORWARD DROP
+iptables -P OUTPUT DROP
 

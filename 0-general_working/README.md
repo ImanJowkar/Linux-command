@@ -92,6 +92,8 @@ which pwd
 
 tail /var/log/file.txt
 tail -f /var/log/file.txt
+tail -n +2     # show from line 2 to the end of the file
+
 head /var/log/file.txt
 cat /var/log/file.txt
 
@@ -700,6 +702,7 @@ ps -eo user,pid,pcpu,pmem,state,command --sort=-pcpu          # pcpu = percentag
 
 ps -eo user,pid,pcpu,pmem,state,command --sort=-%mem | head  
 ps -eo user,pid,pcpu,pmem,state,command --sort=-pmem | head   # pmem = percentage memory
+ps -eo user,pid=process-id,pcpu,pmem=percent-memory,state,command --sort=-pmem | less
 
 
 
@@ -797,6 +800,8 @@ xz -d file.xz
 ```
 Buffer + Cache    # part of RAM, for speed the application performace
 Swap              # part of disk, act as a RAM
+
+echo 3 > /proc/sys/vm/drop_caches     # clear buffer + cache
 
 sync              # this command write buffer to disk
 
@@ -1334,10 +1339,17 @@ iptables -A INPUT -p tcp --dport 22 -m time --timestart 14:00 --timestop 20:00 -
 iptables -A INPUT -p tcp --dport 22 -j DROP
 
 
+## IPset
+apt install ipset
+
+ipset -N myset hash:ip
+
+ipset -A myset 1.1.1.1
+ipset -A myset 8.8.8.8
 
 
-## prevent DDOS attack with connlimit module
-iptables -A INPUT -p tcp --dport 22 -syn -m connlimit --connlimit-above 5 -j REJECT
+iptables -A INPUT -m set --match-set myset src -j DROP
+
 
 
 
