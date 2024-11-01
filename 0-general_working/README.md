@@ -12,6 +12,9 @@
 - [ ] Package manager
 - [ ] Networking
 - [ ] Iptables
+
+
+
 ## two main Linux ditributions
 * Debina Based(ubuntu(18.20,22,24), debain(10,11,12)) -->  pakage manager apt
 * RHEL Based(centos(dead), fedora, rockey(8,9)) --> package manager yum, dnf
@@ -123,7 +126,7 @@ sha256sum file.tar
 # redirect output and input
 echo "hi" > file              # standard output   STDOUT
 caaat file 2> /dev/null       # standard error    STDERR
-caaaat file &2> /dev/null     # stdout, stderr
+caaaat file &> /dev/null     # stdout, stderr
 echo $?
 
 ```
@@ -135,9 +138,10 @@ echo $?
 
 
 ```
-adduser iman                      # This is a low-level command that creates a user account without any additional setup.
+useradd iman                      # This is a low-level command that creates a user account without any additional setup.
 
-useradd iman   --> user-friendly  # This is a higher-level command, typically a script that uses useradd under the hood. It simplifies the process by providing a more interactive experience, often prompting for details like the password and home directory
+adduser iman   --> user-friendly  # This is a higher-level command, typically a script that uses useradd under the hood. It simplifies the process by providing a more interactive experience, often prompting for details like the password and home directory
+
 
 useradd prometheus -r -s /sbin/nologin -u 8000 -d /prom-data/ 
 
@@ -175,14 +179,6 @@ usermod -U <user>   # unlock a user
 
 cat /etc/shadow
 
-su <user>     # switch to another user but don't run scripts (.bashrc, ...) 
-su - <user>   # run script (.bashrc, ...) when switch to user
-
-vim .bashrc       # you can add some env var to this file
-
-
-sudo chage -d 0 <username>   # force a user to change its password
-
 ```
 ![hidden file](img/hidden-file-home-user.png)
 
@@ -196,8 +192,6 @@ ls -lah /home/iman1
 
 who
 last      # last login
-lastb     # last bad password
-
 
 ```
 
@@ -230,7 +224,6 @@ $           # go to the end of a specefic line
 yy          # copy the line 
 p           # paste the line
 
-ggVG        # highlight all 
 
 :set number         # show line number
 
@@ -270,6 +263,7 @@ chmod o+rw file.txt
 chmod a-x file.txt
 
 sudo -H -u <user> bash -c 'cat /etc/add-route.sh'
+
 sudo -H -u ansible bash -c 'echo "fsdf" >>  /etc/add-route.sh'
 
 chmod g=rx file.txt
@@ -279,6 +273,9 @@ chmod -R 444 directory
 R       W       X
 2^2     2^1     2^0
 
+4       2        1   = 7
+
+user, group, other
 
 chmod 724 file > user: RWX, group: W, Other: R
 
@@ -363,16 +360,7 @@ echo 3 >> file
 lsattr file
 
 
-
-
-shutdown -r 23:00     # reboot on 23:00
-shutdown -r +15       # reboot in 15 minute
-shutdown -r now       # reboot now
-
 ```
-
-
-
 
 
 
@@ -401,7 +389,7 @@ find / -type d                                  # find all directoris
 find . -iname file.txt                          # case insensetive
 sudo find /etc -type f -name "*.conf"
 
-find . -name "file.*" -delete                   # find "file.*" and delete all of them
+find . -name "file*" -delete                   # find "file.*" and delete all of them
 find /etc/ -name shadow                         # search for "shadow" in /etc/ directory
 
 
@@ -418,21 +406,26 @@ find /var/ -type f -size +5M -size -10M
 
 find / -type f -perm 777
 
+
+
 find /var/ -type f -mtime 0 -ls                 # show file which modified in one day past
 find /var/ -type f -mtime 1 -ls                 # show file which modified in two day past
 find /var/ -type f -mmin -60 -ls                 # show file which modified in 60 minute past
+find /var/ -type f -mmin +60 -ls                 # show file which modified in more than 60 minute past
+find /var/ -type f -mmin -1 -ls                 # show file which modified in 1 minute past
+
+
 find /var/ -type f -user iman -ls
+
 find /etc/ -type f -not -group root -ls
 
-
+sudo find /etc/ -type f -not -group adm -ls
 
 
 # find and execute a comand on each element 
 
 sudo find / -type f -size +5M -exec ls -lah {} \;
 find . -type f -name "text*"  -exec rm -rf {} \;
-
-
 
 find / -type f -name "*.logs" -exec grep 'iman' {} \;
 
@@ -1857,6 +1850,17 @@ bc      # terminal calculator
 ```
 fail2ban-client status sshd
 fail2ban-client set sshd unbanip 192.168.1.1
+
+
+```
+
+
+## maintanance
+
+```
+shutdown -r 23:00     # reboot on 23:00
+shutdown -r +15       # reboot in 15 minute
+shutdown -r now       # reboot now
 
 
 ```
