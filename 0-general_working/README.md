@@ -1393,11 +1393,11 @@ vgcreate myvg /dev/sd[bc][12]
 vgs
 
 
-lvcreate -n lv1 -L 6gib myvg
-lvcreate -n lv2 -L 9gib myvg
+lvcreate -n lv1 -L 5g myvg
+lvcreate -n lv2 -L 9g myvg
 lvcreate -n lv3 -l 100%FREE myvg
 ll /dev/myvg/
-
+ 
 
 mkfs.ext4 /dev/myvg/lv1
 mkfs.ext4 /dev/myvg/lv2
@@ -1451,6 +1451,13 @@ Let’s see what are the 5 steps below: \
 * Recheck the file system for error
 * Remount the file-system back to stage
 
+
+# backup
+tar -zxvf backup-etc.tar.gz -c /data
+
+check for ok
+tar -zcfv backup-etc.tar.gz /etc/*
+
 df -TH
 # 1
 umount -v /LVM1
@@ -1480,6 +1487,15 @@ vgs
 
 
 # reduce vg
+# make sure the pv is free
+
+pvdisplay /dev/sdd1
+# make sure   : `Total PE = Free PE`    , and `Allocated PE = 0`
+# then you can reduce the vg
+vgreduce myvg /dev/sdd1
+
+if Total PE != Free PE  you can use pvmove then reduce the vg
+pvmove /dev/sdd1
 vgreduce myvg /dev/sdd1
 
 
