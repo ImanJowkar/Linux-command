@@ -452,9 +452,12 @@ cat -n file     # show line number
 cat file | wc -l
 
 zcat      # decompress and cat a file
+zip -o file.zip file1.txt
+zcat file.zip
+
+
 
 # cut
-file
 
 data.csv
 ----------------------------------
@@ -672,7 +675,7 @@ Acquire::https::Proxy "http://127.0.0.1:8080"
 or we can set these two env variable in terminal
 
 export HTTP_PROXY=http://127.0.0.1:8080
-export HTTP_PROXY=https://127.0.0.1:8080
+export HTTPS_PROXY=https://127.0.0.1:8080
 
 ```
 
@@ -702,6 +705,7 @@ ps -eo user,pid=process-id,pcpu,pmem=percent-memory,state,command --sort=-pmem |
 pidof docker
 pgrep docker
 pgrep zabbix_server     # get the pid of zabbix_server
+
 ps -A -o stat,pid,ppid | grep -e '[zZ]'
 
 ps -A -o stat,pid,ppid | grep -e '[zZ]' | awk '{print $3}' | xargs sudo kill -9
@@ -946,14 +950,6 @@ rsync -avP {dir1,dire2} -e "ssh -p 22" iman@10.10.56.101:/home/iman/test1
 
 
 ```
-
-
-
-
-
-
-
-
 
 
 
