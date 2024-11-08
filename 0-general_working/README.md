@@ -1453,10 +1453,13 @@ Let’s see what are the 5 steps below: \
 
 
 # backup
-tar -zxvf backup-etc.tar.gz -c /data
+tar -zcfv backup-etc.tar.gz /etc/*
+
 
 check for ok
-tar -zcfv backup-etc.tar.gz /etc/*
+mkdir /data2
+tar -zxvf backup-etc.tar.gz -C /data2
+
 
 df -TH
 # 1
