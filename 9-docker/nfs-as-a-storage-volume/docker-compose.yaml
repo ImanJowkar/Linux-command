@@ -1,0 +1,26 @@
+version: '3.7'
+services:
+  db:
+    image: hub.hamdocker.ir/mariadb:10.4
+    container_name: db
+    environment:
+      MYSQL_ROOT_PASSWORD: test
+      MYSQL_USER: test
+      MYSQL_PASSWORD: test
+      MYSQL_DATABASE: mydb
+    ports:
+      - 3306:3306
+    networks:
+      - db-net
+    volumes:
+      - db-data:/var/lib/mysql
+
+volumes:
+  db-data:
+    driver_opts:
+      type: "nfs"
+      o: "addr=192.168.229.167,nolock,rw,nfsvers=4,async"
+      device: ":/docker_nfs_mariadb"
+
+networks:
+  db-net:

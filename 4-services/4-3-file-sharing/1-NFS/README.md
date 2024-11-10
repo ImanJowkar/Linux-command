@@ -10,7 +10,7 @@ sudo apt install nfs-kernel-server
 
 sudo mkdir /mnt/mydirectory
 sudo chown nobody:nogroup /mnt/mydirectory
-sudo chmod 777 /mnt/mydirectory
+
 
 
 
