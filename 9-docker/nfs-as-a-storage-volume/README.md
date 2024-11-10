@@ -15,6 +15,7 @@ sudo chown -R nobody:nogroup /docker_nfs_mariadb
 sudo vim  /etc/exports
 # add below
 -----------------------------
+
 /docker_nfs_mariadb 10.10.1.5(rw,sync,no_subtree_check,no_root_squash)
 ------------------------------
 
