@@ -29,6 +29,15 @@ sudo systemctl restart nfs-kernel-server
 sudo systemctl enable nfs-kernel-server
 ```
 
+* rw
+* ro 
+* sync
+* async
+* root_squash
+* all_squash
+* no_root_squash
+* subtree_check
+* no_subtree_check
 
 
 ### install on nfs-client
