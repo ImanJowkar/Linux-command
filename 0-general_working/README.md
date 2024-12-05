@@ -1879,3 +1879,22 @@ shutdown -r now       # reboot now
 
 
 ```
+
+## check a udp port with netcat
+```
+nc -zvu 10.10.200.5 161
+```
+
+
+## GlusterFS
+
+```
+# install on all nodes
+sudo apt install glusterfs-server
+
+
+
+
+
+
+```
