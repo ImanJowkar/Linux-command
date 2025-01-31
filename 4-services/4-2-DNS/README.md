@@ -11,9 +11,9 @@
 
 ## Cache Only DNS
 ```
-# apt install bind9 bind9utils bind9-doc
+apt install bind9 bind9utils bind9-doc
 
-dnf install bind
+# dnf install bind
 
 
 
