@@ -30,30 +30,25 @@ alter user 'root'@'localhost' identified by 'root';
  use mysql;
  select host,user,password from user;
 
+```
+# show mysql data dir
+```
+show variables like 'datadir';
+SHOW VARIABLES LIKE 'innodb_buffer_pool%';
+
+cd /var/lib/mysql
 
 
-# how to backup a database from mariadb
-mysqldump  testdb -u root -p > testdb.db
+```
 
 
-# resoter a database: 
-mariadb -u root -p
-create database testdb;
-quit
-mariadb testdb -u root -p < testdb.db
+# download and import sakila database
 
 
+```
 
-
-mariadb -u root -p < Chinook.sql
-
-
-
-# afew query
-SELECT * from Track WHERE Bytes > (SELECT AVG(Bytes) from Track ) ;
-
-SELECT  * from Invoice as t1
-WHERE t1.Total  > 9;
+unzip sakila-db.zip
+cd sakila-db
 
 
 
