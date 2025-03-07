@@ -121,9 +121,10 @@ select count(*) from movie_rate_with_G_flag;
 ```
 
 
-# Function
+### Backup with mysqldump
 
-```sql
+```
+
 
 
 
