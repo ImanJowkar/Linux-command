@@ -116,3 +116,4 @@ ps -auxf | grep nginx | grep -v grep
 ```
 
 
+ 
