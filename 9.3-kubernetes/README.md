@@ -79,8 +79,33 @@ Worker Nodes are where **containers/Pods** actually run.
 
 
 # Installation wiht kubeadm
+[ref](https://www.fortaspen.com/install-kubernetes-containerd-ubuntu-linux-22-04/)
 one master node 192.168.56.11
 two worker node 192.168.56.12.192.168.56.13
+
+
+
+### netplan configuration
+[for dns resolver we use electro](https://electrotm.org/)
+```
+root@node1:~/calico# cat /etc/netplan/00-installer-config.yaml
+# This is the network config written by 'subiquity'
+network:
+  ethernets:
+    enp0s3:
+      addresses:
+      - 192.168.56.11/24
+      nameservers:
+        addresses: []
+        search: []
+    enp0s8:
+      dhcp4: true
+      nameservers:
+        addresses: [78.157.42.101,78.157.42.100]
+  version: 2
+
+
+```
 
 
 # On all nodes
@@ -157,14 +182,124 @@ sudo apt-get update
 sudo apt-get install -y kubelet kubeadm kubectl
 sudo apt-mark hold kubelet kubeadm kubectl
 
-sudo apt-mark hold kubelet kubeadm kubectl
+
 ```
 
 
 ## Setup containerd on all nodes
-[containerd-github](https://github.com/containerd/containerd/releases)
+
+```
+sudo apt-get install -y containerd
+
+
+
+sudo mkdir /etc/containerd
+containerd config default | sudo tee /etc/containerd/config.toml
+
+# change below attribute in systemd-cgroup to true
+
+vim /etc/containerd/config.toml
+-------
+SystemdCgroup = true
+
+------
+
+systemctl restart containerd.service
+systemctl status containerd.service
+
+
 ```
 
+
+## Initialize the cluster (master-node)
+
+```
+# pull all required images
+kubeadm config images pull
+
+
+# open /etc/hosts in all nodes and add below 
+-------
+192.168.56.11 node1
+192.168.56.12 node2
+192.168.56.13 node3
+
+------
+
+
+# on master node initialize the cluster
+
+kubeadm init --pod-network-cidr 10.244.0.0/16 --apiserver-advertise-address 192.168.56.11 --kubernetes-version 1.32.3
+
+
+If everything is correct, you will get a result like the one below.
+
+
+
+[addons] Applied essential addon: CoreDNS
+[addons] Applied essential addon: kube-proxy
+
+Your Kubernetes control-plane has initialized successfully!
+
+To start using your cluster, you need to run the following as a regular user:
+
+  mkdir -p $HOME/.kube
+  sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+  sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+Alternatively, if you are the root user, you can run:
+
+  export KUBECONFIG=/etc/kubernetes/admin.conf
+
+You should now deploy a pod network to the cluster.
+Run "kubectl apply -f [podnetwork].yaml" with one of the options listed at:
+  https://kubernetes.io/docs/concepts/cluster-administration/addons/
+
+Then you can join any number of worker nodes by running the following on each as root:
+
+kubeadm join 192.168.56.11:6443 --token l1ne8g.rcuofdodgrrw1nzd \
+        --discovery-token-ca-cert-hash sha256:6528d59ad1218a935503527b98101dccdb385741081c63cecd47d6ade69d19dc
+
+
+
+
+# enable auto-commplete on kubectl 
+source <(kubectl completion bash) # set up autocomplete in bash into the current shell, bash-completion package should be installed first.
+echo "source <(kubectl completion bash)" >> ~/.bashrc # add autocomplete permanently to your bash shell.
+
+```
+
+### setup CNI (we use calico)
+[ref](https://docs.tigera.io/calico/latest/getting-started/kubernetes/quickstart)
+```
+
+wget https://raw.githubusercontent.com/projectcalico/calico/v3.29.3/manifests/tigera-operator.yaml
+
+kubectl create -f tigera-operator.yaml
+
+wget https://raw.githubusercontent.com/projectcalico/calico/v3.29.3/manifests/custom-resources.yaml
+
+# open the file and  change cidr to  -->  cidr: 10.244.0.0/16
+
+
+
+kubectl create -f custom-resources.yaml
+
+
+
+```
+
+### join worker nodes
+
+```
+# generate token on master node
+
+kubeadm token list
+kubeadm token create --print-join-command --ttl 1h
+
+# on worker node run below command
+
+kubeadm join 192.168.56.11:6443 --token sa1ok3.j5whis4u5n84ekgt --discovery-token-ca-cert-hash sha256:6528d59ad1218a935503527b98101dccdb385741081c63cecd47d6ade69d19dc
 
 
 ```
