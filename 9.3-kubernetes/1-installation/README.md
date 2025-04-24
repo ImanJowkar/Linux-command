@@ -80,8 +80,8 @@ Worker Nodes are where **containers/Pods** actually run.
 
 # Installation wiht kubeadm
 [ref](https://www.fortaspen.com/install-kubernetes-containerd-ubuntu-linux-22-04/)
-one master node 192.168.56.11
-two worker node 192.168.56.12.192.168.56.13
+one master node 192.168.229.11
+two worker node 192.168.229.12.192.168.229.13
 
 
 
@@ -92,18 +92,16 @@ root@node1:~/calico# cat /etc/netplan/00-installer-config.yaml
 # This is the network config written by 'subiquity'
 network:
   ethernets:
-    enp0s3:
+    ens32:
       addresses:
-      - 192.168.56.11/24
+      - 192.168.229.11/24
       nameservers:
-        addresses: []
+        addresses: [8.8.8.8]
         search: []
-    enp0s8:
-      dhcp4: true
-      nameservers:
-        addresses: [78.157.42.101,78.157.42.100]
+      routes:
+        - to: default
+          via: 192.168.229.2
   version: 2
-
 
 ```
 
@@ -220,16 +218,16 @@ kubeadm config images pull
 
 # open /etc/hosts in all nodes and add below 
 -------
-192.168.56.11 node1
-192.168.56.12 node2
-192.168.56.13 node3
+192.168.229.11 node1
+192.168.229.12 node2
+192.168.229.13 node3
 
 ------
 
 
 # on master node initialize the cluster
 
-kubeadm init --pod-network-cidr 10.244.0.0/16 --apiserver-advertise-address 192.168.56.11 --kubernetes-version 1.32.3
+kubeadm init --pod-network-cidr 10.244.0.0/16 --apiserver-advertise-address 192.168.229.11 --kubernetes-version 1.32.4
 
 
 If everything is correct, you will get a result like the one below.
@@ -257,7 +255,7 @@ Run "kubectl apply -f [podnetwork].yaml" with one of the options listed at:
 
 Then you can join any number of worker nodes by running the following on each as root:
 
-kubeadm join 192.168.56.11:6443 --token l1ne8g.rcuofdodgrrw1nzd \
+kubeadm join 192.168.229.11:6443 --token l1ne8g.rcuofdodgrrw1nzd \
         --discovery-token-ca-cert-hash sha256:6528d59ad1218a935503527b98101dccdb385741081c63cecd47d6ade69d19dc
 
 
@@ -299,7 +297,8 @@ kubeadm token create --print-join-command --ttl 1h
 
 # on worker node run below command
 
-kubeadm join 192.168.56.11:6443 --token sa1ok3.j5whis4u5n84ekgt --discovery-token-ca-cert-hash sha256:6528d59ad1218a935503527b98101dccdb385741081c63cecd47d6ade69d19dc
+kubeadm join 192.168.229.11:6443 --token sa1ok3.j5whis4u5n84ekgt --discovery-token-ca-cert-hash sha256:6528d59ad1218a935503527b98101dccdb385741081c63cecd47d6ade69d19dc
 
 
 ```
+
