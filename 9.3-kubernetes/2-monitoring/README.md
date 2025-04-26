@@ -25,7 +25,7 @@ helm upgrade --install prometheus prometheus-community/kube-prometheus-stack -f 
 ## the output is like below
 
 ```
-root@node1:~/prometheus# helm upgrade --install prometheus prometheus-community/kube-prometheus-stack -f values.yaml -n monitoring --create-namespace
+helm upgrade --install prometheus prometheus-community/kube-prometheus-stack -f values.yaml -n monitoring --create-namespace
 
 Release "prometheus" has been upgraded. Happy Helming!
 NAME: prometheus
