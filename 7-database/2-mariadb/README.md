@@ -40,6 +40,9 @@ alter user 'root'@'localhost' identified by 'root';
 ```sql
 show variables like 'datadir';
 SHOW VARIABLES LIKE 'innodb_buffer_pool%';
+show variables like '%log_bin%';
+
+
 
 cd /var/lib/mysql
 
