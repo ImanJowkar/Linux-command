@@ -1730,7 +1730,12 @@ grub2-mkconfig -o /boot/grub2/grub.cfg
 
 ```
 
+## if you gone the grub.cfg file you have to add rockey-linux image as a live cd and go to the rescue mode
 
+```
+
+
+```
 
 ## how to secure ssh
 
