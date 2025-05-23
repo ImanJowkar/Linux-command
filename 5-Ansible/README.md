@@ -3,17 +3,30 @@
 ![img](img/1.png)
 
 
-```
+## Ansible installation
+```bash
+sudo apt install python3.10-venv
 
-# install ansible on ansible server
+python3 -m venv venv
+
+source venv/bin/activate
+pip install ansible
+
+
+# another way to install ssh
+
 dnf update && dnf install python3-venv
 
+```
 
 
 
-# create ssh-keygen and copy it to the remote server
 
 
+## create ssh-keygen and copy it to the remote server
+```bash
+ssh-keygen
+ssh-copy-id user@192.168.1.1
 
 ```
 
@@ -25,22 +38,12 @@ dnf update && dnf install python3-venv
 * /etc/ansible/ansible.cfg
 
 
- ansible --version # you can see the location of ansible-config
+ansible --version # you can see the location of ansible-config
 
  
-## Ansible installation
-```
-sudo apt install python3.10-venv
 
-python3 -m venv venv
-
-source venv/bin/activate
-pip install ansible
-
-```
-
-## ## Ansible basics
-```
+#### Ansible basics
+```bash
 ansible-doc service
 ansible-doc apt
 

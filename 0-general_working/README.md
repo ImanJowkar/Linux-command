@@ -23,6 +23,7 @@
 
 
 
+
 ## file system hierarchy
 ![img](img/file-system-hierarchy.png)
 
@@ -43,6 +44,11 @@
 
 lests start: 
 download and install putty.
+
+
+
+
+
 
 ## basic linux command  
 
@@ -82,6 +88,7 @@ ls -li                # inode number(Each file or directory has an inode number 
 ```
 ![img](img/ls-detail.png)
 ![img](img/ls-lah-detail.png)
+
 
 ```
 
@@ -128,6 +135,19 @@ echo "hi" > file              # standard output   STDOUT
 caaat file 2> /dev/null       # standard error    STDERR
 caaaat file &> /dev/null     # stdout, stderr
 echo $?
+
+
+
+
+
+w
+who
+
+# pts: show console session
+# tty: show ssh session
+
+
+
 
 ```
 
@@ -858,6 +878,25 @@ sudo systemctl daemon-reload
 sudo mount -a
 df -TH
 df -hi
+
+```
+
+**always-mount with UUID**
+![mount-in-fstab](img/fstab.png)
+
+### craete a swap file in linux
+We can create swap space in two ways:
+
+1. **File-based swap**
+2. **Partition-based (disk-based) swap**
+
+![swap](img/swap.png)
+
+
+### other storage configuration
+```
+dnf install smartmontools
+smartctl -i /dev/sda  # info about the disk
 
 du -sh .
 du -sh ./* | sort -h
@@ -1734,9 +1773,19 @@ grub2-mkconfig -o /boot/grub2/grub.cfg
 
 ```
 
-
+grub2-mkconfig -o /boot/grub2/grub.cfg
 ```
 
+
+## set grub password in ubuntu 
+
+```
+grub-mkpasswd-pbkdf2
+
+vim /etc/grub.d/00_header
+
+
+```
 ## how to secure ssh
 
 
@@ -1988,9 +2037,20 @@ nc -zvu 10.10.200.5 161
 # install on all nodes
 sudo apt install glusterfs-server
 
+```
 
 
+## Firewalld
+```
+firewall-cmd --state
+firewall-cmd --get-default-zone
+firewall-cmd --get-active-zones
+firewall-cmd --list-all
+firewall-cmd --get-zones
+firewall-cmd --list-all --zone=home
 
+firewall-cmd --list-all --zone=drop
+firewall-cmd --list-all --permanent --zone=drop
 
 
 ```
