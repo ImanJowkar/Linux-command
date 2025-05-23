@@ -22,6 +22,9 @@ mount | grep -E '/tmp|/var|/home|/dev/shm|/var/log|/var/log/audit'
 
 ```bash
 grep -r "gpgcheck" /etc/yum.repos.d/
+
+
+grep -r "gpgcheck" /etc/yum.repos.d/ | grep gpgcheck=0
 ```
 
 ## check selinux
@@ -155,7 +158,6 @@ sudo sed -i '/^(Ciphers|MACs|KexAlgorithms)/ s/^/#/' /etc/ssh/sshd_config
 
 
 ```
-الگوریتمCypher Block Chaining (CBC)را برایsshغیرفعالکرده باشد.
 
 ## disable CBC algorithm in ssh 
 
@@ -237,7 +239,7 @@ ss -ntlup
 ```sh
 rpm -q postfix
 ```
-if installed change in `sudo vi /etc/postfix/main.cf` 
+if installed add below line in `sudo vi /etc/postfix/main.cf` 
 ```sh
 inet_interfaces = localhost
 
@@ -246,7 +248,6 @@ sudo systemctl restart postfix
 
 ## delete unused package
 ```
-
 
 sudo dnf remove openldap* vsftpd telnet tftp tftp-server -y
 
@@ -260,10 +261,13 @@ cat /etc/passwd | grep chrony
 
 ps -aux | grep chron | grep -v grep
 
-# if not running with chrony user you can add 
+# if not running with chrony user you can add into the below file
 
-cat /etc/sysconfig/chronyd
+vim /etc/sysconfig/chronyd
+----
 OPTIONS="-u chrony"
+----
+
 ```
 
 ## Secure cron
@@ -293,31 +297,37 @@ ip link show
 ```sh
 lsmod | grep -E "sctp|rdc|tipc|dccp"
 
-
 ```
 
 ## config kernel parameter for network
 
 ```sh
-
-
+# sysctl config
+sysctl_settings:
   net.ipv4.ip_forward: 0
+  
   net.ipv4.conf.all.send_redirects: 0
-  net.ipv4.conf.all.accept_redirects: 0
+  net.ipv4.conf.default.send_redirects: 0
+  
   net.ipv4.conf.all.secure_redirects: 0
   net.ipv4.conf.default.secure_redirects: 0
+  
+  net.ipv4.conf.all.accept_redirects: 0
   net.ipv4.conf.default.accept_redirects: 0
+
   net.ipv4.conf.all.accept_source_route: 0
   net.ipv4.conf.default.accept_source_route: 0
-  net.ipv6.conf.all.accept_ra: 0
 
   net.ipv4.icmp_ignore_bogus_error_responses: 1
   net.ipv4.icmp_echo_ignore_broadcasts: 1
+  
   net.ipv4.conf.all.rp_filter: 1
+  net.ipv4.conf.default.rp_filter: 1
+
   net.ipv4.conf.all.log_martians: 1
   net.ipv4.conf.default.log_martians: 1
+
   net.ipv4.tcp_syncookies: 1
-  net.ipv4.conf.default.rp_filter: 1
 
   kernel.yama.ptrace_scope: 1
   kernel.randomize_va_space: 2 # change alsr to value 2
@@ -327,7 +337,6 @@ lsmod | grep -E "sctp|rdc|tipc|dccp"
   net.ipv6.conf.default.accept_ra: 0
   net.ipv6.conf.all.disable_ipv6: 1
   net.ipv6.conf.default.disable_ipv6: 1
-
 
 
 sysctl -a | grep 
@@ -368,6 +377,31 @@ like below
 ```
 ![alt text](img/ssh-crypt-policy.png)
 
+
+```sh
+# ssh configuration
+sshd_options:
+  LogLevel: INFO
+  UsePAM: "yes"
+  PermitRootLogin: "no"
+  GSSAPIAuthentication: "no"
+  HostbasedAuthentication: "no"
+  PermitEmptyPasswords: "no"
+  PermitUserEnvironment: "no"
+  IgnoreRhosts: "yes"
+  X11Forwarding: "no"
+  AllowTcpForwarding: "no"
+  MaxAuthTries: 4
+  MaxStartups: 8
+  MaxSessions: 10
+  LoginGraceTime: 20
+  ClientAliveInterval: 900
+  ClientAliveCountMax: 0
+  Banner: /etc/issue.net
+
+```
+
+
 ## restric user to use su command
 ![alt text](img/su.png)
 
@@ -380,5 +414,14 @@ cat /etc/sudoers
 Defaults use_pty
 Defaults logfile="/var/log/sudo.log"
 Defaults timestamp_timeout=0
+
+```
+
+# check PAM
+
+```
+rpm -q authselect libpwquality
+
+
 
 ```
