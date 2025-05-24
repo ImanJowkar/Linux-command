@@ -425,3 +425,40 @@ rpm -q authselect libpwquality
 
 
 ```
+
+
+## check password in /etc/login.defs
+PASS_MAX_DAYS < 365
+PASS_MIN_DAYS > 0
+```sh
+
+cat /etc/login.defs | grep -E "PASS_MAX_DAYS|PASS_MIN_DAYS"
+
+```
+
+## check options in cat /etc/security/pwquality.conf 
+difok = 2 or more
+maxrepeat < 3 and not 0
+dictcheck = 0
+```sh
+cat /etc/security/pwquality.conf | grep -E "dictcheck|maxrepeat|difok"
+
+```
+
+
+## ensure only root has UID = 0
+
+```sh
+awk -F: '$3 == 0 { print $1 }' /etc/passwd
+# output must be root
+```
+
+
+## ensure only root has GID = 0
+
+```sh
+awk -F: '$1 == "root" { print $4 }' /etc/passwd
+# output must be root
+```
+
+
