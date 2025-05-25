@@ -2017,11 +2017,24 @@ nc -zvu 10.10.200.5 161
 
 
 
-## Basic Bash scripting
+## ipv6 disable in grub on both ubuntu and rocky linux
+```sh
+# on ubuntu 
+sudo nano /etc/default/grub
+------
+GRUB_CMDLINE_LINUX_DEFAULT="quiet splash ipv6.disable=1"
+GRUB_CMDLINE_LINUX="ipv6.disable=1"
+------
 
-```
+sudo update-grub
+reboot
 
 
+# on rocky linux
+grubby --update-kernel=ALL --args="ipv6.disable=1"
+# verify, You should see ipv6.disable=1 in the args=... line.
+sudo grubby --info=ALL | grep args
+reboot
 
 
 
