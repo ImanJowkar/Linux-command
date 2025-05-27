@@ -1779,16 +1779,40 @@ grub2-mkconfig -o /boot/grub2/grub.cfg
 
 ## set grub password in ubuntu 
 
-```
+```sh
 grub-mkpasswd-pbkdf2
+Enter password:
+Reenter password:
+PBKDF2 hash of your password is grub.pbkdf2.sha512.10000.2E41F2FEE11120CCEEAC4D529405C22E08030E93AF888ADE3E3F648B5955C99C108C57726CBC21F5CED8A64F68F1881E38D0EADE7475A15521F863C3BD1503BB.CE5E06453BA23D45A49B2E55EC8331C62C402548E996DD3D9E218109B8A4B2EC00121554C2CE7BC801D1914F3F813A94C3232F30B5A546916745F3E182E1EF39
 
-vim /etc/grub.d/00_header
 
+sudo vim /etc/grub.d/40_custom  
+-----
+set superusers="iman"
+set password_pbkdf2 iman grub.pbkdf2.sha512.10000.2E41F2FEE11120CCEEAC4D529405C22E08030E93AF888ADE3E3F648B5955C99C108C57726CBC21F5CED8A64F68F1881E38D0EADE7475A15521F863C3BD1503BB.CE5E06453BA23D45A49B2E55EC8331C62C402548E996DD3D9E218109B8A4B2EC00121554C2CE7BC801D1914F3F813A94C3232F30B5A546916745F3E182E1EF39
+
+-----
+
+
+update-grub
 
 ```
+
+## change root password in grub
+![img](img/grub-32.png)
+![img](img/grub-33.png)
+
+press ctrl + x
+
+```sh
+passwd
+exec /sbin/init
+
+```
+
+
+
 ## how to secure ssh
-
-
 ```
 
 1 - change default port from 22 to something else
