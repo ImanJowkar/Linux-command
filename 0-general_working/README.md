@@ -21,9 +21,6 @@
 
 
 
-
-
-
 ## file system hierarchy
 ![img](img/file-system-hierarchy.png)
 
@@ -44,8 +41,6 @@
 
 lests start: 
 download and install putty.
-
-
 
 
 
@@ -1809,6 +1804,20 @@ passwd
 exec /sbin/init
 
 ```
+## common-system-maintanace
+
+```sh
+# give you zabbix_server pids
+pidof zabbix_server
+
+# how to find a pid open which files
+lsof -p <PID>
+lsof -p 1003
+
+
+```
+
+
 
 
 
