@@ -1817,6 +1817,16 @@ lsof -p 1003
 
 ```
 
+### EOF template
+
+```sh
+cat <<EOF > config.txt
+# Configuration file
+server_ip=192.168.1.1
+port=8080
+EOF
+
+```
 
 
 
