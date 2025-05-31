@@ -578,6 +578,8 @@ awk -F: '$3=="0"{ print $1":"$3 }' /etc/group
 ```sh
 rpm -q aide
 
+aide --init
+mv /var/lib/aide/aide.db.new.gz /var/lib/aide/aide.db.gz
 # ensure filesystem integrity is regularly checked
 crontab -l
 
@@ -587,12 +589,112 @@ crontab -u root -e
 -------------
 
 
-# only use one logging system (rsyslog or systemd-journald)
+# ensure rsyslog is enabled
+dnf install rsyslog
 
-# install systemd-journal-remote
-dnf install systemd-journal-remote
-# and config upload to a remote server
+
+# ensure journald is configured to send logs to rsyslog
+vim /etc/systemd/journald.conf
+---------
+ForwardToSyslog=yes
+---------
+
+# ensure file create mode is configured
+
+vim /etc/ryslog.conf
+------
+FileCreateMode="0640"
+------
+
+# ensure rsyslog send to syslog server
+vim /etc/rsyslog.d/sendrsyslog.conf
+--------------
+*.* @192.168.1.1:514
+--------------
+
+# ensure rsyslog not accept log from remote host
+
+vim /etc/rsyslog.conf
+# remove below line 
+----
+module(load="imtcp")
+input(type="imtcp" port="514")
+----
+
+systemctl restart rsyslog
+
+
+
+
+# ensure rsyslog logroutate is configured
+--------------------------------------
+cat /etc/logrotate.conf
+# see "man logrotate" for details
+
+# global options do not affect preceding include directives
+
+# rotate log files weekly
+weekly
+
+# keep 4 weeks worth of backlogs
+rotate 4
+
+# create new (empty) log files after rotating old ones
+create
+
+# use date as a suffix of the rotated file
+dateext
+
+# uncomment this if you want your log files compressed
+compress
+
+# packages drop log rotation information into this directory
+include /etc/logrotate.d
+
+# system-specific logs may be also be configured here.
+---------------------------------------------------
 
 
 
 ```
+
+## auditing
+
+```sh
+
+systemctl --now enable auditd
+
+
+
+# ensure 
+grubby --update-kernel ALL --args 'audit=1'
+# grub2-mkconfig -o /boot/grub2/grub.cfg           # BIOS systems
+# grub2-mkconfig -o /boot/efi/EFI/centos/grub.cfg  # UEFI systems
+cat /boot/grub2/grub.cfg | grep audit
+
+
+# Ensure audit_backlog_limit is sufficient
+grubby --info=ALL | grep -i audit_backlog_limit
+grubby --update-kernel ALL --args 'audit_backlog_limit=8192'
+
+
+
+# ensure audit log storage size is configured
+vim /etc/audit/auditd.conf
+-----------------
+max_log_file = 100 # in megabyte
+-----------------
+
+# ensure audit logs are not automatically deleted
+vim /etc/audit/auditd.conf
+-----------------
+max_log_file_action = keep_logs
+space_left_action = SYSLOG
+-----------------
+
+
+
+
+
+```
+
