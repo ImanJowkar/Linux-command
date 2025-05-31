@@ -1268,7 +1268,20 @@ nmap -sn 10.10.10.0/24
 
 nmap -sP 172.16.2.0/24
 
+
 ```
+
+## Auditing 
+```sh
+
+apt install auditd
+vim /etc/audit/auditd.conf
+
+
+
+```
+
+
 ## Iptables
 * Iptables,  Netfilter is a packet filtering inside a linux kernel
 

@@ -1,9 +1,8 @@
 ## Check unused file system
 
-```bash
+```sh
 
 lsmod | grep -E 'cramfs|freevxfs|jffs2|hfs|hfsplus|squashfs|udf|autofs|afs|ceph|cifs|exfat|ext|fat|fscache|fuse|gfs2|nfs_common|nfsd|smbfs_common|usb-storage'
-
 
 ```
 
@@ -18,6 +17,17 @@ mount | grep -E '/tmp|/var|/home|/dev/shm|/var/log|/var/log/audit'
 
 ```
 
+## check kernel version
+![kernel version](img/kernel.png)
+
+* for ubuntu its recommended 5.15
+* Use the default kernel provided by your distribution (e.g., kernel-4.18.x for RHEL 8, kernel-5.14.x for RHEL 9).
+
+```sh
+uname -r
+
+```
+
 ## check gpgcheck is enable
 
 ```bash
@@ -27,12 +37,33 @@ grep -r "gpgcheck" /etc/yum.repos.d/
 grep -r "gpgcheck" /etc/yum.repos.d/ | grep gpgcheck=0
 ```
 
+## ensure gpg-check is globally enabled
+```sh
+grep ^gpgcheck /etc/dnf/dnf.conf
+
+grep ^repo_gpgcheck=1 /etc/dnf/dnf.conf
+
+
+```
+
+## check update and patches and additional security software installed
+```sh
+
+dnf check-update
+
+dnf needs-restarting -r
+
+
+```
+
 ## check selinux
 
 ```bash
 rpm -q mcstrans setroubleshoot
+```
+![img](img/50.png)
 
-
+```sh
 # check selinux are not disabled on the bootloader
 
 grep -i 'selinux\|enforcing' /etc/default/grub
@@ -52,13 +83,14 @@ You should not see:
 
 If those are present, SELinux is disabled or not in enforcing mode.
 
-```bash
+```sh
 getenforce                                  #  check for enforcing
 grep ^SELINUXTYPE= /etc/selinux/config      #  check for targeted 
 
 # Unconfined services are processes running without SELinux domain labels (usually unconfined_service_t). This is a security risk.
 
-ps -eZ | grep unconfined_service_t
+ps -eZ | grep unconfined_service_t # no output is produced
+
 
 # If you see any output, those are unconfined services. Example:
 unconfined_u:system_r:unconfined_service_t:s0 1234 ? someprocess
@@ -68,7 +100,7 @@ unconfined_u:system_r:unconfined_service_t:s0 1234 ? someprocess
 
 ## Boot Loader configuration
 
-```bash
+```sh
 
 # ensure password set on bootloader
 grep -E 'set superusers|password_pbkdf2' /boot/grub2/grub.cfg
@@ -87,9 +119,19 @@ password_pbkdf2 root grub.pbkdf2.sha512.10000.0C3F3998ACCA8CEC25D4CE83EA9E89F442
 
 ```bash
 
+chown -R root:root /boot/grub2/
+chown -R root:root /boot/efi/
+
+chmod -R 700 /boot/grub2
+chmod -R 700 /boot/efi
+
+
 # check /boot/grub2 permissions
 ls -lahd /boot/grub2
 ls -lah /boot/grub2
+
+ls -lah /boot/efi
+
 
 
 ls -lahd /boot/efi/EFI
@@ -123,16 +165,15 @@ sysctl -a | grep ptrace_scope
 
 ```
 
-## Disable coredump storage
 
+## Disable coredump storage
 ```bash
 cat /etc/security/limits.conf | grep "* hard core 0"
 
 cat /etc/systemd/coredump.conf | grep -E "Storage=none|ProcessSizeMax=0"
-
-
-
 ```
+
+
 
 ## show system-wide-crypto-policy
 ![alt text](img/crypto-1.png)
@@ -149,15 +190,40 @@ update-crypto-policies --set DEFAULT
 
 ```
 
-```sh
-cat /etc/ssh/sshd_config | grep -Ei 'Ciphers|MACs|KexAlgorithms'
-# must empty key
 
-# set comment 
-sudo sed -i '/^(Ciphers|MACs|KexAlgorithms)/ s/^/#/' /etc/ssh/sshd_config
+
+## system-wide crypto policy , check from CIS book
+```sh
 
 
 ```
+
+## system banner
+
+```sh
+# not exist r, v, m, s in below file
+vim /etc/issue
+vim /etc/issue.net
+vim /etc/motd
+
+
+
+ls -lah /etc/issue
+ls -lah /etc/issue.net
+ls -lah /etc/motd
+
+chown root:root /etc/issue
+chown root:root /etc/issue.net
+chown root:root /etc/motd
+
+chmod 600 /etc/issue
+chmod 600 /etc/issue.net
+chmod 600 /etc/motd
+
+
+
+```
+
 
 ## disable CBC algorithm in ssh 
 
@@ -222,15 +288,15 @@ done
 
 ```
 
+
 ## only accpted port listen on NIC interface
 
-```
+```sh
 netstat -ntlp
 netstat -ntlup
 
 ss -ntlp
 ss -ntlup
-
 
 ```
 
@@ -282,7 +348,30 @@ iman
 systemctl restart crond
 
 
+chown root:root /etc/crontab
+chown root:root /etc/cron.hourly/
+chown root:root /etc/cron.daily/
+chown root:root /etc/cron.weekly/
+chown root:root /etc/cron.monthly/
+chown root:root /etc/cron.d
+chown root:root /etc/at.allow
+
+
+
+
+chmod 700 /etc/crontab
+chmod 700 /etc/cron.hourly/
+chmod 700 /etc/cron.daily/
+chmod 700 /etc/cron.weekly/
+chmod 700 /etc/cron.monthly/
+chmod 700 /etc/cron.d
+chmod 700 /etc/at.allow
+
+
 ```
+
+
+
 
 ## check wireless is enabled or not
 
@@ -339,7 +428,7 @@ sysctl_settings:
   net.ipv6.conf.default.disable_ipv6: 1
 
 
-sysctl -a | grep 
+sysctl -a | grep net.ipv6.conf.all.disable_ipv6
 
 ```
 
@@ -377,6 +466,17 @@ like below
 ```
 ![alt text](img/ssh-crypt-policy.png)
 
+## ssh configuration
+
+```sh
+
+chmod 600 /etc/ssh/sshd_config
+chmod -R 600 /etc/ssh/sshd_config.d
+
+# private key permision set to 600
+# public key permision set to 644
+
+```
 
 ```sh
 # ssh configuration
@@ -416,10 +516,17 @@ Defaults logfile="/var/log/sudo.log"
 Defaults timestamp_timeout=0
 
 ```
-
-# check PAM
+## check a server joined to active directory
 
 ```
+realm list
+
+```
+
+
+## check PAM
+
+```sh
 rpm -q authselect libpwquality
 
 
@@ -461,4 +568,31 @@ awk -F: '$1 == "root" { print $4 }' /etc/passwd
 # output must be root
 ```
 
+## ensure only group root is the only GID 0 group, must return only root
+```sh
+awk -F: '$3=="0"{ print $1":"$3 }' /etc/group
+```
 
+## logging and auditing
+
+```sh
+rpm -q aide
+
+# ensure filesystem integrity is regularly checked
+crontab -l
+
+crontab -u root -e
+-------------
+0 5 * * * /usr/sbin/aide --check
+-------------
+
+
+# only use one logging system (rsyslog or systemd-journald)
+
+# install systemd-journal-remote
+dnf install systemd-journal-remote
+# and config upload to a remote server
+
+
+
+```
