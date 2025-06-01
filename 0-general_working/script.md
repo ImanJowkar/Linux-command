@@ -336,6 +336,25 @@ OPTIONS="-u chrony"
 
 ```
 
+## change default user umask
+
+```sh
+
+vim /etc/profile.d/set_umask.sh
+---------
+umask 027
+---------
+
+
+
+```
+
+
+
+
+
+
+
 ## Secure cron
 
 ```sh
@@ -693,8 +712,178 @@ space_left_action = SYSLOG
 -----------------
 
 
+```
+
+## configuring auditd rules
+5-6-3-3
+```sh
+
+cat /etc/audit/rules.d/audit.rules
+must have below record
+------
+  -w /etc/sudoers -p wa -k scope
+  -w /etc/sudoers.d -p wa -k scope
+  -a always,exit -F arch=b64 -C euid!=uid -F auid!=unset -S execve -k user_emulation
+  -a always,exit -F arch=b32 -C euid!=uid -F auid!=unset -S execve -k user_emulation
+  -a always,exit -F arch=b64 -S adjtimex,settimeofday,clock_settime -k timechange
+  -a always,exit -F arch=b32 -S adjtimex,settimeofday,clock_settime -k timechange
+  -w /etc/localtime -p wa -k time-change
+  -a always,exit -F arch=b64 -S sethostname,setdomainname -k system-locale
+  -a always,exit -F arch=b32 -S sethostname,setdomainname -k system-locale
+  -w /etc/issue -p wa -k system-locale
+  -w /etc/issue.net -p wa -k system-locale
+  -w /etc/hosts -p wa -k system-locale
+  -w /etc/sysconfig/network -p wa -k system-locale
+  -w /etc/sysconfig/network-scripts/ -p wa -k system-locale
+  -w /etc/group -p wa -k group_changes
+  -w /etc/shadow -p wa -k shadow_changes
+  -w /etc/gshadow -p wa -k shadow_changes
+  -w /etc/opasswd -p wa -k shadow_changes
+  -w /etc/sudoers -p wa -k sudoers_changes
+  -w /etc/sudoers.d -p wa -k sudoers.d_changes
+  -w /etc/selinux -p wa -k selinux_changes
+  -w /usr/share/selinux -p wa -k selinux_changes
+  -w /sbin/insmod -p x -k module_insertion
+  -w /sbin/rmmod -p x -k rmmod_insertion
+  -w /sbin/modprobe -p x -k modprobe_insertion
+  -a always,exit -F arch=b64 -S mount -F auid>=500 -F auid!=4294967295 -k export
+  -a always,exit -F arch=b64 -S adjtimex -S settimeofday -k time_change
+  -a always,exit -S sethostname -S setdomainname -k system_locale
+  -w /etc/localtime -p wa -k audit_time_rules
+  -w /etc/passwd -p wa -k passwd_change
+  -w /bin/hostnamectl -p wa -k hostname_change
+  -w /etc/sysconfig/network -p wa -k network_change
+  -w /etc/sysconfig/network_scripts -p wa -k network_scripts_change
+  -w /etc/hosts -p wa -k hosts_change
+  -w /etc/issue -p wa -k issuenet_change
+  -w /etc/issue.net -p wa -k issuenet_change
+  -w /usr/bin/setfacl -p wa -k setxattr_change
+  -w /usr/bin/chmod -p wa -k setxattr_change
+  -w /usr/bin/fchmod -p wa -k setxattr_fchmod_change
+  -w /usr/bin/fchmodat -p wa -k setxattr_fchmodat_change
+  -w /usr/bin/fchown -p wa -k setxattr_fchown_change
+  -w /usr/bin/fchownat -p wa -k setxattr_fchownat_change
+  -w /usr/bin/lchown -p wa -k setxattr_lchown_change
+  -w /usr/bin/chown -p wa -k setxattr_change
+  -w /var/log/lastlog -p wa -k sudo_change
+  -w /var/log/lastlog -p wa -k last_change
+  -w /var/log/faillog -p wa -k fail_change
+  -w /var/log/btmp -p wa -k btmp_change
+  -w /var/log/wtmp -p wa -k wtmp_change
+  -w /var/log/utmp -p wa -k utmp_change
+  -w /var/log/suid -p wa -k suid_change
+  -w /var/log/sgid -p wa -k sgid_change
+  -w /var/log/ftruncate -p wa -k ftruncate_change
+  -w /var/log/truncate -p wa -k truncate_change
+  -w /var/log/truncate -p wa -k openat_change
+  -w /var/log/openat -p wa -k openat_change
+  -w /var/log/open -p wa -k open_change
+  -w /var/log/kernel -p wa -k kernel_change
+  -w /var/log/create -p wa -k create_change
+  -a always,exit -F arch=b64 -S unlink,unlinkat,rename,renameat,rmdir -F auid>=500 -F auid!=4294967295 -k delete
+  -a always,exit -F arch=b64 -S chmod,fchmod,fchmodat,chown,fchown,fchownat,lchown -F auid>=500 -F
+  auid!=4294967295 -k perm_mod
+  -a always,exit -F arch=b64 -S creat,open,openat,open_by_handle_at,truncate,ftruncate -F exit=-EPERM -F
+  auid>=500 -F auid!=4294967295 -k access
+  -a always,exit -F arch=b64 -S creat,open,openat,open_by_handle_at,truncate,ftruncate -F exit=-EACCES -F
+  auid>=500 -F auid!=4294967295 -k access
+  -a always,exit -F arch=b64 -S setxattr,fsetxattr,lsetxattr,removexattr,fremovexattr,lremovexattr -F auid>=500 -F
+  auid!=4294967295 -k perm_mod
+  -a always,exit -F arch=b64 -S creat,open,openat,truncate,ftruncate -F exit=-EACCES -F auid>=500 -F
+  auid!=4294967295 -k access
+  -a always,exit -F arch=b64 -S creat,open,openat,truncate,ftruncate -F exit=-EPERM -F auid>=500 -F
+  auid!=4294967295 -k access
+  -a always,exit -F arch=b32 -S creat,open,openat,truncate,ftruncate -F exit=-EACCES -F auid>=500 -F
+  auid!=4294967295 -k access
+  -a always,exit -F arch=b32 -S creat,open,openat,truncate,ftruncate -F exit=-EPERM -F auid>=500 -F
+  auid!=4294967295 -k access
+  -w /etc/group -p wa -k identity
+  -w /etc/passwd -p wa -k identity
+  -w /etc/gshadow -p wa -k identity
+  -w /etc/shadow -p wa -k identity
+  -w /etc/security/opasswd -p wa -k identity
+  -a always,exit -F arch=b64 -S chmod,fchmod,fchmodat -F auid>=500 -F auid!=4294967295 -F key=perm_mod
+  -a always,exit -F arch=b64 -S chown,fchown,lchown,fchownat -F auid>=500 -F auid!=4294967295 -F
+  key=perm_mod
+  -a always,exit -F arch=b32 -S chmod,fchmod,fchmodat -F auid>=500 -F auid!=4294967295 -F key=perm_mod
+  -a always,exit -F arch=b32 -S lchown,fchown,chown,fchownat -F auid>=500 -F auid!=4294967295 -F
+  key=perm_mod
+  -a always,exit -F arch=b32 -S setxattr,lsetxattr,fsetxattr,removexattr,lremovexattr,fremovexattr -F auid>=500 -F
+  auid!=4294967295 -F key=perm_mod
+  -w /var/run/faillock -p wa -k logins
+  -a always,exit -F arch=b64 -S rename,unlink,unlinkat,renameat -F auid>=500 -F auid!=4294967295 -F key=delete
+  -a always,exit -F arch=b32 -S rename,unlink,unlinkat,renameat -F auid>=500 -F auid!=4294967295 -F key=delete
+  -w /etc/selinux -p wa -k MAC-policy
+  -w /usr/share/selinux -p wa -k MAC-policy
+  -a always,exit -F path=/usr/bin/chcon -F perm=x -F auid>=500 -F auid!=4294967295 -k perm_chng
+  -a always,exit -F path=/usr/bin/setfacl -F perm=x -F auid>=500 -F auid!=4294967295 -k perm_chng
+  -a always,exit -F path=/usr/bin/chacl -F perm=x -F auid>=500 -F auid!=4294967295 -k perm_chng
+  -a always,exit -F path=/usr/sbin/usermod -F perm=x -F auid>=500 -F auid!=4294967295 -k usermod
+  -a always,exit -F arch=b64 -S init_module,finit_module,delete_module,create_module,query_module -F auid>=500
+  -F auid!=4294967295 -k kernel_modules
+  -a always,exit -F path=/usr/bin/kmod -F perm=x -F auid>=500 -F auid!=4294967295 -k kernel_modules
+  -a always,exit -F arch=b32 -S mount -F auid>=500 -F auid!=4294967295 -k mounts
+  -a always,exit -F arch=b64 -S mount -F auid>=500 -F auid!=4294967295 -k mounts
+  -e 2
+
+------
 
 
 
 ```
 
+
+### system maintenance
+
+```sh
+
+chmod 644 /etc/passwd
+chmod 644 /etc/group
+chmod ugo-xwr /etc/shadow
+
+
+ls -hal /etc/gshadow
+ls -hal /etc/gshadow-
+
+chmod 644 /etc/shells
+ls -lah /etc/shells
+
+chmod 600 /etc/security/opasswd
+
+
+# all world-writable files and direcotries sticky bit set on them
+
+find / -type d -perm -0002 ! -perm -1000 -exec ls -ld {} \;
+
+# find / -type d -perm -0002 ! -perm -1000 -exec chmod +t {} \;
+
+# Setting the sticky bit on files is not standard and typically not recommended, because:
+# Sticky bit on regular files is obsolete and ignored on most modern systems.
+# Originally used to keep the file in memory after execution (only for executables).
+
+
+# Find files/directories without an owner
+find / -xdev -nouser
+
+# Find files/directories without a group
+
+find / -xdev -nogroup
+
+
+
+# check duplicate uid
+cut -d: -f3 /etc/passwd | sort | uniq -d
+
+
+# check for duplicate gid
+cut -d: -f3 /etc/group | sort | uniq -d
+
+
+
+# bash_history set 0600 permission
+ls -lah ~
+
+
+# ensure not .rhost, .forward, .netrc not exists in user home direcotries
+
+```
