@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>CIS Compliance Report</title>
+  <style>
+    body { font-family: Arial, sans-serif; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { border: 1px solid #ccc; padding: 8px; }
+    th { background-color: #f2f2f2; }
+    .PASS { background-color: #d4edda; }
+    .FAIL { background-color: #f8d7da; }
+    .- { background-color:rgb(231, 225, 225); }
+    .SKIPPED { background-color:rgb(182, 179, 179); }
+  </style>
+</head>
+<body>
+  <h1>CIS Benchmark Compliance Report</h1>
+  <table>
+    <tr>
+      <th>Description</th>
+      <th>Status</th>
+    </tr>
+    {% for rule in cis_results %}
+    <tr class="{{ rule.status }}">
+      <td>{{ rule.description }}</td>
+      <td>{{ rule.status }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+</body>
+</html>
+

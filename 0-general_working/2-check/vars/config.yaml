@@ -1,0 +1,211 @@
+unused_filesystems:
+  - cramfs
+  - freevxfs
+  - jffs2
+  - hfs
+  - hfsplus
+  - squashfs
+  - udf
+  - autofs
+  - afs
+  - ceph
+  - cifs
+  - exfat
+  - ext
+  - fat
+  - fscache
+  - fuse
+  - gfs2
+  - nfs_common
+  - nfsd
+  - smbfs_common
+  - usb-storage
+  - dccp
+  - tipc
+  - rdc
+  - sctp
+
+
+
+mount_checks:
+  - path: /tmp
+    options: [nodev, nosuid, noexec]
+  - path: /var
+    options: [nodev, nosuid]
+  - path: /home
+    options: [nodev, nosuid]
+  - path: /dev/shm
+    options: [nodev, nosuid, noexec]
+  - path: /var/tmp
+    options: [nodev, nosuid, noexec]
+  - path: /var/log
+    options: [nodev, nosuid, noexec]
+  - path: /var/log/audit
+    options: [nodev, nosuid, noexec]
+
+
+kernel_parameter:
+  - name: ASLR
+    sysctl_name: kernel.randomize_va_space
+    value: 2
+  - name: ptrace
+    sysctl_name: kernel.yama.ptrace_scope
+    value: 1
+
+
+banner_files:
+  - name: motd
+    path: /etc/motd
+  - name: issue
+    path: /etc/issue
+  - name: issue.net
+    path: /etc/issue.net
+
+packages_to_remove:
+  - autofs
+  - avahi
+  - dhcp-server
+  - bind
+  - dnsmasq
+  - samba
+  - vsftpd
+  - ftp
+  - dovecot
+  - cyrus-imapd
+  - nfs-utils
+  - ypserv 
+  - cups
+  - rpcbind
+  - rsync
+  - rsync-daemon
+  - net-snmp 
+  - net-snmp-utils
+  - telnet
+  - telnet-server
+  - tftp
+  - tftp-server
+  - squid
+  - httpd
+  - nginx
+  - xinetd
+  - xorg-x11-server-common
+  - gdm
+  - openldap-clients
+  - ypbind
+  - bluez
+
+
+kernel_modules:
+  - dccp
+  - tipc
+  - rdc
+  - sctp
+
+
+
+sysctl_settings:
+  - name: ip4_forward
+    sysctl_name: net.ipv4.ip_forward
+    value: 0
+  - name: ip6_forward
+    sysctl_name: net.ipv6.conf.all.forwarding
+    value: 0
+    
+
+  - name: all_send_redirects
+    sysctl_name: net.ipv4.conf.all.send_redirects
+    value: 0
+  - name: default_send_redirects
+    sysctl_name: net.ipv4.conf.default.send_redirects
+    value: 0
+
+
+  - name: all_accept_redirects_4
+    sysctl_name: net.ipv4.conf.all.accept_redirects
+    value: 0
+  - name: default_accept_redirects_4
+    sysctl_name: net.ipv4.conf.default.accept_redirects
+    value: 0
+  - name: all_accept_redirects_6
+    sysctl_name: net.ipv6.conf.all.accept_redirects
+    value: 0
+  - name: default_accept_redirects_6
+    sysctl_name: net.ipv6.conf.default.accept_redirects
+    value: 0
+
+
+  - name: all_secure_redirects
+    sysctl_name: net.ipv4.conf.all.secure_redirects
+    value: 0
+  - name: default_secure_redirects
+    sysctl_name: net.ipv4.conf.default.secure_redirects
+    value: 0
+
+
+
+  - name: all_accept_source_route_4
+    sysctl_name: net.ipv4.conf.all.accept_source_route
+    value: 0
+  - name: default_accept_source_route_4
+    sysctl_name: net.ipv4.conf.default.accept_source_route
+    value: 0
+  - name: all_accept_source_route_6
+    sysctl_name: net.ipv6.conf.all.accept_source_route
+    value: 0
+  - name: default_accept_source_route_6
+    sysctl_name: net.ipv6.conf.default.accept_source_route
+    value: 0
+
+
+  - name: all_accept_ra
+    sysctl_name: net.ipv6.conf.all.accept_ra
+    value: 0
+  - name: default_accept_ra
+    sysctl_name: net.ipv6.conf.default.accept_ra
+    value: 0
+
+
+
+  - name: icmp_ignore_bogus_error_responses
+    sysctl_name: net.ipv4.icmp_ignore_bogus_error_responses
+    value: 1
+
+
+  - name: icmp_echo_ignore_broadcasts
+    sysctl_name: net.ipv4.icmp_echo_ignore_broadcasts
+    value: 1
+
+
+  - name: all_rp_filter
+    sysctl_name: net.ipv4.conf.all.rp_filter
+    value: 1
+  - name: default_rp_filter
+    sysctl_name: net.ipv4.conf.default.rp_filter
+    value: 1
+
+
+  - name: all_log_martians
+    sysctl_name: net.ipv4.conf.all.log_martians
+    value: 1
+  - name: default_log_martians
+    sysctl_name: net.ipv4.conf.default.log_martians
+    value: 1
+
+
+  - name: tcp_syncookies
+    sysctl_name: net.ipv4.tcp_syncookies
+    value: 1
+
+
+  - name: all_disable_ipv6
+    sysctl_name: net.ipv6.conf.all.disable_ipv6
+    value: 1
+
+  - name: default_disable_ipv6
+    sysctl_name: net.ipv6.conf.default.disable_ipv6
+    value: 1
+
+  # fs.suid_dumpable: 0
+
+
+

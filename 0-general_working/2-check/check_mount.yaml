@@ -1,0 +1,30 @@
+- name: Check if {{ mount_target.path }} is mounted
+  command: mountpoint -q {{ mount_target.path }}
+  register: mount_check
+  ignore_errors: true
+  changed_when: false
+
+- name: Get mount options for {{ mount_target.path }}
+  command: findmnt --noheadings --output OPTIONS {{ mount_target.path }}
+  register: mount_opts
+  when: mount_check.rc == 0
+  changed_when: false
+
+- name: Append results for mount options on {{ mount_target.path }}
+  set_fact:
+    cis_results: "{{ cis_results + [result_item] }}"
+  vars:
+    result_item:
+      description: "Ensure {{ mount_target.path }} is mounted with {{ option }}"
+      status: >-
+        {% if mount_check.rc != 0 %}
+          SKIPPED
+        {% elif mount_opts.stdout is search(option) %}
+          PASS
+        {% else %}
+          FAIL
+        {% endif %}
+  loop: "{{ mount_target.options }}"
+  loop_control:
+    loop_var: option
+  when: mount_target.options is defined

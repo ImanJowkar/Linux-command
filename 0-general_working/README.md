@@ -1271,6 +1271,29 @@ nmap -sP 172.16.2.0/24
 
 ```
 
+
+## Time Sync server
+* Setup chrony as an ntp server
+```sh
+apt installl chrony
+# sudo nano /etc/chrony.conf   # in rocky linux
+sudo nano /etc/chrony/chrony.conf # in ubuntu based system
+---------
+# Allow NTP clients in a specific subnet (adjust as needed)
+allow 192.168.217.0/24
+
+# (Optional) Listen on all interfaces
+bindaddress 0.0.0.0
+
+---------
+
+sudo systemctl restart chronyd
+
+ss -ulpn | grep chronyd
+
+```
+
+
 ## Auditing 
 ```sh
 
@@ -1797,7 +1820,7 @@ PBKDF2 hash of your password is grub.pbkdf2.sha512.10000.2E41F2FEE11120CCEEAC4D5
 sudo vim /etc/grub.d/40_custom  
 -----
 set superusers="iman"
-set password_pbkdf2 iman grub.pbkdf2.sha512.10000.2E41F2FEE11120CCEEAC4D529405C22E08030E93AF888ADE3E3F648B5955C99C108C57726CBC21F5CED8A64F68F1881E38D0EADE7475A15521F863C3BD1503BB.CE5E06453BA23D45A49B2E55EC8331C62C402548E996DD3D9E218109B8A4B2EC00121554C2CE7BC801D1914F3F813A94C3232F30B5A546916745F3E182E1EF39
+password_pbkdf2 iman grub.pbkdf2.sha512.10000.2E41F2FEE11120CCEEAC4D529405C22E08030E93AF888ADE3E3F648B5955C99C108C57726CBC21F5CED8A64F68F1881E38D0EADE7475A15521F863C3BD1503BB.CE5E06453BA23D45A49B2E55EC8331C62C402548E996DD3D9E218109B8A4B2EC00121554C2CE7BC801D1914F3F813A94C3232F30B5A546916745F3E182E1EF39
 
 -----
 
@@ -2121,5 +2144,26 @@ firewall-cmd --list-all --zone=home
 firewall-cmd --list-all --zone=drop
 firewall-cmd --list-all --permanent --zone=drop
 
+
+```
+
+## bypass grub password
+boot system with live image
+
+```sh
+
+lsblk 
+mount /dev/sda2 /test
+vim /test/grub.grub.cfg
+# remove the password below in this file
+----
+set superusers="iman"
+password_pbkdf2 iman grub.pbkdf2.sha512.10000.2E41F2FEE11120CCEEAC4D529405C22E08030E93AF888ADE3E3F648B5955C99C108C57726CBC21F5CED8A64F68F1881E38D0EADE7475A15521F863C3BD1503BB.CE5E06453BA23D45A49B2E55EC8331C62C402548E996DD3D9E218109B8A4B2EC00121554C2CE7BC801D1914F3F813A94C3232F30B5A546916745F3E182E1EF39
+
+----
+
+sync
+
+reboot
 
 ```

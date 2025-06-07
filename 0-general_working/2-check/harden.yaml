@@ -1,0 +1,493 @@
+- name: CIS Benchmark - Check
+  hosts: all
+  become: yes
+  gather_facts: false
+  # gather_facts: yes
+
+
+  vars_files:
+    - vars/config.yaml
+
+  vars:
+    cis_results: []
+
+  tasks:
+##################---check disabled unused file system-----################################################
+    - name: Append to separate section - check disabled unused filesystem
+      set_fact:
+        cis_results: "{{ cis_results + [result_item] }}"
+      vars:
+        result_item:
+          description: "<h2> Check For Disabled unused_filesystems</h2>"
+          status: '-'
+
+
+
+    - name: Check unused filesystem is disabled
+      shell: "modprobe -n -v {{ item }} | grep -qE 'install[[:space:]]+/bin/(true|false)'"
+      register: fs_check_result
+      loop: "{{ unused_filesystems }}"
+      ignore_errors: yes
+      changed_when: false
+
+    - name: Append each check result to cis_results
+      set_fact:
+        cis_results: "{{ cis_results + [result_item] }}"
+      vars:
+        result_item:
+          description: "Disable {{ item.item }} filesystem"
+          status: "{{ 'PASS' if item.rc == 0 else 'FAIL' }}"
+      loop: "{{ fs_check_result.results }}"
+
+
+######################---check separate partitions-----#####################################################
+    - name: Append to separate section - check  separate partition
+      set_fact:
+        cis_results: "{{ cis_results + [result_item] }}"
+      vars:
+        result_item:
+          description: "<h2> Check For sperate partition</h2>"
+          status: '-'
+
+    - name: Check if mount points are on separate partitions
+      command: mountpoint -q {{ item.path }}
+      register: mount_check_results
+      ignore_errors: yes
+      loop: "{{ mount_checks }}"
+
+
+    - name: Append mount checks to cis_results
+      set_fact:
+        cis_results: "{{ cis_results + [result_item] }}"
+      vars:
+        result_item:
+          description: "Ensure {{ item.item.path }} is on a separate partition"
+          status: "{{ 'PASS' if item.rc == 0 else 'FAIL' }}"
+      loop: "{{ mount_check_results.results }}"
+
+######################---check  mountpoint option on partitions-----#####################################
+
+    - name: Append to separate section - check  mountpoint option on partitions
+      set_fact:
+        cis_results: "{{ cis_results + [result_item] }}"
+      vars:
+        result_item:
+          description: "<h2> Check  mountpoint option on partitions </h2>"
+          status: '-'
+
+    - name: Mount option checks
+      include_tasks: check_mount.yaml
+      loop: "{{ mount_checks }}"
+      loop_control:
+        loop_var: mount_target
+
+
+######################---check  selinux status -----#####################################
+
+    - name: Append to separate section - selinux status
+      set_fact:
+        cis_results: "{{ cis_results + [result_item] }}"
+      vars:
+        result_item:
+          description: "<h2>selinux status</h2>"
+          status: '-'
+      when: os == "rhel"
+
+
+    - name: Ensure SELinux is enabled and enforcing
+      set_fact:
+        cis_results: "{{ cis_results + [result_item] }}"
+      vars:
+        result_item:
+          description: "Ensure SELinux is enabled and set to enforcing"
+          status: >-
+            {% if ansible_selinux.status != 'enabled' %}
+              FAIL
+            {% elif ansible_selinux.mode != 'enforcing' %}
+              FAIL
+            {% else %}
+              PASS
+            {% endif %}
+      when: os == "rhel"
+
+    - name: Ensure SELinux policy is targeted
+      set_fact:
+        cis_results: "{{ cis_results + [result_item] }}"
+      vars:
+        result_item:
+          description: "Ensure SELinux policy is set to targeted"
+          status: "{{ 'PASS' if ansible_selinux.type == 'targeted' else 'FAIL' }}"
+      ignore_errors: yes
+      when: os == "rhel"
+
+
+
+    - name: Ensure not exists unconfined service 
+      shell: "ps -eZ | grep -qw 'unconfined_service_t'"
+      register: unconfined_service
+      ignore_errors: yes
+
+
+    - name: Append results for check not exists unconfined service
+      set_fact:
+        cis_results: "{{ cis_results + [result_item] }}"
+      vars:
+        result_item:
+          description: "Ensure not exists unconfined service"
+          status: "{{ 'PASS' if unconfined_service.rc != 0 else 'FAIL' }}"
+
+
+
+
+
+    - name: Check  setroubleshoot and mcstrans  not installed
+      command: rpm -q {{ item }}
+      register: pkg_status
+      ignore_errors: yes
+      loop:
+        - mcstrans
+        - setroubleshoot
+      when: os == "rhel"
+
+    - name: Append results
+      set_fact:
+        cis_results: "{{ cis_results + [result_item] }}"
+      vars:
+        result_item:
+          description: "Ensure {{ item.item }} is not installed"
+          status: "{{ 'PASS' if item.rc != 0 else 'FAIL' }}"
+      loop: "{{ pkg_status.results }}"
+      when: os == "rhel"
+
+
+    - name: Check  selinux is not disabled in bootloader
+      shell: "grubby --info=ALL | grep -qw 'selinux=0'"
+      register: selinux_grub
+      ignore_errors: yes
+
+
+
+    - name: Append results for check selinux not disable on bootloader
+      set_fact:
+        cis_results: "{{ cis_results + [result_item] }}"
+      vars:
+        result_item:
+          description: "Ensure selinux is not disable on bootloader"
+          status: "{{ 'PASS' if selinux_grub.rc != 0 else 'FAIL' }}"
+      when: os == "rhel"
+
+
+######################--- Check Bootloader security-----#####################################
+
+    - name: Append to separate section - check  Bootloader security
+      set_fact:
+        cis_results: "{{ cis_results + [result_item] }}"
+      vars:
+        result_item:
+          description: "<h2> Check  bootloader security </h2>"
+          status: '-'
+
+    - name: Check  grub has password
+      shell: cat /boot/grub2/user.cfg  | grep grub.pbkdf2.sha512
+      register: grub_password
+      ignore_errors: yes
+
+
+    - name: Append results for check bootloader password
+      set_fact:
+        cis_results: "{{ cis_results + [result_item] }}"
+      vars:
+        result_item:
+          description: "Ensure bootloader has password"
+          status: "{{ 'PASS' if grub_password.rc == 0 else 'FAIL' }}"
+      when: os == "rhel"
+
+
+    - name: Read current kernel parameter values
+      command: cat /proc/sys/{{ item.sysctl_name | replace('.', '/') }}
+      register: sysctl_result
+      loop: "{{ kernel_parameter }}"
+
+
+    - name: Append results
+      set_fact:
+        cis_results: "{{ cis_results + [result_item] }}"
+      vars:
+        result_item:
+          description: "Ensure {{ item.item.name }} is enabled"
+          status: "{{ 'PASS' if item.stdout|int == item.item.value else 'FAIL' }}"
+      loop: "{{ sysctl_result.results }}"
+
+
+
+    - name: Ensure core dump backtraces are disabled
+      shell: "cat /etc/systemd/coredump.conf  | grep -qw '^ProcessSizeMax=0'"
+      register: coredump_backtraces
+      ignore_errors: yes
+
+
+    - name: Append results for check core dump  backtraces is disabled
+      set_fact:
+        cis_results: "{{ cis_results + [result_item] }}"
+      vars:
+        result_item:
+          description: "Ensure core dump backtraces is disabled"
+          status: "{{ 'PASS' if coredump_backtraces.rc == 0 else 'FAIL' }}"
+
+
+    - name: Ensure core dump storage is disabled
+      shell: "cat /etc/systemd/coredump.conf  | grep -qw '^Storage=none'"
+      register: coredump_storage
+      ignore_errors: yes
+
+
+    - name: Append results for check core dump storage is disabled
+      set_fact:
+        cis_results: "{{ cis_results + [result_item] }}"
+      vars:
+        result_item:
+          description: "Ensure core dump storage is disabled"
+          status: "{{ 'PASS' if coredump_storage.rc == 0 else 'FAIL' }}"
+
+
+######################--- System wide crypto policy -----#####################################
+    - name: Append to separate section - check  System wide crypto policy 
+      set_fact:
+        cis_results: "{{ cis_results + [result_item] }}"
+      vars:
+        result_item:
+          description: "<h2> Check  System wide crypto policy </h2>"
+          status: '-'
+
+
+    - name: Ensure System wide crypto policy not set to legacy
+      shell: "update-crypto-policies --show | grep -iq 'LEGACY'"
+      register: def_crypt_pol
+      ignore_errors: yes
+
+
+    - name: Append results for check crypto policy not set to legacy
+      set_fact:
+        cis_results: "{{ cis_results + [result_item] }}"
+      vars:
+        result_item:
+          description: "Ensure crypto policy not set to legacy"
+          status: "{{ 'PASS' if def_crypt_pol.rc != 0 else 'FAIL' }}"
+
+
+######################--- check system banner -----#####################################
+    - name: Append to separate section - System Banners 
+      set_fact:
+        cis_results: "{{ cis_results + [result_item] }}"
+      vars:
+        result_item:
+          description: "<h2> Check  System Banners </h2>"
+          status: '-'
+
+
+
+    - name: Run grep to search for \r, \s, \m, \v in each file
+      command: grep -E '\\[rsmvS]' {{ item.path }}
+      register: banner_results
+      loop: "{{ banner_files }}"
+      ignore_errors: true
+      changed_when: false
+
+    - name: show
+      debug:
+        msg: "{{ banner_results.results }}"
+
+
+    - name: Append results for check [rsmvS] not exists in banners file
+      set_fact:
+        cis_results: "{{ cis_results + [result_item] }}"
+      vars:
+        result_item:
+          description: "Ensure [rsmvS]  no exists in {{ item.item.path }} "
+          status: "{{ 'PASS' if item.rc != 0 else 'FAIL' }}"
+      loop: "{{ banner_results.results }}"
+
+
+######################--- check installed packages -----#####################################
+    - name: Append to separate section - check installed packages 
+      set_fact:
+        cis_results: "{{ cis_results + [result_item] }}"
+      vars:
+        result_item:
+          description: "<h2> Check   installed packages </h2>"
+          status: '-'
+
+
+    - name: Check  packages  not installed
+      command: rpm -q {{ item }}
+      register: pkg_status
+      ignore_errors: yes
+      loop: "{{ packages_to_remove }}"
+      when: os == "rhel"
+
+    - name: Append results
+      set_fact:
+        cis_results: "{{ cis_results + [result_item] }}"
+      vars:
+        result_item:
+          description: "Ensure {{ item.item }} is not installed"
+          status: "{{ 'PASS' if item.rc != 0 else 'FAIL' }}"
+      loop: "{{ pkg_status.results }}"
+      when: os == "rhel"
+
+
+######################--- Time Synchronization -----#####################################
+    - name: Append to separate section - check time Synchronization
+      set_fact:
+        cis_results: "{{ cis_results + [result_item] }}"
+      vars:
+        result_item:
+          description: "<h2> check time Synchronization </h2>"
+          status: '-'
+
+
+    - name: Check  chrony installed
+      command: rpm -q chrony
+      register: pkg_status
+      ignore_errors: yes
+      when: os == "rhel"
+
+    
+    - name: Append results
+      set_fact:
+        cis_results: "{{ cis_results + [result_item] }}"
+      vars:
+        result_item:
+          description: "Ensure  chrony  is  installed"
+          status: "{{ 'PASS' if pkg_status.rc == 0 else 'FAIL' }}"
+      when: os == "rhel"
+
+
+
+    - name: Run chronyc tracking
+      command: chronyc tracking
+      register: chrony_tracking
+      failed_when: false
+      changed_when: false
+
+
+    - name: Set sync status fact
+      set_fact:
+        chrony_sync_ok: "{{ 'Leap status     : Normal' in chrony_tracking.stdout }}"
+
+    
+
+
+    - name: Append results
+      set_fact:
+        cis_results: "{{ cis_results + [result_item] }}"
+      vars:
+        result_item:
+          description: "Ensure chrony is sync"
+          status: "{{ 'PASS' if chrony_sync_ok else 'FAIL' }}"
+
+
+
+    - name: Get chronyd process user
+      shell: pgrep -x chronyd | xargs -r ps -o user= -p
+      register: chronyd_user
+      changed_when: false
+      failed_when: false
+
+
+
+    - name: Set check result
+      set_fact:
+        is_chrony_non_root: "{{ chronyd_user.stdout.strip() != 'root' }}"
+
+    # - name: show
+    #   debug:
+    #     msg: "{{ is_chrony_non_root }}"
+
+
+    - name: Append result for chronyd non-root check
+      set_fact:
+        cis_results: "{{ cis_results + [result_item] }}"
+      vars:
+        result_item:
+          description: "Ensure chronyd does not run as root"
+          status: "{{ 'PASS' if is_chrony_non_root else 'FAIL' }}"
+
+
+######################--- check dccp, tipc, rdc, sctp kernel module unloaded or not -----#####################################
+
+    - name: Append to separate section - check dccp, tipc, rdc, sctp kernel module unloaded or not
+      set_fact:
+        cis_results: "{{ cis_results + [result_item] }}"
+      vars:
+        result_item:
+          description: "<h2> check dccp, tipc, rdc, sctp kernel module unloaded or not </h2>"
+          status: '-'
+
+
+    - name: Check if kernel module {{ item }} is loaded
+      command: grep -w "^{{ item }}" /proc/modules
+      register: module_check
+      ignore_errors: yes
+      loop: "{{ kernel_modules }}"
+      loop_control:
+        label: "{{ item }}"
+
+    - name: Append results to cis_results
+      set_fact:
+        cis_results: "{{ cis_results + [result_item] }}"
+      vars:
+        result_item:
+          description: "Ensure kernel module {{ item.item }} is not loaded"
+          status: "{{ 'FAIL' if item.rc == 0 else 'PASS' }}"
+      loop: "{{ module_check.results }}"
+
+
+######################--- Sysctl parameter -----#####################################
+
+
+    - name: Append to separate section - check sysctl parameter
+      set_fact:
+        cis_results: "{{ cis_results + [result_item] }}"
+      vars:
+        result_item:
+          description: "<h2> check sysctl parameter </h2>"
+          status: '-'
+
+
+    - name: Read current sysctl parameter values
+      command: cat /proc/sys/{{ item.sysctl_name | replace('.', '/') }}
+      register: sysctl_result
+      loop: "{{ sysctl_settings }}"
+
+
+    - name: Append results
+      set_fact:
+        cis_results: "{{ cis_results + [result_item] }}"
+      vars:
+        result_item:
+          description: "Ensure {{ item.item.name }} is enabled"
+          status: "{{ 'PASS' if item.stdout|int == item.item.value else 'FAIL' }}"
+      loop: "{{ sysctl_result.results }}"
+
+
+
+
+
+
+
+
+
+    - name: Generate single HTML report from cis_results
+      template:
+        src: templates/report.html.j2
+        dest: /tmp/cis_report.html
+
+    - name: Fetch HTML report to local
+      fetch:
+        src: /tmp/cis_report.html
+        dest: ./htmls/cis_report_{{ inventory_hostname }}.html
+        flat: yes
+
+
+
