@@ -2167,3 +2167,18 @@ sync
 reboot
 
 ```
+
+## netcat working
+
+```sh
+server: 192.168.1.1
+client: 192.168.1.2
+
+
+# server
+nc -ul -p 1519
+
+
+# client
+echo tessssssssst | nc -u 192.168.1.1 -p 1519
+```
