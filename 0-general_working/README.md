@@ -2087,8 +2087,19 @@ shutdown -r now       # reboot now
 ```
 
 ## check a udp port with netcat
-```
+```sh
+# check tcp port
+nc -zv 192.168.1.10 80
+
+
+# check udp port
 nc -zvu 10.10.200.5 161
+
+
+# check tcp range
+nc -zv 192.168.1.10 20-100
+
+
 ```
 
 
