@@ -2057,7 +2057,7 @@ NIC Bonding like ether-channel in cisco devices
 
 
 # figlet
-```
+```sh
 sudo apt install figlet
 figlet imanjowkar
 
@@ -2068,7 +2068,7 @@ bc      # terminal calculator
 
 ## fail2ban
 
-```
+```sh
 fail2ban-client status sshd
 fail2ban-client set sshd unbanip 192.168.1.1
 
@@ -2078,7 +2078,7 @@ fail2ban-client set sshd unbanip 192.168.1.1
 
 ## maintanance
 
-```
+```sh
 shutdown -r 23:00     # reboot on 23:00
 shutdown -r +15       # reboot in 15 minute
 shutdown -r now       # reboot now
