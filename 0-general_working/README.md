@@ -1930,7 +1930,7 @@ nmcli device wifi connect "ssid" password pass  name "wifi1-profile"
 
 ### ufw  and  firewalld
 
-```
+```sh
 
 sudo ufw enable
 
@@ -1962,13 +1962,17 @@ sudo ufw allow from 10.10.1.10 to any port 22
 sudo ufw delete allow 80/tcp
 
 
-# Default Policies:
-By default, ufw denies all incoming connections and allows all outgoing connections. You can change these policies using:
 
-sudo ufw default allow incoming
-sudo ufw default deny outgoing
+#  show ufw default policy
+sudo ufw status verbose
 
-# firewalld
+# change default policy
+ufw reset 
+ufw allow in 22/tcp
+ufw enable 
+sudo ufw default deny incoming
+sudo ufw default allow outgoing
+sudo ufw default deny routed
 
 
 
