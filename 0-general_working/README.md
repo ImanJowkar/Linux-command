@@ -2234,13 +2234,13 @@ echo tessssssssst | nc -u 192.168.1.1 -p 1519
 
 ----------
 sudo dnf install nfs-utils
-sudo mkdir /var/nfs/general -p
-sudo chown nobody /var/nfs/general
+sudo mkdir /mnt/nfs/data -p
+sudo chown nobody /mnt/nfs/data
 ----------
 # now go the  /etc/exports and add below config
 vim /etc/exports
 --------------
-/var/nfs/general    192.168.244.20(rw,sync,no_subtree_check)
+/mnt/nfs/data    192.168.244.20(rw,sync,no_subtree_check)
 --------------
 sudo systemctl enable nfs-server
 sudo systemctl start nfs-server
@@ -2256,12 +2256,19 @@ firewall-cmd --reload
 
 apt install nfs-common
 
-sudo mkdir -p /var/nfs-data
+sudo mkdir -p /mnt/nfs/data
 -----
-mount 192.168.244.10:/var/nfs/general /var/nfs-data
-
+mount 192.168.244.10:/mnt/nfs/data /mnt/nfs/data
 -----
 
+# you can permanent it in /etc/fstab
+vim /etc/fstab
+-----
+192.168.244.10:/mnt/nfs/data   /mnt/nfs/data   nfs auto,nofail,noatime,nolock,intr,tcp,actimeo=1800 0 0
+-----
+
+df -Th 
+lsblk
 
 ```
 ## GlusterFS
