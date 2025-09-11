@@ -644,7 +644,7 @@ diff -y a b                 # pretty output
 
 ## hard link and soft link
 ![img](img/1.png)
-```
+```sh
 # hard link, hard link only used for files
 * hardlink only work with files
 * hardlink only work on the same partition
@@ -664,22 +664,49 @@ ls -s file1.txt file2.txt
 
 
 ## Package manager
-
-```
-rpm -qa  # show all program which is installed 
-rpm -qa | grep nginx
-
+```sh
+# debian
 apt list --installed
-dpkg -l
+dpkg -l 
+
+# Show which package owns a file and where it stores its files
+dpkg -L vim 
+dpkg -L docker-ce
+
+sudo dpkg -i file.deb  # install .deb file 
+
+# remove
+dpkg -r vim 
+
 
 sudo apt-key list    # list of gpg keys , gpg is used for preventing man in the middle, gpg is a key
                      # between you and repositroy server.
 
-sudo dpkg -i file.deb  # install .deb file 
+apt remove nginx # remove the nginx 
+apt autoremove   # remove the dependencies which not needed anymore
+
+
+| Command          | Effect                                 |
+| ---------------- | -------------------------------------- |
+| `apt remove`     | Remove package, keep configs           |
+| `apt autoremove` | Remove unused dependencies             |
+| `apt purge`      | Remove package + configs               |
+| `apt autopurge`  | Purge + autoremove dependencies        |
+| `apt clean`      | Delete all cached .deb files           |
+| `apt autoclean`  | Delete only outdated cached .deb files |
 
 
 
-# how to set apt proxy
+# RPM or yum or dnf
+
+rpm -qa  # show all program which is installed 
+rpm -qa | grep nginx
+
+
+
+
+
+# how to set proxy for apt
 
 sudo vim /etc/apt/apt.conf.d/01proxy
 -----------------------------
@@ -692,12 +719,19 @@ or we can set these two env variable in terminal
 export HTTP_PROXY=http://127.0.0.1:8080
 export HTTPS_PROXY=https://127.0.0.1:8080
 
+
+# how to set proxy on rocky or RHEL based linux for dnf 
+vim /etc/dnf/dnf.conf
+-----
+proxy=http://192.168.1.1:3128
+-----
+
 ```
 
 
 ## Process management
 
-```
+```sh
 ps       
 ps -ef        # show pid and ppid
 ps -aux
@@ -2138,13 +2172,6 @@ reboot
 
 
 
-## GlusterFS
-
-```
-# install on all nodes
-sudo apt install glusterfs-server
-
-```
 
 
 ## Firewalld
@@ -2196,4 +2223,51 @@ nc -ul -p 1519
 
 # client
 echo tessssssssst | nc -u 192.168.1.1 -p 1519
+```
+
+
+## NFS-server
+[nfs-server](img/nfs.png)
+```sh
+
+# nfs-server
+
+----------
+sudo dnf install nfs-utils
+sudo mkdir /var/nfs/general -p
+sudo chown nobody /var/nfs/general
+----------
+# now go the  /etc/exports and add below config
+vim /etc/exports
+--------------
+/var/nfs/general    192.168.244.20(rw,sync,no_subtree_check)
+--------------
+sudo systemctl enable nfs-server
+sudo systemctl start nfs-server
+
+firewall-cmd --permanent --add-service=nfs
+firewall-cmd --permanent --add-service=mountd
+firewall-cmd --permanent --add-service=rpc-bind
+firewall-cmd --reload
+
+
+
+## nfs client
+
+apt install nfs-common
+
+sudo mkdir -p /var/nfs-data
+-----
+mount 192.168.244.10:/var/nfs/general /var/nfs-data
+
+-----
+
+
+```
+## GlusterFS
+
+```
+# install on all nodes
+sudo apt install glusterfs-server
+
 ```
