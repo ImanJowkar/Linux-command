@@ -47,7 +47,7 @@ download and install putty.
 
 ## basic linux command  
 
-```
+```sh
 ls 
 ls -lah             # long-list, hidden, human-readable
 pwd
@@ -85,7 +85,7 @@ ls -li                # inode number(Each file or directory has an inode number 
 ![img](img/ls-lah-detail.png)
 
 
-```
+```sh
 
 
 sudo apt install tree
@@ -152,7 +152,7 @@ who
 * domain controller: Openldap, Active-Directory
 
 
-```
+```sh
 useradd iman                      # This is a low-level command that creates a user account without any additional setup.
 
 adduser iman   --> user-friendly  # This is a higher-level command, typically a script that uses useradd under the hood. It simplifies the process by providing a more interactive experience, often prompting for details like the password and home directory
@@ -174,7 +174,7 @@ passwd iman
 ```
 ![img](img/passwd.png)
 
-```
+```sh
 gid, uid
 id -u     # show user uid
 id -g     # show user gid
@@ -197,7 +197,7 @@ cat /etc/shadow
 ```
 ![hidden file](img/hidden-file-home-user.png)
 
-```
+```sh
 cd /etc/skel
 touch /etc/skel/info.text
 adduser iman1
@@ -212,7 +212,7 @@ last      # last login
 
 
 ## text editor (vim)
-```
+```sh
 set cursorline
 :5          $ go to line 5
 
@@ -258,7 +258,7 @@ set cursorline
 
 ## Basic Linux permision
 
-```
+```sh
 
 
 chown user:group file.txt   # change ownership of a file
@@ -382,7 +382,7 @@ lsattr file
 
 ## finding file and directories
 
-```
+```sh
 # we have two option for finding a file in linux: 1-locate, 2-find
 # 'locate' is faster than a 'find', because it use a database which we need update it constantly
 
@@ -459,7 +459,7 @@ mtime:
 ## Text Processing
 ### cat, cut, sed
 
-```
+```sh
 cat file
 cat -E file     # show \n too
 cat -n file     # show line number
@@ -603,7 +603,7 @@ cat ip | sort | uniq -d    # show only duplicate
 
 
 ### grep (text configurations)
-```
+```sh
 grep iman /etc/passwd
 grep "pattern" /etc/shadow
 grep -i "SSH" /etc/ssh/ssh_config           # case insensitive
@@ -620,7 +620,7 @@ grep -A 3 -B 4 "pattern" /etc/..            # show 3 line after match and 4 line
 
 ### comparing files
 
-```
+```sh
 
 # we have three way to compare files in linux: 1-cmp, 2-diff, 3-sha256sum or other hash function
 
@@ -800,7 +800,7 @@ pidof zabbix_server | xargs sudo kill -9
 ## compression and tar
 [refrence](https://www.rootusers.com/gzip-vs-bzip2-vs-xz-performance-comparison/) for comparing these three method for compress files.
 **tip**: before compres any file, first use tar and then use compres method
-```
+```sh
 gzip -c file  > file.gz
 file file.gz
 gzip -d file.gz       # uncompress the file
@@ -928,7 +928,7 @@ We can create swap space in two ways:
 
 
 ### other storage configuration
-```
+```sh
 dnf install smartmontools
 smartctl -i /dev/sda  # info about the disk
 
@@ -985,7 +985,7 @@ sudo iptop         # show disk i/o statistics
 
 
 ## SCP (Secure COPY)
-```
+```sh
 scp -p 22 file.tar user@172.16.2.2:/home/user/backup/                           # for scp a file or tar file
 scp -r -p 22 dirctory user@172.16.2.2:/home/user/backup/                        # for scp a dirctory
 
@@ -1034,7 +1034,7 @@ todays linux servers used one of the three below network services. the three mos
 * `networkd` -> ubuntu server
 * `NetworkManager` -> redhat, fedora, centos, ubuntu desktop
 
-```
+```sh
 
 ip -br -c a
 ip r     ##short for `ip route show `
@@ -1046,7 +1046,7 @@ nmap -sP 172.16.2.0/24
 
 ### networking service
 ![img](img/networking.png)
-```
+```sh
 systemctl status networking.service
 
 nano /etc/network/interfaces
@@ -1083,7 +1083,7 @@ ifquery enp0s8  # show ip address , gateway, netmask
 ### networkd
 ![img](img/systemd-networkd.png)
 
-```
+```sh
 systemctl status systemd-networkd
 
 
@@ -1163,7 +1163,7 @@ resolvectl statistics
 ### NetworkManager
 ![img](img/network-manager.png)
 
-```
+```sh
 
 nmtui
 nmcli 
@@ -1184,7 +1184,7 @@ journalctl -u NetworkManager.service  | tail -10 | column -t
 ```
 ## ip command
 
-```
+```sh
 
  ip link show   === ip l  # show layer 2 of OSI-model
 
@@ -1251,7 +1251,7 @@ ip -6 route list
 ```
 ## Network testing command
 
-```
+```sh
 
 # how to disable ping 
 
@@ -1351,7 +1351,7 @@ vim /etc/audit/auditd.conf
 ![tables](img/iptables-tables.png)
 ![chains](img/iptables-chains.png)
 
-```
+```sh
 iptables -L             # list rules in filter table
 
 # list in specific table
@@ -1476,7 +1476,7 @@ iptables-save > /etc/iptables/rules.v4
 
 ## linux as a router 
 
-```
+```sh
 echo 1 >  /proc/sys/net/ipv4/ip_forward
 
 
@@ -1490,7 +1490,7 @@ echo 1 >  /proc/sys/net/ipv4/ip_forward
 
 # LVM (logical volume management)
 [ref](https://www.tecmint.com/create-lvm-storage-in-linux/)
-```
+```sh
 cat /proc/sys/vm/swappiness
 cat /proc/swaps
 swapon -s
@@ -1683,7 +1683,7 @@ lsblk
 
 # pvmove
 
-```
+```sh
 fdisk /dev/sdf
 
 pvcreate /dev/sdf1
@@ -1711,7 +1711,7 @@ pvremove /dev/sdb1
 
 
 # lvm snapshot
-```
+```sh
 lvcreate --size 1G --snapshot --name lv1-snapshot /dev/myvg/lv1
 
 # lvcreate -L 1GB -s -n lv1-snapshot /dev/myvg/lv1
@@ -1753,7 +1753,7 @@ mount -a                # apply changes in /etc/fstab
 
 
 ## modules 
-```
+```sh
 lsmod                               # print all modules which already added to kernel
 modprobe module_name                # add module and requiremnt modules to kernel
 modprobe -r module_name             # remove a modlue and all dependencies
@@ -1769,7 +1769,7 @@ modinfo module_name                 # get info of modules
 # Grub
 
 
-```
+```sh
 # do not edit this file
 vim /boot/grub/grub.cfg
 
@@ -1783,7 +1783,7 @@ vim /etc/default/grub
 grub-mkconfig -o /boot/grub/grub.cfg
 echo $?
 
-```
+```sh
 
 ## change root password in grub in Rockey Linux
 
@@ -1799,7 +1799,7 @@ pree ctrl+x or F10
 
 then add below command
 
-```
+```sh
 /usr/sbin/load_policy -i
 
 mount -o remount,rw /
@@ -1820,7 +1820,7 @@ pree e to edit the boot loader
 change selected line to 
 
 ![alt text](img/grub-4.png)
-```
+```sh
 mount -o remount,rw /
 
 passwd 
@@ -1832,7 +1832,7 @@ exec /sbin/init
 
 ## set password for grub in Rocke linux
 
-```
+```sh
 grub2-setpassword
 
 grub2-mkconfig -o /boot/grub2/grub.cfg
@@ -1841,7 +1841,7 @@ grub2-mkconfig -o /boot/grub2/grub.cfg
 
 ## if you gone the grub.cfg file you have to add rockey-linux image as a live cd and go to the rescue mode
 
-```
+```sh
 
 grub2-mkconfig -o /boot/grub2/grub.cfg
 ```
@@ -1907,7 +1907,7 @@ EOF
 
 
 ## how to secure ssh
-```
+```sh
 
 1 - change default port from 22 to something else
 2 - disable root login
@@ -1931,7 +1931,7 @@ Banner /etc/banner.txt
 ![img](img/dns.png)
 
 
-```
+```sh
 
 hostnamectl set-hostname test.local
 
@@ -1941,7 +1941,7 @@ hostnamectl set-hostname test.local
 ## nmcli
 
 
-```
+```sh
 
 nmcli connection show
 nmcli connection down enp0s3
@@ -2023,7 +2023,7 @@ sudo ufw default deny routed
 ## SFTP
 
 
-```
+```sh
 sftp user@10.10.10.1 
 
 
@@ -2045,7 +2045,7 @@ lmkdir # create directory on local server
 
 # Additional network tools
 
-```
+```sh
 # neofetch
 
 apt install neofetch
@@ -2092,7 +2092,7 @@ lsof -i :22
 
 ## NIC Bonding
 NIC Bonding like ether-channel in cisco devices
-```
+```sh
 
 
 
@@ -2180,7 +2180,7 @@ reboot
 
 
 ## Firewalld
-```
+```sh
 firewall-cmd --state
 firewall-cmd --get-default-zone
 firewall-cmd --get-active-zones
@@ -2278,8 +2278,57 @@ lsblk
 ```
 ## GlusterFS
 
-```
+```sh
 # install on all nodes
 sudo apt install glusterfs-server
+
+```
+
+
+## Debug
+```sh
+apt install iotop
+apt install sysstat   # used in sar
+apt install lsof
+
+dnf install iotop
+dnf install sysstat   # used in sar
+dnf install lsof
+
+uptime # look for load avg 
+free -h 
+
+top 
+```
+![top-attention](img/top.png)
+
+```sh
+# by def , show cpu info 
+sar 1
+sar 1 10
+
+sar -b 1  # show block device info
+
+sar -d 1  # per block device info
+
+
+sar -n TCP 1
+
+ss -nltp   # check for tcp listen interface
+ss -nlup   # check for udp listen interface
+ps auxf | less  # for finding which command run by which user
+
+
+
+
+
+## disk usage
+du -sh /*
+
+lsof file.txt  # show file opened by a file
+ while true; do lsof data.file ;done
+ 
+watch -n 5 ls -lah 
+
 
 ```
