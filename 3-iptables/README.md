@@ -62,7 +62,7 @@ used for stateful firewall
 ![pic](./picture/6.png)
 # iptables-command
 
-```
+```sh
 iptables -L             # list rules in filter table
 iptables -t mangle -L   # list rules in mangle table
 
@@ -106,7 +106,7 @@ iptables -X custom-chain        # delete chain
 # default policy
 Policy can be changed only for INPUT, OUTPUT, FORWARD chains
 
-```
+```sh
 iptables -nvL               # attention to policy
 
 iptables -P INPUT DROP      # set default policy to DROP in INPUT chain, be careful maybe your connection will be losed.
@@ -116,7 +116,7 @@ iptables -P INPUT ACCEPT
 
 # iptables-save
 iptables rules are stored in memory, so they are not persistent, because when the system is shutting down all rules will be deleted.
-```
+```sh
 
 # first option
 iptables-save > rules
@@ -131,7 +131,7 @@ iptables-save > /etc/iptables/rules.v4
 
 # Source and Destination
 
-```
+```sh
 iptables -A INPUT -s 192.168.0.20 -j DROP
 iptables -A OUTPUT -d 8.0.0.0/8 -j DROP
 iptables -A OUTPUT -d a.com -j DROP
@@ -154,7 +154,7 @@ iptables -A INPUT -p tcp -m multiport --dport 80,443 -j DROP
 ![pic](./picture/8.png)
 
 ## filter by protocols:
-```
+```sh
 
 cat /etc/protocols
 
@@ -163,7 +163,7 @@ cat /etc/protocols
 
 
 ## Interface
-```
+```sh
 iptables -A INPUT -i enp0s3 -j ACCEPT
 iptables -A INPUT -i lo -j ACCEPT
 
@@ -174,7 +174,7 @@ iptables -A INPUT ! -s 172.16.0.5 -p tcp --dport 443 -j DROP  # close 443 over a
 ```
 
 ## drop from all source but not a specific ip
-```
+```sh
 iptables -t filter -A INPUT ! -s 10.10.10.1 -p tcp --dport 443 -j DROP
 
 ```
@@ -193,7 +193,7 @@ iptables -t filter -A INPUT ! -s 10.10.10.1 -p tcp --dport 443 -j DROP
 ![pic](./picture/12.png)
 # filter by date and time
 
-```
+```sh
 
 #!/bin/bash
 
@@ -215,7 +215,7 @@ iptables -t filter -A FORWARD -p tcp --dport 443 -m time --timestart 9:00 --time
 
 ![pic](./picture/13.png)
 
-```
+```sh
 apt install ipset
 dnf install ipset
 
