@@ -841,9 +841,12 @@ xz -d file.xz
 ```
 
 
+
 # Disk management
 
-```
+```sh
+# Max inode is : 2^32
+
 Buffer + Cache    # part of RAM, for speed the application performace
 Swap              # part of disk, act as a RAM
 
@@ -888,6 +891,7 @@ ZB    -> * 10^21              ZiB    -> * 2^70
 YB    -> * 10^24              YiB    -> * 2^80 
 
 
+
 fdisk /dev/sdb
 mkfs.ext4 /dev/sdb1
 echo $?
@@ -895,6 +899,7 @@ lsblk -f
 
 mount /dev/sdb1 /data
 mount -r /dev/sdb1 /data    # read-only mount
+
 
 
 # open /etc/fstab
