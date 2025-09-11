@@ -46,4 +46,8 @@ chmod 600 inter-vlan-routing.yaml
 
 netplay apply
 
+
+
+iptables -t nat -A POSTROUTING -o ens4 -j MASQUERADE
+
 ```
