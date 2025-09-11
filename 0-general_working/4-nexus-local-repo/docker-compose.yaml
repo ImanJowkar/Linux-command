@@ -1,0 +1,12 @@
+version: "3"
+services:
+  nexus:
+    image: sonatype/nexus3:3.82.1-alpine
+    restart: always
+    volumes:
+      - "nexus-data:/sonatype-work"
+    ports:
+      - "8081:8081"
+      - "8085:8085"
+volumes:
+  nexus-data: {}
