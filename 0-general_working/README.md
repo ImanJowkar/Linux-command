@@ -1027,12 +1027,12 @@ rsync -avP {dir1,dire2} -e "ssh -p 22" iman@10.10.56.101:/home/iman/test1
 
 
 # Networking
-
 ## types of networking services in linux
 todays linux servers used one of the three below network services. the three most common are: 
 * `networking` ->  debain server
 * `networkd` -> ubuntu server
 * `NetworkManager` -> redhat, fedora, centos, ubuntu desktop
+
 
 ```sh
 

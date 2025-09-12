@@ -99,6 +99,26 @@ iptables -Z             # reset byte and counters
 
 iptables -N custom-chain        # Create Custom chain
 iptables -X custom-chain        # delete chain
+
+
+
+iptables -t nat -A PREROUTING -p tcp --dport 8585 -j REDIRECT --to-port 80  # redirect port to another port
+
+iptables -t nat -nvL
+
+```
+
+## NAT
+```
+iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
+
+```
+
+
+## DNAT
+```
+
+
 ```
 
 
@@ -185,6 +205,13 @@ iptables -t filter -A INPUT ! -s 10.10.10.1 -p tcp --dport 443 -j DROP
 
 ![pic](./picture/9.png)
 ![pic](./picture/10.png)
+
+```sh
+
+iptables -t filter -A INPUT -p tcp --dport 22 -j ACCEPT
+iptables -t filter -A OUTPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+
+```
 
 
 
