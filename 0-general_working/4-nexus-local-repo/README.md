@@ -10,7 +10,7 @@ docker compose up -d
 ```
 
 
-
+# Rocky linux mirrors
 # look for mirrors: 
 [mirrors](https://mirrors.rockylinux.org/mirrormanager/)
 
@@ -34,6 +34,13 @@ baseurl=http://192.168.244.20:8081/repository/dnf/$releasever/AppStream/$basearc
 baseurl=http://192.168.244.20:8081/repository/dnf/$releasever/extras/$basearch/os/
 
 
+
+
+```
+
+
+# Alma Linux Repo
+```sh
 
 
 ```

@@ -1479,11 +1479,6 @@ iptables-save > /etc/iptables/rules.v4
 ```sh
 echo 1 >  /proc/sys/net/ipv4/ip_forward
 
-
-
-
-
-
 ```
 
 
@@ -1501,7 +1496,6 @@ pvs
 vgcreate myvg /dev/sd[bc][12]
 vgs
 
-
 lvcreate -n lv1 -L 5g myvg
 lvcreate -n lv2 -L 9g myvg
 lvcreate -n lv3 -l 100%FREE myvg
@@ -1514,9 +1508,9 @@ mkfs.ext4 /dev/myvg/lv3
 
 
 vim /etc/fstab
-/dev/myvg/lv1   /LVM1   ext4    defaults        0       1
-/dev/myvg/lv2   /LVM2   ext4    defaults        0       1
-/dev/myvg/lv3   /LVM3   ext4    defaults        0       1
+/dev/myvg/lv1   /LVM1   ext4    defaults        0       0
+/dev/myvg/lv2   /LVM2   ext4    defaults        0       0
+/dev/myvg/lv3   /LVM3   ext4    defaults        0       0
 
 mount -a
 
@@ -1539,7 +1533,7 @@ lvs
 
 
 # extend lv
-lvextend -L +4G /dev/myvg/lv2
+lvextend -L +4G /dev/myvg/lv2  # add 4G size to privious size  
 lvextend -l +100%FREE /dev/myvg/lv1
 
 resize2fs /dev/myvg/lv2
