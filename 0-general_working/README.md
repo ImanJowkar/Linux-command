@@ -1777,11 +1777,11 @@ vim /etc/default/grub
 grub-mkconfig -o /boot/grub/grub.cfg
 echo $?
 
-```sh
+
 
 ## change root password in grub in Rockey Linux
 
-pree e to edit the boot loader
+prees e to edit the boot loader
 
 ![alt text](img/grub-1.png)
 
