@@ -105,7 +105,18 @@ vim /etc/frr/daemons
 ospfd=yes
 ------------
 
+
+
 sudo systemctl restart frr
+
+
+
+sysctl -w net.ipv4.ip_forward=1
+
+echo "net.ipv4.ip_forward = 1" |  tee -a /etc/sysctl.conf
+sysctl -p
+
+
 
 
 sudo vtysh
