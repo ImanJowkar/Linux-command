@@ -77,3 +77,66 @@ ip -brief addr show
 iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
 
 ```
+
+## OSPF on linux
+[frr](https://github.com/FRRouting/frr)
+
+```sh
+# add GPG key
+curl -s https://deb.frrouting.org/frr/keys.gpg | sudo tee /usr/share/keyrings/frrouting.gpg > /dev/null
+
+# possible values for FRRVER: 
+frr-6 frr-7 frr-8 frr-9 frr-9.0 frr-9.1 frr-10 frr10.0 frr10.1 frr-10.2 frr-10.3 frr-rc frr-stable
+# frr-stable will be the latest official stable release. frr-rc is the latest release candidate in beta testing
+FRRVER="frr-stable"
+echo deb '[signed-by=/usr/share/keyrings/frrouting.gpg]' https://deb.frrouting.org/frr \
+     $(lsb_release -s -c) $FRRVER | sudo tee -a /etc/apt/sources.list.d/frr.list
+
+# update and install FRR
+sudo apt update && sudo apt install frr frr-pythontools
+
+
+
+sudo systemctl enable frr
+sudo systemctl start frr
+
+vim /etc/frr/daemons
+-------------
+ospfd=yes
+------------
+
+sudo systemctl restart frr
+
+
+sudo vtysh
+
+
+configure terminal
+!
+router ospf
+ network 192.168.1.0/24 area 0
+ passive-interface lo
+!
+exit
+write memory
+
+
+
+show ip ospf neighbor
+show ip ospf route
+
+
+
+
+# at linux level
+
+ip route
+
+
+
+# you can create dummy interface 
+sudo ip link add dummy0 type dummy
+sudo ip addr add 10.10.10.1/24 dev dummy0
+sudo ip link set dummy0 up
+
+```
