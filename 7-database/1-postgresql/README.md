@@ -1,11 +1,13 @@
 # Postgresql
+[End of life postgresql](https://endoflife.date/postgresql)
 
 
+[installation](https://www.postgresql.org/download/)
 
 ## install on debain
 [ref](https://www.digitalocean.com/community/tutorials/how-to-install-postgresql-on-ubuntu-22-04-quickstart)
 
-```
+```sh
 # install on ubuntu
 sudo apt update
 sudo apt install postgresql postgresql-contrib
@@ -20,27 +22,89 @@ apt install postgresql postgresql-client
 
 # in debain config file stored in `/etc/postgresql/...`
 
-```
+```sh
 ## install on Reocky linux
 
 [ref](https://www.digitalocean.com/community/tutorials/how-to-install-and-use-postgresql-on-rocky-linux-9)
 
+```sh
+
+# Install the repository RPM:
+sudo dnf install -y https://download.postgresql.org/pub/repos/yum/reporpms/EL-9-x86_64/pgdg-redhat-repo-latest.noarch.rpm
+
+# Disable the built-in PostgreSQL module:
+sudo dnf -qy module disable postgresql
+
+# Install PostgreSQL:
+sudo dnf install -y postgresql17-server
+
+ln -s  /usr/pgsql-17/bin/* /usr/sbin/
+
 ```
-sudo dnf install postgresql-server glibc-all-langpacks
 
-sudo postgresql-setup --initdb
+## Change postgreql data dir
 
-sudo systemctl start postgresql
-sudo systemctl enable postgresql
-
-
-# in rockey config file stored in `/var/lib/pgsql/data`
-
-
-# switch to postgres user and enter `psql` to access to the database
+```sh
+mkdir /pgdata
+chown postgres /pgdata
 
 su postgres
+initdb -D /pgdata/data
+echo $?
+
+chmod 740 -R /pgdata/data
+
+cd /var/lib/pgsql/17/
+rm -rf data
+ln -s /pgdata/data/ /var/lib/pgsql/17/
+
+
+sudo systemctl enable postgresql-17 --now
+
+
+firewall-cmd --add-service=postgresql  --permanent
+firewall-cmd --reload
+
+
+sudo su postgres
+psql -c "alter user postgres with password 'test222'"
 psql
+```
+
+```sql
+create database zbx;
+select oid, datname FROM pg_database;
+\q
+```
+```sh
+cd /var/lib/pgsql/17/data/base
+ls -lah 
+
+```
+![datadir](img/1.png)
+
+```sh
+vim /var/lib/pgsql/17/data/postgresql.conf
+-------
+listen_addresses = '192.168.96.141'
+# listen_addresses = '*'
+-------
+
+vim /var/lib/pgsql/17/data/pg_hba.conf
+------
+# Accept from anywhare
+#host    all     all             0.0.0.0/0                 md5
+
+# Accept from trusted subnets
+host    all     all             192.168.96.0/24                 md5
+------
+
+systemctl restart postgresql-17.service
+
+
+psql -h 192.168.96.141 -p 5432 -U postgres
+
+
 
 ```
 
@@ -49,7 +113,7 @@ psql
 
 ### Basic configuration
 
-```
+```sh
 
 psql
 pg_isready
@@ -80,7 +144,7 @@ drop database mydb1;
 `template1` is a template database that can be modified. It is used as a base for creating new databases and can include common schema objects or settings that you want to be present in all new databases.
 
 
-```
+```sh
 
 create database test template template0;
 
@@ -97,7 +161,7 @@ select * from users;
 
 
 ### User Management
-```
+```sh
 \du     # list all roles in postgres
 create role iman with login ;
 create role iman1 with login superuser;
@@ -129,7 +193,7 @@ host    all             iman1           192.168.56.1/32         md5
 
 # Create a database and user and restore database
 [ref](https://www.w3schools.com/postgresql/postgresql_insert_into.php)
-```
+```sh
 create database store;
 \c store;
 
@@ -209,7 +273,7 @@ pg_restore -U test -C -d postgres store-backup-directory/ # -C means create data
 
 ## Set up pgadmin with docker
 
-```
+```yaml
 version: '3.8'
 services:
  pgadmin:
@@ -233,7 +297,7 @@ volumes:
  
 for connect to your postgres instance with pgadmin, go to the `sudo vim /etc/postgresql/16/main/pg_hba.conf` and change the below line 
 
-```
+```sh
 comment below line 
 # host    all             all             127.0.0.1/32            scram-sha-256
 
@@ -243,13 +307,13 @@ host    all             all             all            scram-sha-256
 
 ```
 and restart your server
-```
+```sh
  sudo systemctl restart postgresql.service
 ```
 
 remmeber to change the listen address to a pingable IP address instead of loopback interface in ` sudo vim /etc/postgresql/16/main/postgresql.conf`
 
-```
+```sh
 listen_addresses = '192.168.5.6'            # what IP address(es) to listen on;
 
 
@@ -257,7 +321,7 @@ listen_addresses = '192.168.5.6'            # what IP address(es) to listen on;
 
 
 ## Create Table
-```
+```sql
 
 CREATE TABLE IF NOT EXISTS public.movie
 (
@@ -288,7 +352,7 @@ CREATE TABLE IF NOT EXISTS public.movie_category
 
 # Query
 
-```
+```sql
 select * from film limit 15;
 
 select * from film where id=4;
