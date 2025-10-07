@@ -1480,6 +1480,7 @@ iptables-save > /etc/iptables/rules.v4
 echo 1 >  /proc/sys/net/ipv4/ip_forward
 
 ```
+# advance file system overview
 
 
 
@@ -1919,6 +1920,57 @@ Banner /etc/banner.txt
 
 
 
+## Sysctl
+
+**always backup the sysctl before make any change**
+```sh
+cp /etc/sysctl.conf /etc/sysctl.conf.back
+sysctl -a > sysctl.backup
+```
+kernel parameter stored in /proc/sys/
+![sysctl-image1](img/sysctl-1.png)
+- net ( network related parameter)
+- vm (virtual memory management)
+- fs (filesystem settings)
+- kernel (core kernel settings)
+
+```sh
+sysctl -a   # view all loaded parameters
+sysctl net.ipv4.ip_forward   # show this parameter
+
+# for permanent configuration save int /etc/sysctl.conf
+vim /etc/sysctl.conf
+-------
+net.ipv4.ip_forward = 1
+-------
+
+sysctl -p   # reload changes 
+
+
+# commonly Tuned parameters
+# - Network parameters: 
+sysctl -w net.ipv4.tcp_syncookies=1      # enables syn flood attack prevention
+sysctl -w net.core.somaxconn=1024        # set the maximum number of queued connections
+sysctl -w kernel.randomize_va_space=2    # enables address space layout randomization(ASLR)
+
+sysctl -w fs.protected_symlinks=1        # protects against symlink-based attacks
+
+
+
+# - Memory Management:
+sysctl -w vm.swappiness = 10
+
+
+
+
+
+
+
+
+
+```
+
+
 
 
 ## DNS
@@ -2284,6 +2336,9 @@ sudo apt install glusterfs-server
 apt install iotop
 apt install sysstat   # used in sar
 apt install lsof
+apt install dstat
+
+
 
 dnf install iotop
 dnf install sysstat   # used in sar
@@ -2342,5 +2397,12 @@ vim /etc/docker/daemon.json
 ------
 systemctl reload docker
 
-
 ```
+
+## file system
+![storage driver](img/storage-driver.png)
+
+**all of this information is can be found on docker info**
+
+* if you want to use storage quota in docker , you must use xfs with pquota as and `storage-opt`
+
