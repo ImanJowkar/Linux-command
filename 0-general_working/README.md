@@ -2326,3 +2326,21 @@ watch -n 5 ls -lah
 
 
 ```
+
+
+# Docker 
+*What is daemon less in docker
+it means container can run whenever docker damon is stoped
+you have to set below config in /etc/docker/daemon.json
+note: live restore only works on linux not in windows*
+```sh
+vim /etc/docker/daemon.json
+------
+{
+  "live-restore": true
+}
+------
+systemctl reload docker
+
+
+```

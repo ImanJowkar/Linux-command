@@ -21,8 +21,8 @@ apt install postgresql postgresql-client
 
 
 # in debain config file stored in `/etc/postgresql/...`
+```
 
-```sh
 ## install on Reocky linux
 
 [ref](https://www.digitalocean.com/community/tutorials/how-to-install-and-use-postgresql-on-rocky-linux-9)
@@ -104,15 +104,104 @@ systemctl restart postgresql-17.service
 
 psql -h 192.168.96.141 -p 5432 -U postgres
 
+psql -h 192.168.96.141 -p 5432 -d database-name -U username  -W
+psql -h 192.168.96.141 -p 5432 -d postgres -U postgres  -W  -c "select current_time"
+
+
+
+
+
+```
+
+## SETUP PG-admin
+
+```sh
+
+docker run -p 80:80 --name mypgadmin \
+    -e 'PGADMIN_DEFAULT_EMAIL=user@domain.com' \
+    -e 'PGADMIN_DEFAULT_PASSWORD=SuperSecret' \
+    -e 'PGADMIN_CONFIG_ENHANCED_COOKIE_PROTECTION=True' \
+    -e 'PGADMIN_CONFIG_LOGIN_BANNER="Authorised users only!"' \
+    -e 'PGADMIN_CONFIG_CONSOLE_LOG_LEVEL=10' \
+    -d hub.hamdocker.ir/dpage/pgadmin4:9.8.0
+
+
+
+
+
+
+version: "3.9"
+services:
+  pgadmin:
+    image: hub.hamdocker.ir/dpage/pgadmin4:9.8.0
+    container_name: pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com   # change to your email
+      PGADMIN_DEFAULT_PASSWORD: admin          # change to a strong password
+      PGADMIN_CONFIG_ENHANCED_COOKIE_PROTECTION: True
+    ports:
+      - "8080:80"   # access pgAdmin at http://localhost:8080
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin  # persistent storage for pgAdmin
+volumes:
+  pgadmin_data:
+
+
 
 
 ```
 
 
+
+
+## Setup pgcli
+```sh
+mkdir python-pgcli && cd python-pgcli
+
+python -m venv venv
+source venv/bin/activate
+
+pip install -U pgcli
+
+pgcli postgres://postgres:test222@192.168.96.141:5432/
+
+pgcli -h 192.168.96.141 -p 5432 -d postgres -U postgres  -W
+
+select version();
+
+
+
+```
 ## Work with postgresql
+```sh
+\d table_name
+\du   # list all user and roles
+
+\s   # list history
+\s myhistory.sql  # save history into a file
+
+
+\e   # give you the file editor and insert you sql syntax and close the file it will run for us.
+
+```
+
+### Database administration
+
+```sh
+pgcli -h 192.168.96.141 -p 5432 -d postgres -U postgres  -W
+```
+```sql
+select name, setting FROM pg_settings where category = 'File Locations';
+
+
+
+```
+
+
+
 
 ### Basic configuration
-
 ```sh
 
 psql
