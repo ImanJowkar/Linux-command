@@ -1310,6 +1310,32 @@ nmap -sP 172.16.2.0/24
 
 ```
 
+## Lets-ecrypt
+
+```sh
+sudo apt update
+sudo apt install certbot
+
+sudo certbot certonly --manual --preferred-challenges dns -d repo.mydomain.com
+
+
+
+# on another terminal you can check you dns recored updated or not
+dig TXT _acme-challenge.repo.mydomain.com
+
+# if everything ok , you can check you certificate in /etc/letsencrypt/live/repo.mydomain.com/*
+
+```
+## Get wild-card certificate
+```sh
+sudo certbot certonly --manual --preferred-challenges dns -d "*.mydomain.com" -d mydomain.com
+
+
+
+```
+
+
+
 
 ## Time Sync server
 * Setup chrony as an ntp server
@@ -1480,7 +1506,13 @@ iptables-save > /etc/iptables/rules.v4
 echo 1 >  /proc/sys/net/ipv4/ip_forward
 
 ```
-# advance file system overview
+# advance file-system
+1. Ext4(fourth version of Extended file system): 
+    * max file-system size: 16EB
+    * max file size:        1EB
+
+2. XFS (Extended file system)
+
 
 
 

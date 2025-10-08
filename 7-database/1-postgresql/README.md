@@ -15,7 +15,6 @@ sudo apt install postgresql postgresql-contrib
 
 
 # install on debain
-
 apt install postgresql postgresql-client
 
 
@@ -28,7 +27,6 @@ apt install postgresql postgresql-client
 [ref](https://www.digitalocean.com/community/tutorials/how-to-install-and-use-postgresql-on-rocky-linux-9)
 
 ```sh
-
 # Install the repository RPM:
 sudo dnf install -y https://download.postgresql.org/pub/repos/yum/reporpms/EL-9-x86_64/pgdg-redhat-repo-latest.noarch.rpm
 
