@@ -1,0 +1,16 @@
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-svc
+  labels:
+    app: nginx
+spec:
+  selector:
+    app: nginx1        # Matches Pods with this label
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80          # Service port (inside cluster)
+      targetPort: 80    # Container port (in the Pod)
+  type: LoadBalancer
