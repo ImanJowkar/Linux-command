@@ -1,0 +1,83 @@
+version: "3.9"
+
+services:
+  traefik:
+    container_name: traefik
+    image: hub.hamdocker.ir/traefik:v3.1
+    command:
+      - "--configFile=/etc/traefik/traefik.yml"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - "./traefik/traefik.yml:/etc/traefik/traefik.yml:ro"
+      - "./traefik/dynamic_conf.yml:/etc/traefik/dynamic_conf.yml:ro"
+      - "./traefik/certs:/certs:ro"
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "./logs:/var/log/traefik"
+    networks:
+      - web
+
+    labels:
+      # Enable Dashboard
+      - "traefik.enable=true"
+      - "traefik.http.routers.dashboard.rule=Host(`panel.imanjowkar.ir`)"
+      - "traefik.http.routers.dashboard.service=api@internal"
+      - "traefik.http.routers.dashboard.entrypoints=websecure"
+      - "traefik.http.routers.dashboard.tls=true"
+      - "traefik.http.routers.dashboard.middlewares=dashboard-auth"
+      # Middleware for Basic Auth
+      - "traefik.http.middlewares.dashboard-auth.basicauth.users=foo:$$apr1$$opuOxieb$$oZvheZK8PwpMt/axvycZc/"
+
+
+  nginx:
+    image: hub.hamdocker.ir/nginx:alpine
+    container_name: nginx
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.nginx.rule=Host(`nginx.imanjowkar.ir`)"
+      - "traefik.http.routers.nginx.entrypoints=websecure"
+      - "traefik.http.routers.nginx.tls=true"
+      - "traefik.http.services.nginx.loadbalancer.server.port=80"
+
+      - "traefik.http.routers.nginx.middlewares=nginx-auth"
+      - "traefik.http.middlewares.nginx-auth.basicauth.users=foo:$$apr1$$opuOxieb$$oZvheZK8PwpMt/axvycZc/"
+      - "traefik.http.routers.nginx.middlewares=security-headers@file"
+
+
+    networks:
+      - web
+
+
+  nexus:
+    image: sonatype/nexus3:3.82.1-alpine
+    restart: always
+    container_name: nexus
+    volumes:
+      - "nexus-data:/nexus-data"
+    networks:
+      - web
+    labels:
+      - "traefik.enable=true"
+      # Traefik UI
+      - "traefik.http.routers.nexus.rule=Host(`repo.imanjowkar.ir`)"
+      - "traefik.http.routers.nexus.entrypoints=websecure"
+      - "traefik.http.routers.nexus.tls=true"
+      - "traefik.http.routers.nexus.service=nexus-ui"
+      - "traefik.http.services.nexus-ui.loadBalancer.server.port=8081"
+      - "traefik.http.routers.nexus.middlewares=security-headers@file"
+
+
+      - "traefik.http.routers.registry.rule=Host(`docker.imanjowkar.ir`)"
+      - "traefik.http.routers.registry.entrypoints=websecure"
+      - "traefik.http.routers.registry.tls=true"
+      - "traefik.http.routers.registry.service=nexus-docker-reg"
+      - "traefik.http.services.nexus-docker-reg.loadBalancer.server.port=8085"
+
+
+volumes:
+  nexus-data:
+
+networks:
+  web:
+    driver: bridge

@@ -1,0 +1,10 @@
+tls:
+  certificates:
+    - certFile: /certs/mycert.crt
+      keyFile: /certs/mycert.key
+http:
+  middlewares:
+    security-headers:
+      headers:
+        customResponseHeaders:
+          Server: "not available"
