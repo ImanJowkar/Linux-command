@@ -36,37 +36,29 @@ sudo dnf -qy module disable postgresql
 # Install PostgreSQL:
 sudo dnf install -y postgresql17-server
 
-ln -s  /usr/pgsql-17/bin/* /usr/sbin/
-
-```
-
-## Change postgreql data dir
-
-```sh
-mkdir /pgdata
-chown postgres /pgdata
-
-su postgres
-initdb -D /pgdata/data
-echo $?
-
-chmod 740 -R /pgdata/data
-
-cd /var/lib/pgsql/17/
-rm -rf data
-ln -s /pgdata/data/ /var/lib/pgsql/17/
-
-
-sudo systemctl enable postgresql-17 --now
+# Optionally initialize the database and enable automatic start:
+sudo /usr/pgsql-17/bin/postgresql-17-setup initdb
+sudo systemctl enable postgresql-17
+sudo systemctl start postgresql-17
 
 
 firewall-cmd --add-service=postgresql  --permanent
 firewall-cmd --reload
 
 
-sudo su postgres
+
+sudo su - postgres
 psql -c "alter user postgres with password 'test222'"
 psql
+
+select version();
+select current_user;
+\du # list of roles
+
+select datname from pg_database; # list all databases;
+\l   # list all database too with details
+
+
 ```
 
 ```sql
@@ -105,10 +97,6 @@ psql -h 192.168.96.141 -p 5432 -U postgres
 psql -h 192.168.96.141 -p 5432 -d database-name -U username  -W
 psql -h 192.168.96.141 -p 5432 -d postgres -U postgres  -W  -c "select current_time"
 
-
-
-
-
 ```
 
 ## SETUP PG-admin
@@ -122,12 +110,12 @@ docker run -p 80:80 --name mypgadmin \
     -e 'PGADMIN_CONFIG_LOGIN_BANNER="Authorised users only!"' \
     -e 'PGADMIN_CONFIG_CONSOLE_LOG_LEVEL=10' \
     -d hub.hamdocker.ir/dpage/pgadmin4:9.8.0
+```
 
 
 
 
-
-
+```yaml
 version: "3.9"
 services:
   pgadmin:
@@ -144,8 +132,6 @@ services:
       - pgadmin_data:/var/lib/pgadmin  # persistent storage for pgAdmin
 volumes:
   pgadmin_data:
-
-
 
 
 ```
@@ -346,65 +332,8 @@ pg_dump -U <user> -Fd -f store-backup-directory <db_name>  # store in directory 
 pg_restore -U test -C -d postgres store-backup-directory/ # -C means create database , -d means connect to database and create database
 
 
-
-
-
-
-
-
-
-
 ```
 
-
-
-## Set up pgadmin with docker
-
-```yaml
-version: '3.8'
-services:
- pgadmin:
-   container_name: pgadmin4_container
-   image: dpage/pgadmin4:7.7
-   restart: always
-   environment:
-     PGADMIN_DEFAULT_EMAIL: admin@admin.com
-     PGADMIN_DEFAULT_PASSWORD: secret
-     PGADMIN_LISTEN_PORT: 80
-   ports:
-     - "8080:80"
-   volumes:
-     - pgadmin-data:/var/lib/pgadmin
-volumes:
- pgadmin-data:
-
-
-
-```
- 
-for connect to your postgres instance with pgadmin, go to the `sudo vim /etc/postgresql/16/main/pg_hba.conf` and change the below line 
-
-```sh
-comment below line 
-# host    all             all             127.0.0.1/32            scram-sha-256
-
-# add below line instaed of above line
-host    all             all             all            scram-sha-256
-#
-
-```
-and restart your server
-```sh
- sudo systemctl restart postgresql.service
-```
-
-remmeber to change the listen address to a pingable IP address instead of loopback interface in ` sudo vim /etc/postgresql/16/main/postgresql.conf`
-
-```sh
-listen_addresses = '192.168.5.6'            # what IP address(es) to listen on;
-
-
-```
 
 
 ## Create Table
@@ -479,3 +408,11 @@ MVCC stands for Multi-Version Concurrency Control, and it is a critical feature 
 MVCC in PostgreSQL allows for high levels of concurrency in database operations, as multiple transactions can read and write data simultaneously without waiting for locks. It also provides strong data consistency and isolation between transactions, allowing them to work independently without interfering with each other.
 
 Different database systems implement MVCC in their own ways, but the fundamental principle of managing concurrent access through versioning data and transaction snapshots is common to most modern RDBMS, including PostgreSQL.
+
+
+
+
+# Clustering 
+
+
+## solution - 1: ()

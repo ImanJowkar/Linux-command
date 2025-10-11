@@ -39,10 +39,14 @@ services:
       - "traefik.http.routers.nginx.entrypoints=websecure"
       - "traefik.http.routers.nginx.tls=true"
       - "traefik.http.services.nginx.loadbalancer.server.port=80"
+      
 
-      - "traefik.http.routers.nginx.middlewares=nginx-auth"
-      - "traefik.http.middlewares.nginx-auth.basicauth.users=foo:$$apr1$$opuOxieb$$oZvheZK8PwpMt/axvycZc/"
+      - "traefik.http.routers.nginx.middlewares=nginx-auth"      
       - "traefik.http.routers.nginx.middlewares=security-headers@file"
+
+
+      - "traefik.http.middlewares.nginx-auth.basicauth.users=foo:$$apr1$$opuOxieb$$oZvheZK8PwpMt/axvycZc/"
+
 
 
     networks:

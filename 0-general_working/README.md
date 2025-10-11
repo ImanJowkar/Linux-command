@@ -14,6 +14,36 @@
 - [ ] Iptables
 
 
+## good package for linux 
+
+```sh
+apt install iotop sysstat lsof dstat bash-completion vim nano tar zip unzip 
+dnf install iotop sysstat lsof dstat bash-completion vim nano tar zip unzip 
+
+
+# by def , show cpu info 
+sar 1
+sar 1 10
+sar -b 1  # show block device info
+sar -d 1  # per block device info
+
+sar -n TCP 1
+
+ss -nltp   # check for tcp listen interface
+ss -nlup   # check for udp listen interface
+ps auxf | less  # for finding which command run by which user
+
+
+## disk usage
+du -sh /*
+
+lsof file.txt  # show file opened by a file
+ while true; do lsof data.file ;done
+ 
+watch -n 5 ls -lah 
+```
+
+
 
 ## two main Linux ditributions
 * Debina Based(ubuntu(18.20,22,24), debain(10,11,12)) -->  pakage manager apt
