@@ -59,7 +59,7 @@ services:
       - web
     labels:
       - "traefik.enable=true"
-      # Traefik UI
+      # Nexus UI
       - "traefik.http.routers.nexus.rule=Host(`repo.imanjowkar.ir`)"
       - "traefik.http.routers.nexus.entrypoints=websecure"
       - "traefik.http.routers.nexus.tls=true"
