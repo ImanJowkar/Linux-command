@@ -262,8 +262,9 @@ kubeadm join 192.168.229.11:6443 --token l1ne8g.rcuofdodgrrw1nzd \
 
 
 # enable auto-commplete on kubectl 
-source <(kubectl completion bash) # set up autocomplete in bash into the current shell, bash-completion package should be installed first.
-echo "source <(kubectl completion bash)" >> ~/.bashrc # add autocomplete permanently to your bash shell.
+sudo apt-get install -y bash-completion
+echo "source <(kubectl completion bash)" >> ~/.bashrc
+source ~/.bashrc
 
 ```
 
