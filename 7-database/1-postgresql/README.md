@@ -7,6 +7,14 @@
 ## install on debain
 [ref](https://www.digitalocean.com/community/tutorials/how-to-install-postgresql-on-ubuntu-22-04-quickstart)
 
+
+
+```sh
+apt install iotop sysstat lsof dstat bash-completion vim nano tar zip unzip wget
+dnf install iotop sysstat lsof dstat bash-completion vim nano tar zip unzip  wget
+
+
+```
 ```sh
 # install on ubuntu
 sudo apt update
@@ -401,148 +409,45 @@ In PostgreSQL, WAL stands for Write-Ahead Logging. It is a critical component of
 In summary, Write-Ahead Logging (WAL) is a fundamental mechanism in PostgreSQL that enhances the durability, reliability, and performance of the database system. It helps ensure data consistency and recoverability in the face of system failures.
 
 
-# MVCC
-MVCC stands for Multi-Version Concurrency Control, and it is a critical feature of PostgreSQL and other relational database management systems (RDBMS). MVCC is used to manage concurrent access to data in a way that allows multiple transactions to read and write data without interfering with each other while maintaining data consistency and integrity.
-
-
-MVCC in PostgreSQL allows for high levels of concurrency in database operations, as multiple transactions can read and write data simultaneously without waiting for locks. It also provides strong data consistency and isolation between transactions, allowing them to work independently without interfering with each other.
-
-Different database systems implement MVCC in their own ways, but the fundamental principle of managing concurrent access through versioning data and transaction snapshots is common to most modern RDBMS, including PostgreSQL.
-
-
 
 
 # Clustering  with patroni + HAproxy + etcd
----
 
-## 🧩 Components Overview
+* VIP: 192.168.96.200
+* pg-1: 192.168.96.201   ( Postgresql + etcd + Patroni)
+* pg-2: 192.168.96.202   ( Postgresql + etcd + Patroni)
+* pg-3: 192.168.96.203   ( Postgresql + etcd + Patroni)
 
-### 1. **PostgreSQL**
 
-* The actual **database engine**.
-* Runs on multiple nodes — typically:
-
-  * **One primary** (read/write)
-  * **One or more replicas** (read-only)
-
-### 2. **Patroni**
-
-* A **high-availability orchestration tool** for PostgreSQL.
-* Handles **automatic failover**, **replication management**, and **cluster state synchronization**.
-* Communicates with a **distributed configuration store (DCS)** — e.g., **etcd** — to determine which node is the primary.
-* Manages PostgreSQL instances via local control and writes cluster state info to etcd.
-
-### 3. **etcd**
-
-* A **distributed key-value store** used by Patroni for:
-
-  * **Leader election**
-  * **Cluster configuration**
-  * **Health/status information**
-* Keeps consensus among nodes (usually runs as a 3-node cluster for quorum).
-
-### 4. **HAProxy**
-
-* A **TCP load balancer** that routes client connections.
-* Checks which PostgreSQL node is **primary** (through Patroni REST API).
-* Routes:
-
-  * Write queries → primary node
-  * Read queries → replicas (if configured for read scaling)
+## type of replication in postgresql
 
 ---
 
-## 🏗️ Architecture Diagram (Conceptual)
+### 🧱 **PostgreSQL Replication Types**
 
-```
-                   ┌──────────────────────────┐
-                   │        Clients           │
-                   │  (Apps, APIs, Tools)     │
-                   └────────────┬─────────────┘
-                                │
-                                ▼
-                     ┌────────────────────┐
-                     │     HAProxy        │
-                     │ - Routes traffic   │
-                     │ - Health checks    │
-                     └────────┬───────────┘
-                              │
-     ┌────────────────────────┼─────────────────────────┐
-     ▼                        ▼                         ▼
-┌────────────┐         ┌────────────┐           ┌────────────┐
-│ PostgreSQL │         │ PostgreSQL │           │ PostgreSQL │
-│  Primary   │         │  Replica 1 │           │  Replica 2 │
-│ + Patroni  │         │ + Patroni  │           │ + Patroni  │
-└─────┬──────┘         └─────┬──────┘           └─────┬──────┘
-      │                      │                        │
-      └──────────┬───────────┴──────────┬─────────────┘
-                 ▼                      ▼
-         ┌────────────────────────────────────┐
-         │              etcd Cluster          │
-         │ (3 nodes recommended for quorum)   │
-         └────────────────────────────────────┘
-```
+| Type                     | Level       | Description                                                                                                |
+| ------------------------ | ----------- | ---------------------------------------------------------------------------------------------------------- |
+| **Physical replication** | Block level | Copies WAL files from primary to standby. Used for HA and backups.                                         |
+| **Logical replication**  | SQL level   | Replicates specific tables or data changes (INSERT, UPDATE, DELETE). Used for migrations or partial syncs. |
 
 ---
 
-## ⚙️ Workflow Explanation
+### ⚙️ **Patroni**
 
-### 1. **Cluster Initialization**
-
-* Patroni starts on all PostgreSQL nodes.
-* Each Patroni instance registers itself in **etcd**.
-* One node is elected as **leader (primary)**; others become **replicas**.
-
-### 2. **Normal Operation**
-
-* The primary node handles **read/write** traffic.
-* Replicas replicate data using **streaming replication** from the primary.
-* Patroni continuously updates its status in etcd.
-
-### 3. **Monitoring & Load Balancing**
-
-* **HAProxy** periodically queries Patroni’s REST API (`:8008/health`) to see which node is the leader.
-* It routes connections to the current primary for writes (and optionally replicas for reads).
-
-### 4. **Failover**
-
-* If the primary fails:
-
-  * Patroni detects the failure (no heartbeat, or PostgreSQL down).
-  * The remaining Patroni nodes coordinate via **etcd**.
-  * A new leader is elected and promoted to **primary**.
-  * etcd updates the cluster state.
-  * HAProxy automatically redirects clients to the new primary (via updated health checks).
+* Works at the **physical replication level** (streaming replication).
+* Automates **failover**, **replica promotion**, and **cluster management** using **etcd, Consul, or Kubernetes**.
+* Provides **high availability** for PostgreSQL clusters.
 
 ---
 
-## 🧠 Key Advantages
-
-✅ **Automatic failover** – No manual intervention needed.
-✅ **Consistent cluster state** – Managed via etcd.
-✅ **Centralized health checking** – via Patroni REST API.
-✅ **Seamless client redirection** – via HAProxy.
-✅ **Scalable** – Add replicas for load distribution.
-
----
-
-## 🧩 Typical Node Setup Example
-
-| Node     | Role                 | Components                                |
-| -------- | -------------------- | ----------------------------------------- |
-| node1    | PostgreSQL + Patroni | May become Primary                        |
-| node2    | PostgreSQL + Patroni | Replica                                   |
-| node3    | PostgreSQL + Patroni | Replica                                   |
-| etcd1    | etcd                 | Member of etcd cluster                    |
-| etcd2    | etcd                 | Member of etcd cluster                    |
-| etcd3    | etcd                 | Member of etcd cluster                    |
-| haproxy1 | HAProxy              | Routes traffic to correct PostgreSQL node |
-
----
+🟢 **In short:**
+> PostgreSQL has **physical** and **logical** replication.
+> **Patroni** manages **physical (streaming)** replication to provide automatic failover and high availability.
 
 
-we use 
-# node1 - postgresql-1
+
+
+# node1 - postgresql-1   - 192.168.96.201
 ```sh
 
 hostnmaectl set-hostname pg-1
@@ -556,12 +461,36 @@ sudo dnf -qy module disable postgresql
 # Install PostgreSQL:
 sudo dnf install -y postgresql17-server
 
+sudo /usr/pgsql-17/bin/postgresql-17-setup initdb
+sudo systemctl enable postgresql-17
+sudo systemctl start postgresql-17
+
+
+firewall-cmd --add-service=postgresql  --permanent  # postgresql
+firewall-cmd --add-port=8008/tcp --permanent        # patroni
+firewall-cmd --reload
+
+sudo su - postgres
+psql -c "alter user postgres with password 'test222'"
+psql
+
+vim /var/lib/pgsql/17/data/pg_hba.conf
+---------
+host    all             all             192.168.96.0/24            scram-sha-256
+---------
+
+
+
+systemctl restart postgresql-17.service
+
+
 systemctl stop postgresql-17.service
 systemctl disable postgresql-17.service
 
 
-dnf install epel-release
+# dnf install epel-release
 dnf makecache
+dnf install curl wget 
 wget https://github.com/etcd-io/etcd/releases/download/v3.5.23/etcd-v3.5.23-linux-amd64.tar.gz
 tar -xzvf etcd-v3.5.23-linux-amd64.tar.gz
 cp etcd-v3.5.23-linux-amd64/etcd* /usr/local/bin/
@@ -596,7 +525,7 @@ ExecStart=/usr/local/bin/etcd \
 
 Restart=on-failure
 RestartSec=5s
-StartLimitIntervalSec=60s
+# StartLimitIntervalSec=60s
 StartLimitBurst=3
 LimitNOFILE=40000
 
@@ -604,15 +533,662 @@ LimitNOFILE=40000
 WantedBy=multi-user.target
 ------------------
 
-systemctl daemon-reload
-systemctl enable --now etcd
+sudo systemctl daemon-reload
+sudo systemctl enable --now etcd
 
 
 # Installing Patroni
+su - postgres
+python3 -m venv venv
+source venv/bin/activate
 dnf install python3-pip gcc python3-devel
-
 pip install psycopg2-binary "patroni[etcd]"
 
+
+
+# Create a user for patroni
+sudo systemctl start postgresql-17
+sudo -i -u postgres
+psql -U postgres
+
+CREATE ROLE replicator WITH REPLICATION LOGIN PASSWORD 'replicator_pass';
+\q
+exit
+
+
+
+systemctl stop postgresql-17.service
+systemctl disable postgresql-17.service
+
+
+
+# Create patroni config file
+
+vim /etc/patroni.yml
+------------
+scope: postgres_cluster
+log:
+  level: DEBUG
+namespace: /db/
+name: node1
+
+restapi:
+  listen: 192.168.96.201:8008
+  connect_address: 192.168.96.201:8008
+
+etcd3:
+  hosts:
+    - 192.168.96.201:2379
+#    - 192.168.96.202:2379
+#    - 192.168.96.203:2379
+postgresql:
+  listen: 192.168.96.201:5432
+  connect_address: 192.168.96.201:5432
+  data_dir: /var/lib/pgsql/17/data
+  bin_dir: /usr/pgsql-17/bin
+  authentication:
+    replication:
+      username: replicator
+      password: replicator_pass
+    superuser:
+      username: postgres
+      password: test222
+  parameters:
+    unix_socket_directories: '/var/run/postgresql'
+-------------
+
+
+
+# create systemd unit file for patroni
+sudo vim /etc/systemd/system/patroni.service
+-------------
+[Unit]
+Description=Patroni PostgreSQL HA Cluster Node
+After=network.target
+
+[Service]
+Type=simple
+User=postgres
+Group=postgres
+ExecStart=/var/lib/pgsql/venv/bin/patroni /etc/patroni.yml
+KillMode=process
+Restart=on-failure
+LimitNOFILE=262144
+
+[Install]
+WantedBy=multi-user.target
+
+-------------
+
+sudo systemctl daemon-reload
+sudo systemctl enable patroni
+sudo systemctl restart patroni
+sudo systemctl status patroni
+
+
+# view the log file
+sudo -u postgres tail -n 20 /var/lib/pgsql/17/data/log/postgresql-*.log
+
+
+sudo -u postgres /var/lib/pgsql/venv/bin/patronictl -c /etc/patroni.yml list
+
+curl -v http://192.168.96.201:2379/version
+
+
+
+```
+Test the connection to PostgreSQL on the leader node.
+If your Patroni is configured to run PostgreSQL
+on port 5432 (default), test the connection with:
+
+RUN*
+```sh
+psql -h 192.168.1.188 -p 5432 -U postgres -c "SELECT pg_is_in_recovery();"
+```
+ pg_is_in_recovery
+-------------------
+ f
+(1 row)
+
+
+If the result is false, it means you are connected to the leader node
+(not in recovery mode).
+If it is true, it is a secondary (standby) node.
+
+```sh
+etcdctl endpoint health
+
+```
+
+### config selinux
+
+### 🧱 Step 1. Identify the current context
+
+```bash
+ls -Z /var/lib/pgsql/venv/bin/python
+ls -Z /var/lib/pgsql/venv/bin/patroni
+```
+
+You’ll likely see both are `postgresql_exec_t`.
+
+---
+
+### ⚙️ Step 2. Change to a neutral, executable type
+
+Use `semanage fcontext` and `restorecon` to relabel them as `bin_t`:
+
+```bash
+sudo semanage fcontext -a -t bin_t "/var/lib/pgsql/venv(/.*)?"
+sudo restorecon -Rv /var/lib/pgsql/venv
+```
+
+Then verify:
+
+```bash
+ls -Z /var/lib/pgsql/venv/bin/python /var/lib/pgsql/venv/bin/patroni
+```
+
+Expected output:
+
+```
+system_u:object_r:bin_t:s0 /var/lib/pgsql/venv/bin/python
+system_u:object_r:bin_t:s0 /var/lib/pgsql/venv/bin/patroni
+```
+
+---
+
+### 🧩 Step 3. Restart Patroni safely
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl restart patroni
+sudo systemctl status patroni
+```
+
+---
+
+### 🧠 Step 4 (Optional): verify SELinux no longer complains
+
+```bash
+sudo ausearch -m avc -ts recent | grep patroni
+```
+
+You should see no new denials.
+
+---
+
+
+#### install haproxy
+```sh
+cd  /etc/haproxy/
+rm -rf haproxy.cfg
+vim /etc/haproxy/haproxy.cfg
+------
+global
+    log         127.0.0.1 local2
+    chroot      /var/lib/haproxy
+    pidfile     /var/run/haproxy.pid
+    maxconn     4000
+    user        haproxy
+    group       haproxy
+    daemon
+
+defaults
+    mode                    tcp
+    log                     global
+    option                  tcplog
+    timeout connect         10s
+    timeout client          3m
+    timeout server          3m
+    retries                 3
+
+# Frontend for write connections (primary only)
+frontend pgsql_write_front
+    bind *:15432
+    default_backend pgsql_write_back
+
+# Frontend for read connections (replicas only)
+frontend pgsql_read_front
+    bind *:15433
+    default_backend pgsql_read_back
+
+# Backend for writes - primary node only
+backend pgsql_write_back
+    mode tcp
+    balance first
+    option httpchk GET /primary
+    http-check expect status 200
+    default-server inter 5s fall 5 rise 2 on-marked-down shutdown-sessions
+    server node1 192.168.96.201:5432 check port 8008
+    server node2 192.168.96.202:5432 check port 8008
+    server node3 192.168.96.203:5432 check port 8008
+
+# Backend for reads - replicas only
+backend pgsql_read_back
+    mode tcp
+    balance roundrobin
+    option httpchk GET /replica
+    http-check expect status 200
+    default-server inter 5s fall 5 rise 2 on-marked-down shutdown-sessions
+    server node1 192.168.96.201:5432 check port 8008
+    server node2 192.168.96.202:5432 check port 8008
+    server node3 192.168.96.203:5432 check port 8008
+
+# HAProxy status panel
+frontend stats
+    bind *:8080
+    mode http
+    stats enable
+    stats uri /stats
+    stats refresh 30s
+    stats admin if TRUE
+
+
+------
+
+
+haproxy -c -f /etc/haproxy/haproxy.cfg
+
+
+```
+
+##### Configuring SELinux
+
+Change SELinux policy to allow HAProxy to make connections to PostgreSQL on ports 15432 and 15433:
+
+**RUN:**
+
+```sh
+sudo setsebool -P haproxy_connect_any 1
+```
+
+Add ports for HAProxy in SELinux (if they don't exist yet):
+
+**RUN:**
+
+```sh
+sudo semanage port -a -t postgresql_port_t -p tcp 15432
+sudo semanage port -a -t postgresql_port_t -p tcp 15433
+sudo semanage port -m -t postgresql_port_t -p tcp 15432
+sudo semanage port -m -t postgresql_port_t -p tcp 15433
+```
+
+**RUN:**
+
+```sh
+sudo systemctl enable haproxy
+sudo systemctl restart haproxy
+sudo systemctl status haproxy.service
+```
+
+
+## keepalived
+
+```sh
+sudo dnf install keepalived
+
+```
+
+configuration of keepalived 
+
+```sh
+
+sudo vim /etc/keepalived/check_patroni.sh
+-----
+#!/bin/bash
+
+NODE_IP="192.168.96.201"
+
+STATUS=$(curl -sf http://$NODE_IP:8008/health)
+IS_RUNNING=$(echo "$STATUS" | jq -r .state)
+ROLE=$(echo "$STATUS" | jq -r .role)
+
+echo "STATE: $IS_RUNNING"
+echo "ROLE: $ROLE"
+
+if [ "$IS_RUNNING" = "running" ] && [ "$ROLE" = "primary" ]; then
+  echo "✅ This node is the LEADER (primary) and is RUNNING."
+  exit 0
+else
+  echo "❌ This node is NOT the leader or is not running."
+  exit 1
+fi
+-----
+
+
+sudo vim /etc/keepalived/keepalived.conf
+----------
+global_defs {
+   notification_email {
+     youremail@example.com
+   }
+   notification_email_from youremail@example.com
+   smtp_server 192.168.200.1
+   router_id my_router
+   script_user root
+   enable_script_security
+}
+
+vrrp_script chk_patroni {
+    script "/etc/keepalived/check_patroni.sh"
+    interval 3
+    fall 2
+    rise 1
+}
+
+vrrp_instance VI_1 {
+    state BACKUP                # All start as BACKUP
+    interface ens160            # Change to your real interface, if different
+    virtual_router_id 51
+    priority 100               # Same priority for all
+    advert_int 1
+    authentication {
+        auth_type PASS
+        auth_pass 1111
+    }
+    virtual_ipaddress {
+        192.168.96.200
+    }
+    track_script {
+        chk_patroni
+    }
+}
+
+----------
+
+sudo chmod +x /etc/keepalived/check_patroni.sh
+sudo systemctl enable keepalived --now
+sudo systemctl status keepalived
+
+ip a  # you can see the 192.168.96.200   is set on your NIC 
+
+
+ss -nltp | grep -E "15432|15433"
+firewall-cmd --add-port=15432/tcp --permanent
+firewall-cmd --add-port=15433/tcp --permanent
+firewall-cmd --add-port=8080/tcp --permanent
+firewall-cmd --reload
+
+curl http://192.168.96.200:8080/stats
+
+```
+
+
+# node2 - postgresql-2    - 192.168.96.202
+
+```sh
+
+hostnmaectl set-hostname pg-1
+
+
+sudo dnf install -y https://download.postgresql.org/pub/repos/yum/reporpms/EL-9-x86_64/pgdg-redhat-repo-latest.noarch.rpm
+
+# Disable the built-in PostgreSQL module:
+sudo dnf -qy module disable postgresql
+
+# Install PostgreSQL:
+sudo dnf install -y postgresql17-server
+
+sudo /usr/pgsql-17/bin/postgresql-17-setup initdb
+sudo systemctl enable postgresql-17
+sudo systemctl start postgresql-17
+
+
+firewall-cmd --add-service=postgresql  --permanent  # postgresql
+firewall-cmd --add-port=8008/tcp --permanent        # patroni
+firewall-cmd --reload
+
+sudo su - postgres
+psql -c "alter user postgres with password 'test222'"
+psql
+
+vim /var/lib/pgsql/17/data/pg_hba.conf
+---------
+host    all             all             192.168.96.0/24            scram-sha-256
+---------
+
+
+
+systemctl restart postgresql-17.service
+
+
+systemctl stop postgresql-17.service
+systemctl disable postgresql-17.service
+
+sudo rm -rf /var/lib/pgsql/17/data/*
+
+
+
+# dnf install epel-release
+dnf makecache
+dnf install curl wget 
+wget https://github.com/etcd-io/etcd/releases/download/v3.5.23/etcd-v3.5.23-linux-amd64.tar.gz
+tar -xzvf etcd-v3.5.23-linux-amd64.tar.gz
+cp etcd-v3.5.23-linux-amd64/etcd* /usr/local/bin/
+
+etcd --version
+useradd --system --home-dir /var/lib/etcd --shell /sbin/nologin etcd
+mkdir -p /var/lib/etcd
+chown -R etcd: /var/lib/etcd/
+chmod -R 700 /var/lib/etcd/
+
+```
+
+
+### node1 - 192.168.96.201
+
+```sh
+
+etcdctl --endpoints="http://192.168.96.201:2379" member add node2 --peer-urls="http://192.168.96.202:2380"
+
+
+etcdctl endpoint health
+
+```
+
+### node2
+```sh
+# create systemd unit file
+sudo vim  /etc/systemd/system/etcd.service
+---------------------
+[Unit]
+Description=etcd key-value store
+Documentation=https://etcd.io/docs/
+After=network.target
+
+[Service]
+Type=notify
+User=root
+ExecStart=/usr/local/bin/etcd \
+  --name node2 \
+  --listen-peer-urls http://192.168.96.202:2380 \
+  --listen-client-urls http://192.168.96.202:2379,http://127.0.0.1:2379 \
+  --initial-advertise-peer-urls http://192.168.96.202:2380 \
+  --advertise-client-urls http://192.168.96.202:2379 \
+  --initial-cluster node1=http://192.168.96.201:2380,node2=http://192.168.96.202:2380 \
+  --initial-cluster-state existing \
+  --data-dir /var/lib/etcd
+
+Restart=on-failure
+LimitNOFILE=40000
+
+[Install]
+WantedBy=multi-user.target
+------------------
+
+sudo systemctl daemon-reload
+sudo systemctl enable --now etcd
+
+etcdctl --endpoints="http://192.168.96.201:2379,http://192.168.96.202:2379" endpoint status --write-out=table
+
+
+# Installing Patroni
+su - postgres
+python3 -m venv venv
+source venv/bin/activate
+dnf install python3-pip gcc python3-devel
+pip install psycopg2-binary "patroni[etcd]"
+
+
+
+# Create patroni config file
+
+vim /etc/patroni.yml
+------------
+scope: postgres_cluster
+
+log:
+  level: DEBUG
+namespace: /db/
+
+# CORRECTED: unique node name
+name: node2
+
+restapi:
+  listen: 192.168.96.202:8008
+  connect_address: 192.168.96.202:8008
+
+etcd3:
+  hosts:
+    - 192.168.96.201:2379
+    - 192.168.96.202:2379
+    # - 192.168.96.203:2379   # Uncomment when node 190 is active
+
+postgresql:
+  listen: 192.168.96.202:5432
+  connect_address: 192.168.96.202:5432
+  data_dir: /var/lib/pgsql/17/data
+  bin_dir: /usr/pgsql-17/bin
+  authentication:
+    replication:
+      username: replicator
+      password: replicator_pass
+    superuser:
+      username: postgres
+      password: postgres123
+  parameters:
+    unix_socket_directories: '/var/run/postgresql'
+-------------
+
+
+
+# create systemd unit file for patroni
+sudo vim /etc/systemd/system/patroni.service
+-------------
+[Unit]
+Description=Patroni PostgreSQL HA Cluster Node
+After=network.target
+
+[Service]
+Type=simple
+User=postgres
+Group=postgres
+ExecStart=/var/lib/pgsql/venv/bin/patroni /etc/patroni.yml
+KillMode=process
+Restart=on-failure
+LimitNOFILE=262144
+
+[Install]
+WantedBy=multi-user.target
+
+-------------
+
+sudo systemctl daemon-reload
+sudo systemctl enable patroni
+sudo systemctl restart patroni
+sudo systemctl status patroni
+
+
+# config selinux
+sudo dnf install policycoreutils-python-utils -y
+
+ls -Z /var/lib/pgsql/venv/bin/python
+ls -Z /var/lib/pgsql/venv/bin/patroni
+
+sudo semanage fcontext -a -t bin_t "/var/lib/pgsql/venv(/.*)?"
+sudo restorecon -Rv /var/lib/pgsql/venv
+ls -Z /var/lib/pgsql/venv/bin/python /var/lib/pgsql/venv/bin/patroni
+
+sudo systemctl daemon-reload
+sudo systemctl restart patroni
+sudo systemctl status patroni
+
+sudo ausearch -m avc -ts recent | grep patroni
+
+
+```
+
+
+### node1
+```sh
+vim /var/lib/pgsql/17/data/pg_hba.conf
+------
+host    replication     all             192.168.96.0/24            scram-sha-256
+------
+
+sudo systemctl restart patroni
+
+
+```
+
+### node2
+```sh
+
+sudo systemctl restart patroni
+
+ls -lah /var/lib/pgsql/17/data/
+
+
+```
+
+### node1
+```sh
+
+vim /etc/patroni.yml
+-----------
+scope: postgres_cluster
+log:
+  level: DEBUG
+namespace: /db/
+name: node1
+
+restapi:
+  listen: 192.168.96.201:8008
+  connect_address: 192.168.96.201:8008
+
+etcd3:
+  hosts:
+    - 192.168.96.201:2379
+    - 192.168.96.202:2379
+#    - 192.168.96.203:2379
+
+postgresql:
+  listen: 192.168.96.201:5432
+  connect_address: 192.168.96.201:5432
+  data_dir: /var/lib/pgsql/17/data
+  bin_dir: /usr/pgsql-17/bin
+  authentication:
+    replication:
+      username: replicator
+      password: replicator_pass
+    superuser:
+      username: postgres
+      password: test222
+  parameters:
+    unix_socket_directories: '/var/run/postgresql'
+
+-----------
+systemctl restart patroni.service
+
+```
+
+
+### node2
+```sh
+
+sudo -u postgres /var/lib/pgsql/venv/bin/patronictl -c /etc/patroni.yml list
+
+curl -v http://192.168.96.201:2379/version
 
 
 ```

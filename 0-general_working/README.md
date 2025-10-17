@@ -17,8 +17,8 @@
 ## good package for linux 
 
 ```sh
-apt install iotop sysstat lsof dstat bash-completion vim nano tar zip unzip 
-dnf install iotop sysstat lsof dstat bash-completion vim nano tar zip unzip 
+apt install iotop sysstat lsof dstat bash-completion vim nano tar zip unzip wget 
+dnf install iotop sysstat lsof dstat bash-completion vim nano tar zip unzip wget
 
 
 # by def , show cpu info 
