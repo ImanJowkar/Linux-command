@@ -157,6 +157,7 @@ sudo ip link set dummy0 up
 
 ![GRE-tunnel](img/GRE-2.png)
 
+
 #### R2
 ```sh
 
@@ -237,6 +238,7 @@ network 10.11.13.3 0.0.0.0
 ```sh
 nano /etc/netplan/60.yaml
 ---------
+
 network:
   version: 2
   renderer: networkd
@@ -259,6 +261,13 @@ network:
       id: 20
       link: ens4
       addresses: [192.168.20.1/24]
+  tunnels:
+    gre-1:
+      mode: gre
+      local: 192.0.2.2
+      remote: 198.51.100.2
+      ttl: 255
+      addresses: [172.25.1.1/24]
 
 ---------
 
@@ -283,17 +292,40 @@ echo "8021q" | sudo tee /etc/modules-load.d/8021q.conf
 # Setting up the GRE Tunnel
 
 # Create the GRE tunnel
-ip tunnel add gre-1 mode gre remote 198.51.100.2 local 192.0.2.2 ttl 255
+# ip tunnel add gre-1 mode gre remote 198.51.100.2 local 192.0.2.2 ttl 255
 # Assign an IP address to the tunnel interface
-ip addr add 172.25.1.1/24 dev gre-1
+# ip addr add 172.25.1.1/24 dev gre-1
 
 # Bring the tunnel interface up
-ip link set gre-1 up
+# ip link set gre-1 up
 
 
 
 
-ip route add 192.168.50.0/24 via 172.25.1.2
+# ip route add 192.168.50.0/24 via 172.25.1.2
+# ip route add 192.168.60.0/24 via 172.25.1.2
+# ip route del 192.168.50.0/24
+# ip route del 192.168.60.0/24
+
+
+sed -i 's/^ospfd=no/ospfd=yes/' /etc/frr/daemons
+sudo systemctl restart frr
+
+
+sudo vtysh
+configure terminal
+
+router ospf
+ network 172.25.1.0/24 area 0
+ network 192.168.10.0/24 area 0
+ network 192.168.20.0/24 area 0
+
+exit
+write memory
+
+
+
+
 ```
 
 
@@ -326,6 +358,13 @@ network:
       link: ens4
       addresses: [192.168.60.1/24]
 
+  tunnels:
+    gre-1:
+      mode: gre
+      local: 198.51.100.2
+      remote: 192.0.2.2
+      ttl: 255
+      addresses: [172.25.1.2/24]
 ----
 
 
@@ -351,16 +390,37 @@ echo "8021q" | sudo tee /etc/modules-load.d/8021q.conf
 # Setting up the GRE Tunnel
 
 # Create the GRE tunnel
-ip tunnel add gre-1 mode gre remote 192.0.2.2  local 198.51.100.2 ttl 255
+# ip tunnel add gre-1 mode gre remote 192.0.2.2  local 198.51.100.2 ttl 255
 # Assign an IP address to the tunnel interface
-ip addr add 172.25.1.2/24 dev gre-1
+# ip addr add 172.25.1.2/24 dev gre-1
 
 # Bring the tunnel interface up
-ip link set gre-1 up
+# ip link set gre-1 up
 
 
 
-ip route add 192.168.10.0/24 via 172.25.1.1
+# ip route add 192.168.10.0/24 via 172.25.1.1
+# ip route add 192.168.20.0/24 via 172.25.1.1
+# ip route del 192.168.10.0/24
+# ip route del 192.168.20.0/24
+
+
+
+sed -i 's/^ospfd=no/ospfd=yes/' /etc/frr/daemons
+sudo systemctl restart frr
+
+
+sudo vtysh
+configure terminal
+
+router ospf
+ network 172.25.1.0/24 area 0
+ network 192.168.50.0/24 area 0
+ network 192.168.60.0/24 area 0
+
+exit
+write memory
+
 
 
 ```
@@ -378,6 +438,10 @@ switchport mode trunk
 int eth 0/1
 switchport mode access
 switchport access vlan 10
+
+int eth 0/2
+switchport mode access
+switchport access vlan 20
 ```
 
 
@@ -392,6 +456,10 @@ switchport mode trunk
 int eth 0/1
 switchport mode access
 switchport access vlan 50
+
+int eth 0/2
+switchport mode access
+switchport access vlan 60
 ```
 
 
