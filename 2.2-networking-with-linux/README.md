@@ -461,6 +461,3 @@ int eth 0/2
 switchport mode access
 switchport access vlan 60
 ```
-
-
-
