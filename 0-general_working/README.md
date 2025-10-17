@@ -1924,18 +1924,26 @@ password_pbkdf2 iman grub.pbkdf2.sha512.10000.2E41F2FEE11120CCEEAC4D529405C22E08
 update-grub
 
 ```
-
-## change root password in grub
-![img](img/grub-32.png)
-![img](img/grub-33.png)
-
-press ctrl + x
+# only ask grub password when you want to go to the grub configuration
 
 ```sh
-passwd
-exec /sbin/init
+# open below file and add below config like picture like this 
+vim /etc/grub.d/10_linux
+-------
+--unrestricted
+--------
+```
+![disable gruble password-ask](img/grub-password-ask.png)
+
+```sh
+# then update the grub configuration , by doing so , only ask you the grub password when you want to go in the grub configuration on boot.
+
+update-grub
+echo $?
 
 ```
+
+
 ## common-system-maintanace
 
 ```sh
