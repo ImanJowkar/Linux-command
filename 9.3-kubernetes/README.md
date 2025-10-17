@@ -57,6 +57,16 @@
 ```sh
 kubectl api-resources
 
+# service account and role-binding
+kubectl create serviceaccount mysvcaccount
 
+kubectl create rolebinding my-binding --role view --serviceaccount default:mysvcaccount --namespace default
+
+kubectl create clusterrolebinding my-binding --clusterrole view --serviceaccount default:mysvcaccount
+
+token=$(kubectl create token mysvcaccount)
+
+curl -X GET https://192.168.96.41:6443/api/v1/namespaces/default/pods -H "Authorization: Bearer $token" -H "Accept: application/json" --insecure
 
 ```
+
