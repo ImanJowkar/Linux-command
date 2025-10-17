@@ -461,3 +461,411 @@ int eth 0/2
 switchport mode access
 switchport access vlan 60
 ```
+
+
+## GRE Tunnel Over IPsec
+![GRE-tunnel](img/GRE-2.png)
+
+#### R2
+```sh
+
+conf t
+int eth 0/0
+no sh
+ip addr 10.11.12.2 255.255.255.0
+
+
+int eth 0/2
+no sh
+ip addr 10.11.23.2 255.255.255.0
+
+
+int eth 1/0
+no sh
+ip addr 192.0.2.1 255.255.255.252
+
+
+
+router eigrp 1
+network 10.11.23.2 0.0.0.0 
+network 10.11.12.2 0.0.0.0 
+network 192.0.2.1 0.0.0.0 
+passive-interface eth 1/0
+```
+
+
+#### R1
+```sh
+
+conf t
+int eth 0/0
+no sh
+ip addr 10.11.12.1 255.255.255.0
+
+
+int eth 0/1
+no sh
+ip addr 10.11.13.1 255.255.255.0
+
+
+int eth 1/0
+no sh
+ip addr 198.51.100.1 255.255.255.252
+
+
+router eigrp 1
+network 10.11.12.1 0.0.0.0 
+network 10.11.13.1 0.0.0.0 
+network 198.51.100.1  0.0.0.0 
+passive-interface eth 1/0
+```
+
+
+
+#### R3
+```sh
+
+conf t
+int eth 0/2
+no sh
+ip addr 10.11.23.3 255.255.255.0
+
+
+int eth 0/1
+no sh
+ip addr 10.11.13.3 255.255.255.0
+
+router eigrp 1
+network 10.11.23.3 0.0.0.0 
+network 10.11.13.3 0.0.0.0 
+```
+
+
+
+#### ruoter - A
+```sh
+
+apt update
+apt install strongswan
+
+# install frr
+# add GPG key
+curl -s https://deb.frrouting.org/frr/keys.gpg | sudo tee /usr/share/keyrings/frrouting.gpg > /dev/null
+
+# possible values for FRRVER: 
+frr-6 frr-7 frr-8 frr-9 frr-9.0 frr-9.1 frr-10 frr10.0 frr10.1 frr-10.2 frr-10.3 frr-rc frr-stable
+# frr-stable will be the latest official stable release. frr-rc is the latest release candidate in beta testing
+FRRVER="frr-stable"
+echo deb '[signed-by=/usr/share/keyrings/frrouting.gpg]' https://deb.frrouting.org/frr \
+     $(lsb_release -s -c) $FRRVER | sudo tee -a /etc/apt/sources.list.d/frr.list
+
+# update and install FRR
+sudo apt update && sudo apt install frr frr-pythontools
+
+
+
+
+nano /etc/netplan/60.yaml
+---------
+
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    ens3:
+      dhcp4: no
+      addresses:
+        - 192.0.2.2/30
+      routes:
+        - to: default
+          via: 192.0.2.1
+    ens4:
+      dhcp4: no
+  vlans:
+    vlan10:
+      id: 10
+      link: ens4
+      addresses: [192.168.10.1/24]
+    vlan20:
+      id: 20
+      link: ens4
+      addresses: [192.168.20.1/24]
+  tunnels:
+    gre-1:
+      mode: gre
+      local: 192.0.2.2
+      remote: 198.51.100.2
+      ttl: 255
+      addresses: [172.25.1.1/24]
+
+---------
+
+
+vim /etc/sysctl.conf
+---------
+net.ipv4.ip_forward=1
+--------
+
+sysctl -p
+
+# apt install vlan
+
+
+modprobe 8021q
+lsmod | grep 8021q
+echo "8021q" | sudo tee /etc/modules-load.d/8021q.conf
+
+
+
+
+# Setting up the GRE Tunnel
+
+# Create the GRE tunnel
+# ip tunnel add gre-1 mode gre remote 198.51.100.2 local 192.0.2.2 ttl 255
+# Assign an IP address to the tunnel interface
+# ip addr add 172.25.1.1/24 dev gre-1
+
+# Bring the tunnel interface up
+# ip link set gre-1 up
+
+
+
+
+# ip route add 192.168.50.0/24 via 172.25.1.2
+# ip route add 192.168.60.0/24 via 172.25.1.2
+# ip route del 192.168.50.0/24
+# ip route del 192.168.60.0/24
+
+
+sed -i 's/^ospfd=no/ospfd=yes/' /etc/frr/daemons
+sudo systemctl restart frr
+
+
+sudo vtysh
+configure terminal
+
+router ospf
+ network 172.25.1.0/24 area 0
+ network 192.168.10.0/24 area 0
+ network 192.168.20.0/24 area 0
+
+exit
+write memory
+
+
+exit
+
+
+
+vim /etc/ipsec.conf
+--------
+config setup
+  charondebug="ike 2, knl 2, cfg 2"
+
+conn gre-over-ipsec
+  keyexchange=ikev2
+  auto=start
+  authby=secret
+  type=transport
+  left=192.0.2.2
+  right=198.51.100.2
+  leftprotoport=gre
+  rightprotoport=gre
+  esp=aes256-sha256
+  ike=aes256-sha256-modp2048
+-------
+
+nano /etc/ipsec.secrets
+---------
+192.0.2.2 198.51.100.2 : PSK "StrongSecretKey123"
+---------
+
+systemctl restart strongswan-starter.service
+
+
+```
+
+
+
+#### ruoter - B
+```sh
+
+apt update
+apt install strongswan
+
+# install frr
+# add GPG key
+curl -s https://deb.frrouting.org/frr/keys.gpg | sudo tee /usr/share/keyrings/frrouting.gpg > /dev/null
+
+# possible values for FRRVER: 
+frr-6 frr-7 frr-8 frr-9 frr-9.0 frr-9.1 frr-10 frr10.0 frr10.1 frr-10.2 frr-10.3 frr-rc frr-stable
+# frr-stable will be the latest official stable release. frr-rc is the latest release candidate in beta testing
+FRRVER="frr-stable"
+echo deb '[signed-by=/usr/share/keyrings/frrouting.gpg]' https://deb.frrouting.org/frr \
+     $(lsb_release -s -c) $FRRVER | sudo tee -a /etc/apt/sources.list.d/frr.list
+
+# update and install FRR
+sudo apt update && sudo apt install frr frr-pythontools
+
+
+
+nano /etc/netplan/60.yaml
+----
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    ens3:
+      dhcp4: no
+      addresses:
+        - 198.51.100.2/30
+      routes:
+        - to: default
+          via: 198.51.100.1
+
+    ens4:
+      dhcp4: no
+  vlans:
+    vlan50:
+      id: 50
+      link: ens4
+      addresses: [192.168.50.1/24]
+    vlan60:
+      id: 60
+      link: ens4
+      addresses: [192.168.60.1/24]
+
+  tunnels:
+    gre-1:
+      mode: gre
+      local: 198.51.100.2
+      remote: 192.0.2.2
+      ttl: 255
+      addresses: [172.25.1.2/24]
+----
+
+
+
+
+vim /etc/sysctl.conf
+---------
+net.ipv4.ip_forward=1
+--------
+
+sysctl -p
+
+# apt install vlan
+
+
+modprobe 8021q
+lsmod | grep 8021q
+echo "8021q" | sudo tee /etc/modules-load.d/8021q.conf
+
+
+
+
+# Setting up the GRE Tunnel
+
+# Create the GRE tunnel
+# ip tunnel add gre-1 mode gre remote 192.0.2.2  local 198.51.100.2 ttl 255
+# Assign an IP address to the tunnel interface
+# ip addr add 172.25.1.2/24 dev gre-1
+
+# Bring the tunnel interface up
+# ip link set gre-1 up
+
+
+
+# ip route add 192.168.10.0/24 via 172.25.1.1
+# ip route add 192.168.20.0/24 via 172.25.1.1
+# ip route del 192.168.10.0/24
+# ip route del 192.168.20.0/24
+
+
+
+sed -i 's/^ospfd=no/ospfd=yes/' /etc/frr/daemons
+sudo systemctl restart frr
+
+
+sudo vtysh
+configure terminal
+
+router ospf
+ network 172.25.1.0/24 area 0
+ network 192.168.50.0/24 area 0
+ network 192.168.60.0/24 area 0
+
+exit
+write memory
+
+exit
+
+
+vim /etc/ipsec.conf
+--------
+config setup
+  charondebug="ike 2, knl 2, cfg 2"
+
+conn gre-over-ipsec
+  keyexchange=ikev2
+  auto=start
+  authby=secret
+  type=transport
+  left=198.51.100.2
+  right=192.0.2.2
+  leftprotoport=gre
+  rightprotoport=gre
+  esp=aes256-sha256
+  ike=aes256-sha256-modp2048
+
+-------
+
+nano /etc/ipsec.secrets
+---------
+192.0.2.2 198.51.100.2 : PSK "StrongSecretKey123"
+---------
+
+systemctl restart strongswan-starter.service
+
+
+
+
+```
+
+#### SW-A
+```sh
+vlan 10,20
+
+
+int eth 0/0
+switchport trunk encapsulation dot1q
+switchport mode trunk 
+
+
+int eth 0/1
+switchport mode access
+switchport access vlan 10
+
+int eth 0/2
+switchport mode access
+switchport access vlan 20
+```
+
+
+#### SW-B
+```sh
+vlan 50,60
+
+int eth 0/0
+switchport trunk encapsulation dot1q
+switchport mode trunk 
+
+int eth 0/1
+switchport mode access
+switchport access vlan 50
+
+int eth 0/2
+switchport mode access
+switchport access vlan 60
+```
+
