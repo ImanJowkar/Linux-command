@@ -1840,7 +1840,7 @@ vim /etc/default/grub
 grub-mkconfig -o /boot/grub/grub.cfg
 echo $?
 
-
+```
 
 ## change root password in grub in Rockey Linux
 
