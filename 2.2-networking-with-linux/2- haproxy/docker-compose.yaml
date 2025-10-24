@@ -1,0 +1,34 @@
+version: "3.9"
+services:
+  nginx1:
+    image: hub.hamdocker.ir/nginx:alpine
+    container_name: nginx1
+    volumes:
+      - ./nginx1/index.html:/usr/share/nginx/html/index.html:ro
+    ports:
+      - "8281:80"
+    networks:
+      - webnet
+
+  nginx2:
+    image: hub.hamdocker.ir/nginx:alpine
+    container_name: nginx2
+    volumes:
+      - ./nginx2/index.html:/usr/share/nginx/html/index.html:ro
+    ports:
+      - "8282:80"
+    networks:
+      - webnet
+
+  nginx3:
+    image: hub.hamdocker.ir/nginx:alpine
+    container_name: nginx3
+    volumes:
+      - ./nginx3/index.html:/usr/share/nginx/html/index.html:ro
+    ports:
+      - "8283:80"
+    networks:
+      - webnet
+
+networks:
+  webnet:
