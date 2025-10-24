@@ -1125,7 +1125,6 @@ vrrp_instance VRRP1 {
 
 vim /usr/local/bin/keepalived_notify.sh
 ------
-
 #!/bin/bash
 
 ZBX_SRV="192.168.96.100"
