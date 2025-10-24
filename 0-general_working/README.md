@@ -1123,7 +1123,6 @@ systemctl status systemd-networkd
 vim /etc/netplan/00-installer-config.yaml
 
 -----
-
 network:
   ethernets:
     enp0s8:
@@ -2285,9 +2284,6 @@ grubby --update-kernel=ALL --args="ipv6.disable=1"
 sudo grubby --info=ALL | grep args
 reboot
 
-
-
-
 ```
 
 
@@ -2469,10 +2465,262 @@ systemctl reload docker
 
 ```
 
-## file system
-![storage driver](img/storage-driver.png)
+## set static ip addressing in different linux (debian, ubuntu and RHEL)
 
-**all of this information is can be found on docker info**
+```sh
+# debian
+sudo vim /etc/network/interfaces
+-----
+auto eth0
+iface eth0 inet static
+    address 192.168.1.100
+    netmask 255.255.255.0
+    gateway 192.168.1.1
+    dns-nameservers 8.8.8.8 1.1.1.1
 
-* if you want to use storage quota in docker , you must use xfs with pquota as and `storage-opt`
+-----
+sudo systemctl restart networking
 
+
+
+# ubuntu 
+vim /etc/netplan/
+-----
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    eth0:
+      dhcp4: no
+      addresses:
+        - 192.168.1.100/24
+      routes:
+        - to: default
+          via: 192.168.1.1
+      nameservers:
+        addresses:
+          - 8.8.8.8
+          - 1.1.1.1
+
+      # Static routes
+      routes:
+        - to: 10.10.10.0/24
+          via: 192.168.1.254
+        - to: 172.16.0.0/16
+          via: 192.168.1.253
+-----
+netplan apply
+
+```
+
+## Work with debian
+```sh
+apt install sudo 
+su -
+visudo
+## grant user with sudo privilege
+
+
+```
+
+# Keepalived
+![keepalived](img/keepalived.png)
+#### node1
+```sh
+# debian
+sudo apt -y install keepalived
+ip -br -c a
+apt install nginx curl
+sudo iptables -I INPUT -p 112 -j ACCEPT
+# -p 112 → VRRP (IP protocol number)
+
+
+vim /etc/keepalived/keepalived.conf
+----
+# create new
+global_defs {
+    # set hostname
+    router_id node1
+}
+
+# Custom health check script
+vrrp_script chk_http_port {
+  script "/usr/local/bin/healthcheck.sh"
+  interval 5 # Check every 5 seconds
+  fall 2 # Number of consecutive failures before considering the server as down
+  rise 2 # Number of consecutive successes before considering the server as up
+}
+
+
+vrrp_instance VRRP1 {
+
+    # on primary node, specify [MASTER]
+    # on backup node, specify [BACKUP]
+  state MASTER
+  preempt
+  # set correct network interface
+  interface ens33
+  
+  # set unique ID on each VRRP interface
+  # on the a VRRP interface, set the same ID on all nodes
+  virtual_router_id 101
+  
+  # set priority : [Master] > [BACKUP]
+  priority 100
+
+  # VRRP advertisement interval (sec)
+  advert_int 1
+
+
+  authentication {
+    auth_type PASS
+    auth_pass mypassword
+  }
+
+  # virtual IP address
+  virtual_ipaddress {
+    192.168.96.20
+  }
+
+  track_script {
+    chk_http_port
+  }
+}
+
+
+----
+
+vim /usr/local/bin/healthcheck.sh
+----
+#!/bin/bash
+# Define the URL to check
+URL="http://192.168.96.211:80"
+# Make an HTTP GET request and store the response
+RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" "$URL")
+# Check the HTTP response code
+if [ "$RESPONSE" == "200" ]; then
+  # Server is healthy
+  exit 0
+else
+  # Server is unhealthy
+  exit 1
+fi
+----
+# if the user keepalived_script not exists you can create it by below 
+sudo useradd -r -s /usr/sbin/nologin keepalived_script
+
+
+chown keepalived_script: /usr/local/bin/healthcheck.sh
+chmod u+x /usr/local/bin/healthcheck.sh
+
+systemctl restart keepalived.service
+systemctl status keepalived.service
+```
+
+#### node2
+```sh
+# debian
+sudo apt -y install keepalived
+ip -br -c a
+apt install nginx curl
+
+apt install iptables
+sudo iptables -I INPUT -p 112 -j ACCEPT
+# -p 112 → VRRP (IP protocol number)
+
+vim /etc/keepalived/keepalived.conf
+------
+# create new
+global_defs {
+    # set hostname
+    router_id node2
+}
+
+# Custom health check script
+vrrp_script chk_http_port {
+  script "/usr/local/bin/healthcheck.sh"
+  interval 5 # Check every 5 seconds
+  fall 2 # Number of consecutive failures before considering the server as down
+  rise 2 # Number of consecutive successes before considering the server as up
+}
+
+
+vrrp_instance VRRP1 {
+
+    # on primary node, specify [MASTER]
+    # on backup node, specify [BACKUP]
+  state BACKUP
+  nopreempt
+  # set correct network interface
+  interface ens33
+  
+  # set unique ID on each VRRP interface
+  # on the a VRRP interface, set the same ID on all nodes
+  virtual_router_id 101
+  
+  # set priority : [Master] > [BACKUP]
+  priority 90
+
+  # VRRP advertisement interval (sec)
+  advert_int 1
+
+
+  authentication {
+    auth_type PASS
+    auth_pass mypassword
+  }
+
+  # virtual IP address
+  virtual_ipaddress {
+    192.168.96.20
+  }
+
+  track_script {
+    chk_http_port
+  }
+}
+
+
+----
+
+vim /usr/local/bin/healthcheck.sh
+----
+#!/bin/bash
+# Define the URL to check
+URL="http://192.168.96.212:80"
+# Make an HTTP GET request and store the response
+RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" "$URL")
+# Check the HTTP response code
+if [ "$RESPONSE" == "200" ]; then
+  # Server is healthy
+  exit 0
+else
+  # Server is unhealthy
+  exit 1
+fi
+----
+
+chown keepalived_script: /usr/local/bin/healthcheck.sh
+chmod u+x /usr/local/bin/healthcheck.sh
+# if the user keepalived_script not exists you can create it by below 
+# sudo useradd -r -s /usr/sbin/nologin keepalived_script
+
+systemctl restart keepalived.service
+systemctl status keepalived.service
+
+```
+
+
+# Keepalived with notify and zabbix_sender
+
+```sh
+# installing the zabbix sender
+wget https://repo.zabbix.com/zabbix/7.0/debian/pool/main/z/zabbix-release/zabbix-release_latest_7.0+debian12_all.deb
+dpkg -i zabbix-release_latest_7.0+debian12_all.deb
+apt update
+
+apt install zabbix-sender
+
+
+
+```

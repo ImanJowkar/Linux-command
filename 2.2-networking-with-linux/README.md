@@ -869,3 +869,412 @@ switchport mode access
 switchport access vlan 60
 ```
 
+
+## Keepalived
+![keepalived](img/keepalived.png)
+#### node1
+```sh
+# debian
+sudo apt -y install keepalived
+ip -br -c a
+apt install nginx curl
+sudo iptables -I INPUT -p 112 -j ACCEPT
+# -p 112 → VRRP (IP protocol number)
+
+
+vim /etc/keepalived/keepalived.conf
+----
+# create new
+global_defs {
+    # set hostname
+    router_id node1
+}
+
+# Custom health check script
+vrrp_script chk_http_port {
+  script "/usr/local/bin/healthcheck.sh"
+  interval 5 # Check every 5 seconds
+  fall 2 # Number of consecutive failures before considering the server as down
+  rise 2 # Number of consecutive successes before considering the server as up
+}
+
+
+vrrp_instance VRRP1 {
+
+    # on primary node, specify [MASTER]
+    # on backup node, specify [BACKUP]
+  state MASTER
+  preempt
+  # set correct network interface
+  interface ens33
+  
+  # set unique ID on each VRRP interface
+  # on the a VRRP interface, set the same ID on all nodes
+  virtual_router_id 101
+  
+  # set priority : [Master] > [BACKUP]
+  priority 100
+
+  # VRRP advertisement interval (sec)
+  advert_int 1
+
+
+  authentication {
+    auth_type PASS
+    auth_pass mypassword
+  }
+
+  # virtual IP address
+  virtual_ipaddress {
+    192.168.96.20
+  }
+
+  track_script {
+    chk_http_port
+  }
+}
+
+
+----
+
+vim /usr/local/bin/healthcheck.sh
+----
+#!/bin/bash
+# Define the URL to check
+URL="http://192.168.96.211:80"
+# Make an HTTP GET request and store the response
+RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" "$URL")
+# Check the HTTP response code
+if [ "$RESPONSE" == "200" ]; then
+  # Server is healthy
+  exit 0
+else
+  # Server is unhealthy
+  exit 1
+fi
+----
+chown keepalived_script: /usr/local/bin/healthcheck.sh
+chmod u+x /usr/local/bin/healthcheck.sh
+# if the user keepalived_script not exists you can create it by below 
+# sudo useradd -r -s /usr/sbin/nologin keepalived_script
+
+systemctl restart keepalived.service
+systemctl status keepalived.service
+```
+
+#### node2
+```sh
+# debian
+sudo apt -y install keepalived
+ip -br -c a
+apt install nginx curl
+
+apt install iptables
+sudo iptables -I INPUT -p 112 -j ACCEPT
+# -p 112 → VRRP (IP protocol number)
+
+vim /etc/keepalived/keepalived.conf
+------
+# create new
+global_defs {
+    # set hostname
+    router_id node2
+}
+
+# Custom health check script
+vrrp_script chk_http_port {
+  script "/usr/local/bin/healthcheck.sh"
+  interval 5 # Check every 5 seconds
+  fall 2 # Number of consecutive failures before considering the server as down
+  rise 2 # Number of consecutive successes before considering the server as up
+}
+
+
+vrrp_instance VRRP1 {
+
+    # on primary node, specify [MASTER]
+    # on backup node, specify [BACKUP]
+  state BACKUP
+  nopreempt
+  # set correct network interface
+  interface ens33
+  
+  # set unique ID on each VRRP interface
+  # on the a VRRP interface, set the same ID on all nodes
+  virtual_router_id 101
+  
+  # set priority : [Master] > [BACKUP]
+  priority 90
+
+  # VRRP advertisement interval (sec)
+  advert_int 1
+
+
+  authentication {
+    auth_type PASS
+    auth_pass mypassword
+  }
+
+  # virtual IP address
+  virtual_ipaddress {
+    192.168.96.20
+  }
+
+  track_script {
+    chk_http_port
+  }
+}
+
+
+----
+
+vim /usr/local/bin/healthcheck.sh
+----
+#!/bin/bash
+# Define the URL to check
+URL="http://192.168.96.212:80"
+# Make an HTTP GET request and store the response
+RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" "$URL")
+# Check the HTTP response code
+if [ "$RESPONSE" == "200" ]; then
+  # Server is healthy
+  exit 0
+else
+  # Server is unhealthy
+  exit 1
+fi
+----
+
+chown keepalived_script: /usr/local/bin/healthcheck.sh
+chmod u+x /usr/local/bin/healthcheck.sh
+
+# if the user keepalived_script not exists you can create it by below 
+# sudo useradd -r -s /usr/sbin/nologin keepalived_script
+
+systemctl restart keepalived.service
+systemctl status keepalived.service
+
+```
+
+
+# Keepalived with notify and zabbix_sender
+#### node1
+```sh
+# installing the zabbix sender
+wget https://repo.zabbix.com/zabbix/7.0/debian/pool/main/z/zabbix-release/zabbix-release_latest_7.0+debian12_all.deb
+dpkg -i zabbix-release_latest_7.0+debian12_all.deb
+apt update
+
+apt install zabbix-sender
+
+vim /etc/keepalived/keepalived.conf
+------
+# create new
+global_defs {
+    # set hostname
+    router_id node1
+}
+
+# Custom health check script
+vrrp_script chk_http_port {
+  script "/usr/local/bin/healthcheck.sh"
+  interval 5 # Check every 5 seconds
+  fall 2 # Number of consecutive failures before considering the server as down
+  rise 2 # Number of consecutive successes before considering the server as up
+}
+
+
+vrrp_instance VRRP1 {
+
+    # on primary node, specify [MASTER]
+    # on backup node, specify [BACKUP]
+  state MASTER
+  preempt
+  # set correct network interface
+  interface ens33
+
+  # set unique ID on each VRRP interface
+  # on the a VRRP interface, set the same ID on all nodes
+  virtual_router_id 101
+
+  # set priority : [Master] > [BACKUP]
+  priority 100
+
+  # VRRP advertisement interval (sec)
+  advert_int 1
+
+
+  authentication {
+    auth_type PASS
+    auth_pass mypassword
+  }
+
+  # virtual IP address
+  virtual_ipaddress {
+    192.168.96.20
+  }
+
+  track_script {
+    chk_http_port
+  }
+
+  notify "/usr/local/bin/keepalived_notify.sh"
+
+}
+-----
+
+vim /usr/local/bin/keepalived_notify.sh
+------
+
+#!/bin/bash
+
+ZBX_SRV="192.168.96.100"
+INTERFACE=$2
+STATE=$3
+# Node name
+NODE=$(hostname)
+
+# Map states to numeric value for Zabbix (optional)
+# 2 = MASTER, 1 = BACKUP, 0 = FAULT
+case "$STATE" in
+    MASTER)
+        VALUE=2
+        ;;
+    BACKUP)
+        VALUE=1
+        ;;
+    FAULT)
+        VALUE=0
+        ;;
+    *)
+        VALUE=-1
+        ;;
+esac
+
+# Send state to Zabbix server
+# Replace 10.0.0.10 with your Zabbix server IP and keepalive.vrrp as key
+/usr/bin/zabbix_sender -z "$ZBX_SRV" -s "$NODE" -k "keepalive.vrrp.$INTERFACE" -o $VALUE
+
+# Optional: log locally
+logger "Keepalived VRRP $INTERFACE changed to $STATE, sent to Zabbix as $VALUE"
+-----
+
+chown keepalived_script: /usr/local/bin/keepalived_notify.sh
+chmod u+x /usr/local/bin/keepalived_notify.sh
+
+```
+
+#### node2
+```sh
+
+# installing the zabbix sender
+wget https://repo.zabbix.com/zabbix/7.0/debian/pool/main/z/zabbix-release/zabbix-release_latest_7.0+debian12_all.deb
+dpkg -i zabbix-release_latest_7.0+debian12_all.deb
+apt update
+
+apt install zabbix-sender
+
+vim /etc/keepalived/keepalived.conf
+------
+# create new
+global_defs {
+    # set hostname
+    router_id node2
+}
+
+# Custom health check script
+vrrp_script chk_http_port {
+  script "/usr/local/bin/healthcheck.sh"
+  interval 5 # Check every 5 seconds
+  fall 2 # Number of consecutive failures before considering the server as down
+  rise 2 # Number of consecutive successes before considering the server as up
+}
+
+
+vrrp_instance VRRP1 {
+
+    # on primary node, specify [MASTER]
+    # on backup node, specify [BACKUP]
+  state MASTER
+  preempt
+  # set correct network interface
+  interface ens33
+
+  # set unique ID on each VRRP interface
+  # on the a VRRP interface, set the same ID on all nodes
+  virtual_router_id 101
+
+  # set priority : [Master] > [BACKUP]
+  priority 90
+
+  # VRRP advertisement interval (sec)
+  advert_int 1
+
+
+  authentication {
+    auth_type PASS
+    auth_pass mypassword
+  }
+
+  # virtual IP address
+  virtual_ipaddress {
+    192.168.96.20
+  }
+
+  track_script {
+    chk_http_port
+  }
+
+  notify "/usr/local/bin/keepalived_notify.sh"
+
+}
+-----
+
+vim /usr/local/bin/keepalived_notify.sh
+------
+#!/bin/bash
+
+ZBX_SRV="192.168.96.100"
+INTERFACE=$2
+STATE=$3
+# Node name
+NODE=$(hostname)
+
+# Map states to numeric value for Zabbix (optional)
+# 2 = MASTER, 1 = BACKUP, 0 = FAULT
+case "$STATE" in
+    MASTER)
+        VALUE=2
+        ;;
+    BACKUP)
+        VALUE=1
+        ;;
+    FAULT)
+        VALUE=0
+        ;;
+    *)
+        VALUE=-1
+        ;;
+esac
+
+# Send state to Zabbix server
+# Replace 10.0.0.10 with your Zabbix server IP and keepalive.vrrp as key
+/usr/bin/zabbix_sender -z "$ZBX_SRV" -s "$NODE" -k "keepalive.vrrp.$INTERFACE" -o $VALUE
+
+# Optional: log locally
+logger "Keepalived VRRP $INTERFACE changed to $STATE, sent to Zabbix as $VALUE"
+-----
+
+chown keepalived_script: /usr/local/bin/keepalived_notify.sh
+chmod u+x /usr/local/bin/keepalived_notify.sh
+
+```
+now go to zabbix and create the item and value mapping for each hosts and dashboard or widget
+![zbx-1](img/zbx-1.png)
+
+now create value mapping
+
+![zbx-2](img/zbx-2.png)
+
+Create item
+![zbx-3](img/zbx-3.png)
