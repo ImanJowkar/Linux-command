@@ -17,7 +17,15 @@
 ## good package for linux 
 
 ```sh
+sudo apt update && sudo apt install -y vim nano curl wget git unzip tar zip net-tools iproute2 dnsutils traceroute htop iftop nmap tcpdump lsof software-properties-common gnupg2 apt-transport-https ca-certificates iotop sysstat lsof dstat bash-completion vim nano tar zip unzip wget git rsync jq ssh netcat-openbsd tree screen tmux iperf3 mtr nmap socat sshpass whois ethtool snmp snmp-mibs-downloader
+
+
+
+
+
 apt install iotop sysstat lsof dstat bash-completion vim nano tar zip unzip wget 
+
+
 dnf install iotop sysstat lsof dstat bash-completion vim nano tar zip unzip wget
 
 
