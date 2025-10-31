@@ -1278,7 +1278,196 @@ now create value mapping
 Create item
 ![zbx-3](img/zbx-3.png)
 
+
 # Keepalived unicast
+
+### node1
+```sh
+
+sudo apt -y install keepalived
+ip -br -c a
+apt install nginx curl
+sudo iptables -I INPUT -p 112 -j ACCEPT
+# -p 112 → VRRP (IP protocol number)
+
+
+vim /etc/keepalived/keepalived.conf
+----
+# create new
+global_defs {
+    # set hostname
+    router_id node1
+}
+
+# Custom health check script
+vrrp_script chk_http_port {
+  script "/usr/local/bin/healthcheck.sh"
+  interval 5 # Check every 5 seconds
+  fall 2 # Number of consecutive failures before considering the server as down
+  rise 2 # Number of consecutive successes before considering the server as up
+}
+
+vrrp_instance VRRP1 {
+
+    # on primary node, specify [MASTER]
+    # on backup node, specify [BACKUP]
+  state MASTER
+  preempt
+  # set correct network interface
+  interface ens33
+
+  # set unique ID on each VRRP interface
+  # on the a VRRP interface, set the same ID on all nodes
+  virtual_router_id 101
+
+  # set priority : [Master] > [BACKUP]
+  priority 100
+
+  # VRRP advertisement interval (sec)
+  advert_int 1
+
+
+  authentication {
+    auth_type PASS
+    auth_pass mypassword
+  }
+
+  unicast_src_ip 192.168.85.120
+  unicast_peer {
+      192.168.85.121
+  }
+
+  # virtual IP address
+  virtual_ipaddress {
+    192.168.85.110
+  }
+
+  track_script {
+    chk_http_port
+  }
+}
+
+---
+
+vim /usr/local/bin/healthcheck.sh
+----
+#!/bin/bash
+# Define the URL to check
+URL="http://192.168.85.120:80"
+# Make an HTTP GET request and store the response
+RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" "$URL")
+# Check the HTTP response code
+if [ "$RESPONSE" == "200" ]; then
+  # Server is healthy
+  exit 0
+else
+  # Server is unhealthy
+  exit 1
+fi
+-----
+
+chown keepalived_script: /usr/local/bin/healthcheck.sh
+chmod u+x /usr/local/bin/healthcheck.sh
+# if the user keepalived_script not exists you can create it by below 
+# sudo useradd -r -s /usr/sbin/nologin keepalived_script
+
+systemctl restart keepalived.service
+systemctl status keepalived.service
+
+```
+### node2 
+```sh
+sudo apt -y install keepalived
+ip -br -c a
+apt install nginx curl
+sudo iptables -I INPUT -p 112 -j ACCEPT
+# -p 112 → VRRP (IP protocol number)
+
+
+vim /etc/keepalived/keepalived.conf
+----
+# create new
+global_defs {
+    # set hostname
+    router_id node2
+}
+
+# Custom health check script
+vrrp_script chk_http_port {
+  script "/usr/local/bin/healthcheck.sh"
+  interval 5 # Check every 5 seconds
+  fall 2 # Number of consecutive failures before considering the server as down
+  rise 2 # Number of consecutive successes before considering the server as up
+}
+
+
+vrrp_instance VRRP1 {
+
+    # on primary node, specify [MASTER]
+    # on backup node, specify [BACKUP]
+  state BACKUP
+  nopreempt
+  # set correct network interface
+  interface ens33
+
+  # set unique ID on each VRRP interface
+  # on the a VRRP interface, set the same ID on all nodes
+  virtual_router_id 101
+
+  # set priority : [Master] > [BACKUP]
+  priority 90
+
+  # VRRP advertisement interval (sec)
+  advert_int 1
+
+
+  authentication {
+    auth_type PASS
+    auth_pass mypassword
+  }
+
+  unicast_src_ip 192.168.85.121
+  unicast_peer {
+      192.168.85.120
+  }
+
+  # virtual IP address
+  virtual_ipaddress {
+    192.168.85.110
+  }
+
+  track_script {
+    chk_http_port
+  }
+}
+----
+
+vim /usr/local/bin/healthcheck.sh
+----
+#!/bin/bash
+# Define the URL to check
+URL="http://192.168.85.121:80"
+# Make an HTTP GET request and store the response
+RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" "$URL")
+# Check the HTTP response code
+if [ "$RESPONSE" == "200" ]; then
+  # Server is healthy
+  exit 0
+else
+  # Server is unhealthy
+  exit 1
+fi
+-----
+
+chown keepalived_script: /usr/local/bin/healthcheck.sh
+chmod u+x /usr/local/bin/healthcheck.sh
+# if the user keepalived_script not exists you can create it by below 
+# sudo useradd -r -s /usr/sbin/nologin keepalived_script
+
+systemctl restart keepalived.service
+systemctl status keepalived.service
+
+```
 
 
 # haproxy
