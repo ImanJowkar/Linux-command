@@ -1469,6 +1469,74 @@ systemctl status keepalived.service
 
 ```
 
+### unicast when you have multiple node not only 2
+```
+# node1
+
+----
+    unicast_src_ip 192.168.1.10
+    unicast_peer {
+        192.168.1.11
+        192.168.1.12
+        192.168.1.13
+        192.168.1.14
+    }
+
+----
+
+# node2
+
+----
+    unicast_src_ip 192.168.1.11
+    unicast_peer {
+        192.168.1.10
+        192.168.1.12
+        192.168.1.13
+        192.168.1.14
+    }
+
+----
+
+# node3
+
+----
+    unicast_src_ip 192.168.1.12
+    unicast_peer {
+        192.168.1.10
+        192.168.1.11
+        192.168.1.13
+        192.168.1.14
+    }
+
+----
+
+# node4
+
+----
+    unicast_src_ip 192.168.1.13
+    unicast_peer {
+        192.168.1.10
+        192.168.1.11
+        192.168.1.12
+        192.168.1.14
+    }
+
+----
+
+
+# node5
+
+----
+    unicast_src_ip 192.168.1.14
+    unicast_peer {
+        192.168.1.10
+        192.168.1.11
+        192.168.1.12
+        192.168.1.13
+    }
+----
+```
+
 
 # haproxy
 ```sh
