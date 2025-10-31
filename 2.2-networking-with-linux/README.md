@@ -1525,7 +1525,6 @@ systemctl status keepalived.service
 
 
 # node5
-
 ----
     unicast_src_ip 192.168.1.14
     unicast_peer {
@@ -1560,6 +1559,46 @@ docker compose up -d
 
 
 haproxy -c -f /etc/haproxy/haproxy.cfg  # check the config file
+
+
+
+
+
+
+### node1
+vim /etc/haproxy/haproxy.cfg
+----
+frontend http_front
+    bind *:80
+    default_backend web_back
+
+backend web_back
+    balance roundrobin
+    option httpchk GET /
+    server web1 192.168.85.85:8281 check
+    server web2 192.168.85.85:8282 check
+    server web3 192.168.85.85:8283 check
+    server web4 192.168.85.85:8284 check
+----
+
+
+
+### node2
+vim /etc/haproxy/haproxy.cfg
+----
+frontend http_front
+    bind *:80
+    default_backend web_back
+
+backend web_back
+    balance roundrobin
+    option httpchk GET /
+    server web1 192.168.85.85:8281 check
+    server web2 192.168.85.85:8282 check
+    server web3 192.168.85.85:8283 check
+    server web4 192.168.85.85:8284 check
+----
+
 
 
 
