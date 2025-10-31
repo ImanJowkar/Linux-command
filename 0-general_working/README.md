@@ -1064,6 +1064,13 @@ todays linux servers used one of the three below network services. the three mos
 * `NetworkManager` -> redhat, fedora, centos, ubuntu desktop
 
 
+| Network Service                    | Typical Use                                | Common Distributions                                                              | Notes                                                                                 |
+| ---------------------------------- | ------------------------------------------ | --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| **`networking`** (a.k.a. ifupdown) | Traditional network configuration          | **Debian Server**, older Ubuntu Server                                            | Uses `/etc/network/interfaces`. Simple but manual; being phased out on newer systems. |
+| **`systemd-networkd`**             | Lightweight, modern systemd-native service | **Ubuntu Server**, some Debian, Arch, openSUSE (minimal)                          | Uses `/etc/systemd/network/*.network`. Fast and ideal for cloud/server setups.        |
+| **`NetworkManager`**               | Dynamic and user-friendly network manager  | **Red Hat**, **Fedora**, **CentOS**, **Ubuntu Desktop**, also optional on servers | Provides GUI tools (like `nmcli`, `nmtui`, GNOME applet). Manages Wi-Fi, VPN, etc.    |
+
+
 ```sh
 
 ip -br -c a
@@ -1087,8 +1094,10 @@ nano /etc/network/interfaces
 # add below
 allow-hotplug enp0s8
 iface enp0s8 inet static
-        address 192.168.56.200/24
-        gateway 192.168.56.1
+        address 192.168.85.85
+        netmask 255.255.255.0
+        gateway 192.168.85.2
+        dns-nameservers 8.8.8.8 8.8.4.4
 -------------------------
 
 #### set dynamic ip address
@@ -1918,7 +1927,6 @@ set superusers="iman"
 password_pbkdf2 iman grub.pbkdf2.sha512.10000.2E41F2FEE11120CCEEAC4D529405C22E08030E93AF888ADE3E3F648B5955C99C108C57726CBC21F5CED8A64F68F1881E38D0EADE7475A15521F863C3BD1503BB.CE5E06453BA23D45A49B2E55EC8331C62C402548E996DD3D9E218109B8A4B2EC00121554C2CE7BC801D1914F3F813A94C3232F30B5A546916745F3E182E1EF39
 
 -----
-
 
 update-grub
 
