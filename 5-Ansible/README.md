@@ -2,7 +2,6 @@
 
 ![img](img/1.png)
 
-
 ## Ansible installation
 ```bash
 sudo apt install python3.10-venv
@@ -30,24 +29,22 @@ ssh-copy-id user@192.168.1.1
 
 ```
 
-
-### Ansible Config file location priority
+## Ansible Config file location priority
 * define a variable called ANSIBLE_CONFIG
 * ansible.cfg
 * ~/.ansible.cfg
 * /etc/ansible/ansible.cfg
 
 
+```sh
 ansible --version # you can see the location of ansible-config
-
+```
  
 
-#### Ansible basics
+## Ansible basics
 ```bash
 ansible-doc service
 ansible-doc apt
-
-
 
 ansible-config view
 ansible all -m ping
@@ -55,7 +52,6 @@ ansible all --list-hosts
 ansible all -m gather_facts
 ansible all -m gather_facts --limit 192.168.93.151
 ansible all -m gather_facts | grep -i distribution
-
 
 ansible servers -m command -a uptime
 ansible servers -m command -a who
@@ -76,26 +72,105 @@ ansible all -m apt -a name=nginx --become --ask-become-pass
 
 ansible-playbook -i inventory/mycluster/hosts.yaml  --become --become-user=root --ask-become-pass cluster.yml
 ansible-playbook -i inventory/mycluster/hosts.yaml  --become --become-user=root --ask-become-pass upgrade-cluster.yml
+```
 
-
-
-
-
-
+## Serial and Forks
+```sh
+# forks and serial
+# forks: Default = 5
+# serial: specifiy 
 tail -f /var/log/apt/history.log
 ansible all -m apt -a "upgrade=dist" --become --ask-become-pass
 
 
+ansible-playbook playbook.yaml -u iman -f 2   # change forks  (how many SSH connections Ansible opens simultaneously.)
 
+# change serial
+----
+- name: Rolling update of Apache web servers
+  hosts: webservers
+  serial: 1
+  tasks:
+    - name: task1
+      shell: "sleep 5"
 
-openssl 
+    - name: task2
+      shell: "sleep 5"
+----
+
 
 ```
+
+## Handlers and notify
+```sh
+# Handlers in Ansible = Like functions
+# notify = how you call that “function”
+----
+- hosts: webservers
+  become: yes
+
+  tasks:
+    - name: Install Apache
+      yum:
+        name: httpd
+        state: latest
+      notify: restart apache   
+
+  handlers:
+    - name: restart apache    
+      service:
+        name: httpd
+        state: restarted
+----
+
+
+```
+
+## Tags
+```sh
+Tags let you run or skip specific parts of a playbook — instead of running all tasks every time.
+----
+---
+- hosts: webservers
+  become: yes
+
+  tasks:
+    - name: Install Apache
+      yum:
+        name: httpd
+        state: present
+      tags: install
+
+    - name: Start Apache
+      service:
+        name: httpd
+        state: started
+      tags: start
+
+    - name: Stop Apache
+      service:
+        name: httpd
+        state: stopped
+      tags: stop
+----
+
+# Run only tasks tagged with "install"
+ansible-playbook site.yml --tags install
+
+# You can also run multiple tags:
+ansible-playbook site.yml --tags "install,start"
+
+
+# Or skip some tags:
+ansible-playbook site.yml --skip-tags stop
+
+```
+
 
 
 ## Ansible Playbook
 
-```
+```sh
 ansible-playbook --ask-become-pass playbook1.yaml
 
 ansible-playbook --ask-become-pass playbook1.yaml --start-at-task="task name"
@@ -108,7 +183,7 @@ ansible-playbook --ask-become-pass playbook1.yaml --start-at-task="task name"
 ```
 
 ## Jinja2 Template
-```
+```sh
 
 {%   text    %}
 {{   varialbe    }}     
@@ -124,7 +199,7 @@ ansible-playbook --ask-become-pass playbook1.yaml --start-at-task="task name"
 
 ## Ansible Vault
 
-```
+```sh
 ansible-vault create playbook1.yaml
 ansible-vault edit playbook1.yaml
 ansible-vault encrypt playbook1.yaml
