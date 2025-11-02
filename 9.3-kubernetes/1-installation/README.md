@@ -109,7 +109,7 @@ network:
 # On all nodes
 
 ## check on all nodes
-```
+```sh
 sudo cat /sys/class/dmi/id/product_uuid # must different on all nodes
 
 
