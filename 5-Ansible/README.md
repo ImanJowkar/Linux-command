@@ -29,7 +29,7 @@ ssh-copy-id user@192.168.1.1
 
 ```
 
-## Ansible Config file location priority
+## Order of Ansible Config file location
 * define a variable called ANSIBLE_CONFIG
 * ansible.cfg
 * ~/.ansible.cfg
@@ -37,12 +37,12 @@ ssh-copy-id user@192.168.1.1
 
 
 ```sh
-ansible --version # you can see the location of ansible-config
+ansible --version # you can see the location of ansible-config from the output of this
 ```
  
 
-## Ansible basics
-```bash
+## Ansible ad-hoc commands
+```sh
 ansible-doc service
 ansible-doc apt
 
@@ -72,6 +72,20 @@ ansible all -m apt -a name=nginx --become --ask-become-pass
 
 ansible-playbook -i inventory/mycluster/hosts.yaml  --become --become-user=root --ask-become-pass cluster.yml
 ansible-playbook -i inventory/mycluster/hosts.yaml  --become --become-user=root --ask-become-pass upgrade-cluster.yml
+
+ansible-playbook playbook.yaml --step   # ask you in each task
+ansible-playbook playbook.yaml --list-tasks   # print all tasks in this playbook
+
+# you can set extra-vars when running playbook
+ansible-playbook playbook.yaml -e "name=iman"
+ansible-playbook playbook.yaml --syntax-check
+
+ansible-playbook playbook.yaml  --check  # dry-run check
+
+ansible-playbook playbook.yaml --start-at-task "the task name"
+
+
+
 ```
 
 ## Serial and Forks
@@ -165,6 +179,7 @@ ansible-playbook site.yml --tags "install,start"
 ansible-playbook site.yml --skip-tags stop
 
 ```
+
 
 
 
