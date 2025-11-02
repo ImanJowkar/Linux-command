@@ -20,3 +20,20 @@ docker compose up -d
 
 haproxy -c -f /etc/haproxy/haproxy.cfg  # check the config file
 ```
+
+
+## Basic configuration
+
+```sh
+cd /etc/haproxy
+cp haproxy.cfg haproxy.cfg.backup
+
+vim /etc/haproxy/haproxy.cfg
+------
+
+
+------
+
+
+
+```

@@ -180,22 +180,48 @@ ansible-playbook site.yml --skip-tags stop
 
 ```
 
-
-
-
-## Ansible Playbook
+## Vars and Vars_file
 
 ```sh
-ansible-playbook --ask-become-pass playbook1.yaml
 
-ansible-playbook --ask-become-pass playbook1.yaml --start-at-task="task name"
+vim playbook.yaml
+------
+- name: Install and configure Nginx on web servers
+  hosts: all
+  become: false
+  vars:
+    nginx_port: 80
+  vars_files:
+    vars/main.yaml
+
+  tasks:
+    - name: show vars
+      debug:
+        msg: "{{ nginx_port }}"
+
+    - name: show names
+      debug:
+        msg: "{{ names }}"
+
+------
 
 
+vim vars/config.yaml
+------
+names:
+  - iman
+  - saman
+  - hossen
 
+family: ["jowkar", "ra", "jow"]
+------
 
 
 
 ```
+
+
+
 
 ## Jinja2 Template
 ```sh
