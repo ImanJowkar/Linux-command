@@ -459,7 +459,36 @@ find /var/ -type f -size +5M -size -10M
 
 find / -type f -perm 777
 
+```
 
+```sh
+# atime — Access Time   
+# The last time the file was read or accessed.
+# Example: When you open a file with cat, less, or a program reads it.
+cat file.txt   # This updates the atime.
+
+
+# mtime — Modification Time
+# The last time the file’s content was modified.
+echo "Hello" >> file.txt  # This updates the mtime.
+
+# ctime — Change Time
+# The last time the file’s metadata (inode) changed, such as permissions, ownership, or content.
+chmod 644 file.txt  # This updates ctime, but not mtime (because content didn’t change).
+
+stat file.txt
+
+```
+| Timestamp        | Meaning            | Changes when...                       |
+| ---------------- | ------------------ | ------------------------------------- |
+| **atime**        | Last access        | File is read                          |
+| **mtime**        | Last modification  | File content changes                  |
+| **ctime**        | Last status change | Permissions, owner, or content change |
+| **crtime/birth** | File creation      | File is created (if supported)        |
+
+
+
+```sh
 
 find /var/ -type f -mtime 0 -ls                 # show file which modified in one day past
 find /var/ -type f -mtime 1 -ls                 # show file which modified in two day past
