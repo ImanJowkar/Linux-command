@@ -194,11 +194,57 @@ GRANT 'read_only' TO 'john'@'localhost';
 SET DEFAULT ROLE 'read_only' TO 'john'@'localhost';
 
 
+## server system variables
+# Change a variable temporarily (until restart)
+
+# For the current session:
+SET SESSION variable_name = value;
+SET SESSION sql_mode = 'STRICT_ALL_TABLES';
+
+# For all sessions (temporarily):
+set global log_bin_trust_function_creators = 1;
+set global log_bin_trust_function_creators = 0;
+SET GLOBAL max_connections = 200;
+
+# Change a variable permanently
+vim /etc/mysql/mariadb.conf.d/50-server.cnf
+----
+[mysqld]
+max_connections = 200
+sql_mode = STRICT_ALL_TABLES
+
+----
+sudo systemctl restart mariadb
+
+
+
+
 
 ```
 
 
+### enable slow query log and log error 
+```sh
+vim /etc/mysql/mariadb.conf.d/50-server.cnf
+----
+slow_query_log = 1
+log_slow_query_file    = /var/log/mysql/mariadb-slow.log
+log_error = /var/log/mysql/error.log
 
+----
+# change binlog
+vim /etc/mysql/mariadb.conf.d/50-server.cnf
+----------
+server-id              = 1
+log_bin                = /binlog/mariadb-bin.log
+expire_logs_days        = 10
+max_binlog_size        = 200M
+binlog_format          = mixed
+----------
+
+chown -R mysql: /binlog/
+systemctl restart mariadb.service
+```
 
 
 
