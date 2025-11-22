@@ -1,7 +1,6 @@
 # Postgresql
 [End of life postgresql](https://endoflife.date/postgresql)
 
-
 [installation](https://www.postgresql.org/download/)
 
 ## install on debain
@@ -13,8 +12,8 @@
 apt install iotop sysstat lsof dstat bash-completion vim nano tar zip unzip wget
 dnf install iotop sysstat lsof dstat bash-completion vim nano tar zip unzip  wget
 
-
 ```
+
 ```sh
 # install on ubuntu
 sudo apt update
@@ -1190,5 +1189,120 @@ sudo -u postgres /var/lib/pgsql/venv/bin/patronictl -c /etc/patroni.yml list
 
 curl -v http://192.168.96.201:2379/version
 
+
+```
+
+
+# zabbix installation
+
+### Zabbix - DB
+```sh
+
+sudo apt install -y postgresql-common
+sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh
+
+sudo apt install postgresql-18
+
+
+
+
+
+vim /etc/postgresql/18/main/pg_hba.conf
+-----
+host    zabbix             zabbix-srv             192.168.85.131/32            scram-sha-256
+host    zabbix             zabbix-web             192.168.85.132/32            scram-sha-256
+
+-----
+
+
+sudo vim /etc/postgresql/18/main/postgresql.conf
+---------
+listen_addresses = '*'             # what IP address(es) to listen on;
+---------
+
+sudo systemctl restart postgresql
+
+
+
+# create zabbix database in postgresql
+wget https://repo.zabbix.com/zabbix/7.0/ubuntu/pool/main/z/zabbix-release/zabbix-release_latest_7.0+ubuntu24.04_all.deb
+dpkg -i zabbix-release_latest_7.0+ubuntu24.04_all.deb
+apt update
+sudo apt install zabbix-sql-scripts
+
+
+sudo su - postgres
+createuser --pwprompt zabbix-srv
+
+createuser --pwprompt zabbix-web
+
+exit
+
+
+# ls /usr/share/zabbix/sql-scripts/postgresql
+sudo gzip -d /usr/share/zabbix-sql-scripts/postgresql/server.sql.gz
+
+
+
+sudo su - postgres
+createdb -E Unicode -O zabbix-srv zabbix
+exit
+
+
+psql -h 127.0.0.1 -d zabbix -U zabbix-srv
+SELECT session_user, current_user;
+
+
+CREATE SCHEMA zabbix_server AUTHORIZATION "zabbix-srv";
+SET search_path TO "zabbix_server";
+
+\dn
+
+zabbix=> \dn
+          List of schemas
+     Name      |       Owner
+---------------+-------------------
+ public        | pg_database_owner
+ zabbix_server | zabbix-srv
+(2 rows)
+
+
+GRANT USAGE ON SCHEMA zabbix_server TO "zabbix-web";
+
+
+\i /usr/share/zabbix-sql-scripts/postgresql/server.sql
+
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA zabbix_server TO "zabbix-web";
+
+GRANT SELECT, UPDATE ON ALL SEQUENCES IN SCHEMA zabbix_server TO "zabbix-web";
+
+
+# This command ensures that every time the zabbix-srv user connects to the database, the search_path is automatically set to include $user, public, and zabbix_server.
+ALTER ROLE "zabbix-srv" SET search_path = "$user", public, zabbix_server;
+```
+
+### Zabbix - APP
+
+```sh
+
+wget https://repo.zabbix.com/zabbix/7.0/ubuntu/pool/main/z/zabbix-release/zabbix-release_latest_7.0+ubuntu24.04_all.deb
+dpkg -i zabbix-release_latest_7.0+ubuntu24.04_all.deb
+apt update
+
+sudo apt install zabbix-server-pgsql 
+
+
+sudo vim /etc/zabbix/zabbix_server.conf
+--------
+DBHost=192.168.85.130
+DBName=zabbix
+DBSchema=zabbix_server
+DBUser=zabbix-srv
+DBPassword=11111
+DBPort=5432
+--------
+
+sudo systemctl enable zabbix-server --now
 
 ```

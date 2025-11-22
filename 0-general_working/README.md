@@ -2476,20 +2476,26 @@ sar -n TCP 1
 
 ss -nltp   # check for tcp listen interface
 ss -nlup   # check for udp listen interface
+
+iotop
 ps auxf | less  # for finding which command run by which user
-
-
 
 
 
 ## disk usage
 du -sh /*
 
-lsof file.txt  # show file opened by a file
- while true; do lsof data.file ;done
+lsof file.txt  # This command shows which processes have file.txt open and provides details about how the file is being used
+
+# lsof = List Open Files. It displays all open files on the system (files, directories, sockets, pipes, etc.).
+
+while true; do lsof data.file ;done
  
 watch -n 5 ls -lah 
 
+wc -l access.log
+
+cat /var/log/mariadb/error.log | grep -B5 -A5 connections
 
 ```
 
