@@ -14,20 +14,58 @@
 - [ ] Iptables
 
 
+## rocky linux repo
+```sh
+## local rocky linux repo 
+vim /etc/yum.repos.d/rocky.repo
+--------
+[baseos]
+name=Rocky Linux $releasever - BaseOS
+#mirrorlist=https://mirrors.rockylinux.org/mirrorlist?arch=$basearch&repo=BaseOS-$releasever$rltype
+#baseurl=http://dl.rockylinux.org/$contentdir/$releasever/BaseOS/$basearch/os/
+baseurl=https://repo.iut.ac.ir/repo/rocky-linux/$releasever/BaseOS/$basearch/os/
+gpgcheck=1
+enabled=1
+countme=1
+metadata_expire=6h
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-Rocky-9
+
+
+[appstream]
+name=Rocky Linux $releasever - AppStream
+#mirrorlist=https://mirrors.rockylinux.org/mirrorlist?arch=$basearch&repo=AppStream-$releasever$rltype
+baseurl=https://repo.iut.ac.ir/repo/rocky-linux/$releasever/AppStream/$basearch/os/
+gpgcheck=1
+enabled=1
+countme=1
+metadata_expire=6h
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-Rocky-9
+
+
+
+[extras]
+name=Rocky Linux $releasever - Extras
+#mirrorlist=https://mirrors.rockylinux.org/mirrorlist?arch=$basearch&repo=extras-$releasever$rltype
+#baseurl=http://dl.rockylinux.org/$contentdir/$releasever/extras/$basearch/os/
+baseurl=https://repo.iut.ac.ir/repo/rocky-linux/$releasever/extras/$basearch/os/
+gpgcheck=1
+enabled=1
+countme=1
+metadata_expire=6h
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-Rocky-9
+```
+
+
+
+
 ## good package for linux 
 
 ```sh
-sudo apt update && sudo apt install -y vim nano curl wget git unzip tar zip net-tools iproute2 dnsutils traceroute htop iftop nmap tcpdump lsof software-properties-common gnupg2 apt-transport-https ca-certificates iotop sysstat lsof dstat bash-completion vim nano tar zip unzip wget git rsync jq ssh netcat-openbsd tree screen tmux iperf3 mtr nmap socat sshpass whois ethtool snmp snmp-mibs-downloader
 
+apt install iotop sysstat lsof dstat bash-completion vim nano tar zip unzip wget curl git net-tools dnsutils traceroute htop tcpdump apt-transport-https rsync jq tree tmux iperf3
 
-
-
-
-apt install iotop sysstat lsof dstat bash-completion vim nano tar zip unzip wget 
-
-
-dnf install iotop sysstat lsof dstat bash-completion vim nano tar zip unzip wget
-
+dnf install iotop sysstat lsof dstat bash-completion vim nano tar zip unzip wget curl git net-tools  traceroute htop tcpdump apt-transport-https rsync jq tree tmux iperf3
+ 
 
 # by def , show cpu info 
 sar 1
@@ -51,6 +89,19 @@ lsof file.txt  # show file opened by a file
 watch -n 5 ls -lah 
 ```
 
+## installation
+
+```sh
+# To check which repo a package comes from:
+apt-cache policy postgresql
+
+apt show postgresql
+
+
+ps -eo pid,ppid,cmd
+
+
+```
 
 
 ## two main Linux ditributions
@@ -1570,8 +1621,96 @@ iptables-save > /etc/iptables/rules.v4
 
 ```
 
-* ufw 
-* firewalld
+
+## nftables
+```sh
+
+
+
+```
+
+## ufw
+
+```sh
+
+sudo ufw enable
+
+sudo ufw disable
+
+sudo ufw status
+
+sudo ufw reset
+
+
+
+sudo ufw allow 80/tcp
+sudo ufw deny 80/tcp
+
+
+# Allow a Port Range:
+sudo ufw allow 6000:7000/tcp
+
+
+# Allow from a Specific IP Address:
+sudo ufw allow from 10.10.1.10
+
+
+# Allow from a Specific IP Address to a Specific Port:
+sudo ufw allow from 10.10.1.10 to any port 22
+
+
+# Delete a Rule:
+sudo ufw delete allow 80/tcp
+
+
+
+#  show ufw default policy
+sudo ufw status verbose
+
+# change default policy
+ufw reset 
+ufw allow in 22/tcp
+ufw enable 
+sudo ufw default deny incoming
+sudo ufw default allow outgoing
+sudo ufw default deny routed
+
+```
+
+## firewalld
+```sh
+# list and show the current config
+firewall-cmd --state
+firewall-cmd --get-default-zone
+firewall-cmd --get-active-zones
+firewall-cmd --list-all
+
+firewall-cmd --get-zones
+firewall-cmd --list-all --zone=home
+
+firewall-cmd --list-all --zone=drop
+
+# add port
+firewall-cmd --add-port=8080/tcp --permanent
+firewall-cmd --reload
+
+firewall-cmd --add-service=http --permanent
+firewall-cmd --reload
+
+# remove port
+firewall-cmd --remove-port=8080/tcp --permanent
+firewall-cmd --reload
+
+
+firewall-cmd --set-default-zone=public
+
+firewall-cmd --zone=public --add-interface=eth0 --permanent
+firewall-cmd --reload
+
+
+```
+
+
 
 
 
@@ -2127,58 +2266,6 @@ nmcli device wifi connect "ssid" password pass  name "wifi1-profile"
 
 ```
 
-### ufw  and  firewalld
-
-```sh
-
-sudo ufw enable
-
-sudo ufw disable
-
-sudo ufw status
-
-sudo ufw reset
-
-
-
-sudo ufw allow 80/tcp
-sudo ufw deny 80/tcp
-
-
-# Allow a Port Range:
-sudo ufw allow 6000:7000/tcp
-
-
-# Allow from a Specific IP Address:
-sudo ufw allow from 10.10.1.10
-
-
-# Allow from a Specific IP Address to a Specific Port:
-sudo ufw allow from 10.10.1.10 to any port 22
-
-
-# Delete a Rule:
-sudo ufw delete allow 80/tcp
-
-
-
-#  show ufw default policy
-sudo ufw status verbose
-
-# change default policy
-ufw reset 
-ufw allow in 22/tcp
-ufw enable 
-sudo ufw default deny incoming
-sudo ufw default allow outgoing
-sudo ufw default deny routed
-
-
-
-
-
-
-```
 
 ## SFTP
 
@@ -2336,20 +2423,6 @@ reboot
 
 
 
-## Firewalld
-```sh
-firewall-cmd --state
-firewall-cmd --get-default-zone
-firewall-cmd --get-active-zones
-firewall-cmd --list-all
-firewall-cmd --get-zones
-firewall-cmd --list-all --zone=home
-
-firewall-cmd --list-all --zone=drop
-firewall-cmd --list-all --permanent --zone=drop
-
-
-```
 
 ## bypass grub password
 boot system with live image
