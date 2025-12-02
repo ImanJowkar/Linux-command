@@ -3,7 +3,7 @@
 
 sudo apt install sssd-ad sssd-tools realmd adcli
 
-pam-auth-update  # mark the `Create home directory on login`
+sudo pam-auth-update --enable mkhomedir
 
 
 sudo realm join --user i.family tech.com
