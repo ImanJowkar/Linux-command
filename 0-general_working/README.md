@@ -2872,14 +2872,62 @@ apt install zabbix-sender
 # FreeBSD
 ```sh
 
+# Change default shell
+chsh -s /usr/local/bin/bash
+
 # package mgmt
 pkg update
 pkg install nginx
 pkg install python3
 pkg install vim
+pkg install sudo bash vim htop wget curl git bash-completion
+pkg install tcpdump nmap mtr iftop iperf3 bind-tools
+pkg search nginx
+pkg info htop
+pkg delete packagename
+pkg update && pkg upgrade
+
+# show all files and direcoty added by installing this packages
+pkg info -l zabbix7-agent
+pkg info -l nginx
+
+
+
+
+# config zabbix agnet
+pkg install  zabbix7-agent
+pkg info -l zabbix7-agent
+
+vim /usr/local/etc/zabbix7/zabbix_agentd.conf
+----
+Server=192.168.1.10
+ServerActive=192.168.1.10
+Hostname=freebsd-node1
+
+----
+sysrc zabbix_agentd_enable="YES"
+service zabbix-agent2 status
+
+# permanently enable nginx
+sysrc nginx_enable="YES"
+
+
+
+# like netstat freebsd -ntlp in ubuntu and rocky
+sockstat -4 -6
+
+service -l | grep zabbix
+service zabbix_agentd status
+service nginx onestart
+
+
+
+
 
 # Networking
 ifconfig
+ifconfig em0 up
+
 
 
 vim /etc/rc.conf
@@ -2897,7 +2945,6 @@ sshd_enable="YES"
 
 ----
 
-vim /etc/
 
 service netif restart && service routing restart
 
@@ -2912,5 +2959,44 @@ nameserver 8.8.8.8
 nameserver 8.8.4.4
 ----
 
+service netif restart && service routing restart
+
+# show gateway and routing
+netstat -rn
+
+# add route
+route add 10.10.10.0/24 192.168.10.1
+route delete 10.10.10.0/24
+
+# add route permanently
+vim /etc/rc.conf
+------
+# static route
+static_routes="net1 net2"
+route_net1="-net 10.10.0.0/16 192.168.85.4"
+route_net2="-net 172.16.5.0/24 192.168.85.5"
+
+------
+service netif restart && service routing restart 
+netstat -rn
+
+
+
+
+# Freebsd as a router
+sysctl net.inet.ip.forwarding=1
+echo 'gateway_enable="YES"' >> /etc/rc.conf
+service routing restart
+
+
+# Traffic Monitoring
+tcpdump -i em0
+
+
+pkg install iftop
+iftop -i em0
+
+
+# make user sudoer add in visudo in freebsd
 
 ```
