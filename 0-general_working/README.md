@@ -1624,8 +1624,28 @@ iptables-save > /etc/iptables/rules.v4
 
 ## nftables
 ```sh
+dpkg -L nftables
+
+systemctl status nftables
+nft list ruleset
 
 
+
+vim /etc/nftables.conf
+
+----
+
+
+
+---
+
+
+# load the rules
+nft -f /etc/nftables.conf
+
+
+# flush all rules
+nft flush ruleset
 
 ```
 
@@ -2845,6 +2865,52 @@ apt update
 
 apt install zabbix-sender
 
+
+
+```
+
+# FreeBSD
+```sh
+
+# package mgmt
+pkg update
+pkg install nginx
+pkg install python3
+pkg install vim
+
+# Networking
+ifconfig
+
+
+vim /etc/rc.conf
+----
+# if dhcp enabled
+hostname="my-freebsd14-vm"
+ifconfig_em0="DHCP"
+sshd_enable="YES"
+
+
+# static ip configuration
+ifconfig_em0="inet 192.168.1.10/24"
+defaultrouter="192.168.1.1"
+sshd_enable="YES"
+
+----
+
+vim /etc/
+
+service netif restart && service routing restart
+
+# another way to set ip address permanently
+sysrc hostname="fbsd.example.com"
+sysrc ifconfig_em0="inet 192.168.1.150 netmask 255.255.255.0"
+sysrc defaultrouter="192.168.1.1"
+
+vim /etc/resolv.conf
+----
+nameserver 8.8.8.8
+nameserver 8.8.4.4
+----
 
 
 ```
