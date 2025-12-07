@@ -1737,6 +1737,11 @@ firewall-cmd --zone=public --add-interface=eth0 --permanent
 firewall-cmd --reload
 
 
+# allow icmp
+firewall-cmd --permanent --add-icmp-block-inversion
+firewall-cmd --permanent --add-icmp-block=echo-reply
+firewall-cmd --permanent --add-icmp-block=echo-request
+firewall-cmd --reload
 ```
 
 
