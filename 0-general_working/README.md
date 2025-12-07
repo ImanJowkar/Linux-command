@@ -1099,6 +1099,15 @@ sudo apt  install iotop
 sudo iptop         # show disk i/o statistics
 
 
+
+# du command
+du -d1 -h /
+du -d1 -h /var
+du -d1 -h .
+du -d1 -h / | sort -rh
+du -d1 -h / | sort -rh | head -10
+find / -type f -size +500M -exec du -h {} +
+
 ```
 
 
@@ -2609,21 +2618,8 @@ systemctl reload docker
 
 ```
 
-## set static ip addressing in different linux (debian, ubuntu and RHEL)
 
 ```sh
-# debian
-sudo vim /etc/network/interfaces
------
-auto eth0
-iface eth0 inet static
-    address 192.168.1.100
-    netmask 255.255.255.0
-    gateway 192.168.1.1
-    dns-nameservers 8.8.8.8 1.1.1.1
-
------
-sudo systemctl restart networking
 
 
 
@@ -2657,12 +2653,27 @@ netplan apply
 
 ```
 
-## Work with debian
+# debian
 ```sh
 apt install sudo 
 su -
 visudo
 ## grant user with sudo privilege
+
+
+
+# debian
+sudo vim /etc/network/interfaces
+-----
+auto eth0
+iface eth0 inet static
+    address 192.168.1.100
+    netmask 255.255.255.0
+    gateway 192.168.1.1
+    dns-nameservers 8.8.8.8 1.1.1.1
+
+-----
+sudo systemctl restart networking
 
 
 ```
@@ -2998,5 +3009,79 @@ iftop -i em0
 
 
 # make user sudoer add in visudo in freebsd
+visudo
+
+
+
+# working with storage and disk
+# After physically adding the disk or attaching a virtual disk, rescan devices:
+camcontrol rescan all 
+
+# List disks:
+geom disk list
+
+# or
+ls /dev/da*
+ls /dev/ada*
 
 ```
+SATA/SAS disks → /dev/ada0, /dev/ada1
+
+SCSI/VM disks → /dev/da0, /dev/da1
+
+NVMe → /dev/nvme0ns1
+
+```sh
+
+# WARNING: fdisk is deprecated and is not available in FreeBSD 15 or later.
+camcontrol rescan all
+geom disk list
+gpart create -s gpt /dev/da2
+gpart add -t freebsd-ufs /dev/da2
+newfs -U /dev/da2p1
+mkdir /mnt/data
+mount /dev/da1p1 /mnt/data
+vim /etc/fstab
+-------
+/dev/da1p1   /mnt/data   ufs   rw   2   2
+-------
+
+```
+
+
+
+# zfs
+
+```sh
+sudo apt update
+sudo apt install -y zfsutils-linux
+
+zfs version
+lsmod | grep zfs
+
+
+# Single disk pool (testing)
+sudo zpool create tank /dev/sdb
+
+
+# Mirror pool (recommended)
+sudo zpool create tank mirror /dev/sdb /dev/sdc
+
+zpool status
+zpool list
+
+
+# Create Datasets (instead of partitions)
+zfs create tank/data
+zfs list
+
+
+
+
+
+
+
+
+
+```
+
