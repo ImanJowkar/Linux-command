@@ -3055,7 +3055,86 @@ vim /etc/fstab
 
 
 
-# zfs
+# SUSE Linux 
+```sh
+# set ip address in suse linux
+# Check which network service you’re using
+systemctl status wicked
+systemctl status NetworkManager
+
+# 1 -  if you are using wicked
+## static IP configuration:
+vim /etc/sysconfig/network/ifcfg-eth0
+------
+BOOTPROTO='static'
+STARTMODE='auto'
+IPADDR='192.168.1.50/24'
+GATEWAY='192.168.1.1'
+------
+
+## dns configuration
+vi /etc/sysconfig/network/config
+----
+NETCONFIG_DNS_STATIC_SERVERS="8.8.8.8 8.8.4.4"
+----
+
+netconfig update
+
+systemctl restart wicked
+
+# Method 2: Set static IP using NetworkManager
+nmcli con show
+
+nmcli con mod "Wired connection 1" \
+ipv4.method manual \
+ipv4.addresses 192.168.1.50/24 \
+ipv4.gateway 192.168.1.1 \
+ipv4.dns "8.8.8.8 8.8.4.4"
+
+
+nmcli con down "Wired connection 1" ; nmcli con up "Wired connection 1"
+
+
+
+#### Package manager
+
+# like makecache
+zypper refresh
+# or
+zypper ref
+
+
+# search
+zypper search nginx
+# short
+zypper se nginx
+
+
+# install
+zypper install nginx
+# short
+zypper in nginx
+
+zypper in vim git curl
+
+
+
+# remove 
+zypper remove nginx
+# short
+zypper rm nginx
+
+
+
+# remove with dependencies
+zypper rm --clean-deps nginx
+
+```
+
+
+
+# Usefull Utitlity for sys admins
+##  zfs
 
 ```sh
 sudo apt update
