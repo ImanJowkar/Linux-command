@@ -3160,10 +3160,27 @@ zfs create tank/data
 zfs list
 
 
+```
 
 
+## Selinux (Security Enhanced Linux)
+```sh
+
+sudo dnf install policycoreutils-python-utils
+tail -f /var/log/audit/audit.log
+
+grep zabbix_t /var/log/audit/audit.log  | audit2allow -M zabbix-server
 
 
+setenforce 0 
+
+grep nginx /var/log/audit/audit.log  | audit2allow -M nginx
+semodule -i nginx.pp
+
+
+setenforce 1
+
+systemctl restart nginx
 
 
 
