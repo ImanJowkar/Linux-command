@@ -3218,4 +3218,12 @@ tcpdump -i eth0 -w capture.pcap
 
 # Read PCAP file
 tcpdump -r capture.pcap
+
+
+# capture icmp
+tcpdump -i eth0 icmp
+
+tcpdump -i eth0 -w icmp.pcap icmp
+
+
 ```
