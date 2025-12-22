@@ -3005,9 +3005,6 @@ echo 'gateway_enable="YES"' >> /etc/rc.conf
 service routing restart
 
 
-# Traffic Monitoring
-tcpdump -i em0
-
 
 pkg install iftop
 iftop -i em0
@@ -3186,3 +3183,39 @@ systemctl restart nginx
 
 ```
 
+
+## tcpdump
+
+```sh
+
+apt install tcpdump
+dnf install tcpdump
+
+
+# Traffic Monitoring
+
+# Capture all packets on an interface
+tcpdump -i eth0
+
+# Capture only packets going to or from an IP
+tcpdump -i eth0 host 10.10.10.1
+
+# Capture traffic to a specific PORT
+tcpdump -i eth0 port 80
+
+
+
+# Capture only inbound traffic
+tcpdump -i eth0 inbound
+
+
+# Capture only outbound traffic
+tcpdump -i eth0 outbound
+
+
+# Capture and write to file
+tcpdump -i eth0 -w capture.pcap
+
+# Read PCAP file
+tcpdump -r capture.pcap
+```
