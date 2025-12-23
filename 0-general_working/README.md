@@ -3225,5 +3225,7 @@ tcpdump -i eth0 icmp
 
 tcpdump -i eth0 -w icmp.pcap icmp
 
+# show traffic for specific port except one ip address.
+tcpdump -i ens160 tcp port 22 and not host 192.168.85.1
 
 ```
