@@ -3229,3 +3229,23 @@ tcpdump -i eth0 -w icmp.pcap icmp
 tcpdump -i ens160 tcp port 22 and not host 192.168.85.1
 
 ```
+
+
+## ping vs fping
+```sh
+# fping
+# High-speed pinging of multiple hosts
+# Designed for monitoring and automation
+
+# ping
+# Simple one-host-at-a-time connectivity test
+
+
+
+fping 8.8.8.8 1.1.1.1 9.9.9.9
+ping google.com
+fping aparat.com google.com yahoo.com
+
+
+
+```
