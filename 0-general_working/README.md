@@ -2482,6 +2482,10 @@ reboot
 ## netcat working
 
 ```sh
+
+dnf install nmap
+
+
 server: 192.168.1.1
 client: 192.168.1.2
 
@@ -2492,6 +2496,14 @@ nc -ul -p 1519
 
 # client
 echo tessssssssst | nc -u 192.168.1.1 -p 1519
+
+
+
+# check udp port
+nc -uz 10.10.10.1 161
+echo $? # if 0 port open, if 1 port closed
+
+
 ```
 
 
