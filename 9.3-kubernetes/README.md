@@ -53,20 +53,31 @@
 
 ![name-space and cgroup](img/1.png)
 
+Cordon → block new Pods
+
+Drain → evict existing Pods
+
+Uncordon → allow Pods again
+
+Evict → graceful Pod removal & reschedule
+
 
 ```sh
-kubectl api-resources
+# maintainace
+kubectl cordon node # Stop new Pods from being scheduled, Existing Pods keep running, No eviction
 
-# service account and role-binding
-kubectl create serviceaccount mysvcaccount
+kubectl drain node  # Stop new Pods from being scheduled, Evicts existing Pods (gracefully)
 
-kubectl create rolebinding my-binding --role view --serviceaccount default:mysvcaccount --namespace default
+kubectl uncordon node # Allow scheduling again, New Pods can be placed on the node
+‍‍‍‍‍‍‍‍‍
 
-kubectl create clusterrolebinding my-binding --clusterrole view --serviceaccount default:mysvcaccount
 
-token=$(kubectl create token mysvcaccount)
+# set lable
+kubectl label node node3 role=worker
+kubectl label node node3 role-
+kubectl get node node3 --show-labels
 
-curl -X GET https://192.168.96.41:6443/api/v1/namespaces/default/pods -H "Authorization: Bearer $token" -H "Accept: application/json" --insecure
+
+
 
 ```
-

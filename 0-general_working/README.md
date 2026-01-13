@@ -1045,6 +1045,39 @@ We can create swap space in two ways:
 ![swap](img/swap.png)
 
 
+## create and remove swap
+```sh
+
+# remove swap 
+swapoff -a
+# open fstab and remove the swap record from this file
+vim /etc/fstab
+------
+# /swap.img       none    swap    sw      0       0
+------
+rm -rf /swap.img
+
+
+
+# create swap
+# 4G swap
+dd if=/dev/zero of=/swapfile bs=1M count=4000
+chmod 600 /swapfile
+mkswap /swapfile
+swapon /swapfile
+vim /etc/fstab
+-----
+/swapfile       none    swap    sw      0       0
+-----
+systemctl daemon-reload
+mount -a
+
+
+
+
+```
+
+
 ### other storage configuration
 ```sh
 dnf install smartmontools
@@ -3191,8 +3224,6 @@ setenforce 1
 
 systemctl restart nginx
 
-
-
 ```
 
 
@@ -3261,3 +3292,22 @@ fping aparat.com google.com yahoo.com
 
 
 ```
+
+## package manager
+```sh
+# mount cd iso file
+mkdir RockyCD
+mount /dev/sr0 /RockyCD/
+
+vim /etc/yum.repos.d/media.repo
+------
+[RockyCD]
+name=RockyCD
+baseurl=file:///RockyCD
+enabled=1
+gpgcheck=0
+
+------
+
+```
+
