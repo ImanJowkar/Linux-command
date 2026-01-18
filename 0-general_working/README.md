@@ -493,6 +493,8 @@ find / -type d                                  # find all directoris
 find . -iname file.txt                          # case insensetive
 sudo find /etc -type f -name "*.conf"
 
+
+
 find . -name "file*" -delete                   # find "file.*" and delete all of them
 find /etc/ -name shadow                         # search for "shadow" in /etc/ directory
 
@@ -1741,6 +1743,7 @@ sudo ufw default deny routed
 
 ## firewalld
 ```sh
+
 # list and show the current config
 firewall-cmd --state
 firewall-cmd --get-default-zone
@@ -1775,6 +1778,8 @@ firewall-cmd --permanent --add-icmp-block-inversion
 firewall-cmd --permanent --add-icmp-block=echo-reply
 firewall-cmd --permanent --add-icmp-block=echo-request
 firewall-cmd --reload
+
+
 ```
 
 
@@ -3293,7 +3298,7 @@ fping aparat.com google.com yahoo.com
 
 ```
 
-## package manager
+## Use CD for rockylinux
 ```sh
 # mount cd iso file
 mkdir RockyCD
@@ -3301,13 +3306,32 @@ mount /dev/sr0 /RockyCD/
 
 vim /etc/yum.repos.d/media.repo
 ------
-[RockyCD]
-name=RockyCD
-baseurl=file:///RockyCD
+[RockyCD-BaseOS]
+name=RockyCD-BaseOS
+baseurl=file:///RockyCD/BaseOS
 enabled=1
 gpgcheck=0
 
+
+[RockyCD-AppStream]
+name=RockyCD-AppStream
+baseurl=file:///RockyCD/AppStream
+enabled=1
+gpgcheck=0
+
+
 ------
+
+
+dnf makecache
+dnf info bind
+dnf list bind
+rpm -qa  # list all instlled package 
+rpm -qa | grep bind 
+
+
+
+
 
 ```
 

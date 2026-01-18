@@ -2,10 +2,9 @@
 
 This [refrence](https://www.cyberithub.com/category/scripting/bash/) have useful bash excersize and best practice for learning bash
 
-
 ## add comment in the begining of the bash file
 
-```
+```sh
 # Auther: x
 # Date: 2021
 # description: ssss
@@ -13,10 +12,57 @@ This [refrence](https://www.cyberithub.com/category/scripting/bash/) have useful
 ```
 
 
-
-
 ## variables
-```
+```sh
+alias # show all aliases which defined in the OS
+
+# create alias
+alias ssn='systemctl status nginx'
+
+
+
+vim /etc/bashrc
+----
+alias kgp='kubectl get pod'
+alias ssp='systemctl status postgresql-18'
+alias net-reset='nmcli networking off; nmcli networking on'
+
+----
+
+source /etc/bashrc # or run bash
+type net-reset
+unalias ssp
+
+rpm -qf `which timescaledb-tune`  # show which package added timescaledb-tune in our system
+rpm -qf `which timescaledb-parallel-copy`
+
+
+# function
+vim app1.sh
+------
+#!/bin/bash
+hello() {
+
+        echo Hello $USER welcom to linux bash script
+}
+hello
+------
+./app1.sh
+
+# when open new bash, first ~/.bashrc  will run  and then this file will run /etc/bashrc 
+
+# if you want to know how long do it takes the script you can use time before running a script
+time ./app1.sh
+
+
+
+
+
+
+
+
+
+
 name=jack
 age=32
 
@@ -89,7 +135,7 @@ echo ${#txt}
 
 ## arithmatic 
 
-```
+```sh
 num=2
 echo $(( $num + 2))
 
@@ -114,14 +160,15 @@ let "a = 47 * 5"
 echo $a
 
 
-let "a = $1 + 30"
-echo $a # 30 + first command line argument
-
-
-
 num=$( expr 2 + 2)
 echo $num
 
+
+
+a1=3
+a2=949
+a=`echo "scale=6; $a1/$a2" | bc`
+echo $a
 
 
 ```
