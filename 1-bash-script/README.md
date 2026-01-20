@@ -35,6 +35,8 @@ unalias ssp
 
 rpm -qf `which timescaledb-tune`  # show which package added timescaledb-tune in our system
 rpm -qf `which timescaledb-parallel-copy`
+rpm -qf `which zabbix_agent2`
+rpm -qf `which zabbix_get`
 
 
 # function
@@ -42,7 +44,6 @@ vim app1.sh
 ------
 #!/bin/bash
 hello() {
-
         echo Hello $USER welcom to linux bash script
 }
 hello
@@ -53,13 +54,6 @@ hello
 
 # if you want to know how long do it takes the script you can use time before running a script
 time ./app1.sh
-
-
-
-
-
-
-
 
 
 
@@ -165,18 +159,12 @@ echo $num
 
 
 
-a1=3
-a2=949
-a=`echo "scale=6; $a1/$a2" | bc`
-echo $a
-
-
 ```
 
 
 ## Positional Parameters
 
-```
+```sh
 echo $0   # is the name of the script itself (script.sh)
 echo ${1:-default_value}   # is the first positional argument (filename1)
 echo ${1:--100}   # is the first positional argument (filename1)
@@ -199,7 +187,7 @@ echo $$   # give the process ID of the shell
 
 ## conditions
 
-```
+```sh
 
 
 test # specifiy a variable which is empty or not
@@ -221,11 +209,17 @@ fi
 ------------------------
 
 
+
+
+
 # inline if
 
 if test -z $name; then echo "empty variable"; fi
 
 
+if test -z $name; then echo "empty variable"; else echo "variable not empty"; fi
+
+cat /etc/passwd | cut -d ":" -f1
 
 ----------------
 #!/bin/bash
