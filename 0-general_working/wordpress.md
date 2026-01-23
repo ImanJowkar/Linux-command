@@ -19,7 +19,7 @@ sudo ufw reload
 # config time sync and timezone
 
 sudo timedatectl set-timezone Asia/Tehran
-sudo apt install chronyd
+sudo apt install chrony
 
 vim /etc/chrony/chrony.conf
 ---------
@@ -212,6 +212,21 @@ create database shop;
 CREATE USER 'iman'@'localhost' IDENTIFIED BY 'test';
 GRANT ALL ON shop.* TO 'iman'@'localhost';
 FLUSH PRIVILEGES;
+
+
+
+
+```
+
+
+
+### setup wordpress
+
+```sh
+
+
+
+
 
 
 

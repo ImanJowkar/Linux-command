@@ -916,7 +916,6 @@ pidof zabbix_server | xargs sudo kill -9
 ```
 
 
-
 ## compression and tar
 [refrence](https://www.rootusers.com/gzip-vs-bzip2-vs-xz-performance-comparison/) for comparing these three method for compress files.
 **tip**: before compres any file, first use tar and then use compres method
