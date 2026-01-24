@@ -3334,3 +3334,153 @@ rpm -qa | grep bind
 
 ```
 
+## Permission in linux
+
+#### POSIX Permission
+
+#### ACL 
+
+we have a file called `file.txt` belongs to `root:root`, but user `iman` needs `read/write` access.
+```sh
+
+ls -l file.txt
+-rw-r----- 1 root root file.txt
+
+
+setfacl -m u:iman:rw file.txt
+getfacl file.txt
+# file: file.txt
+# owner: root
+# group: root
+user::rw-
+user:alice:rw-
+group::r--
+mask::rw-
+other::---
+
+
+# Multiple users, different permissions
+setfacl -m u:alice:rw,u:bob:r file.txt
+
+
+
+# See ACL indicator in ls
+ls -l file.txt
+-rw-r-----+ 1 root root file.txt
+```
+`+` means ACL present
+
+
+#### mask
+
+```sh
+
+
+```
+
+#### Sticky Bit
+In a shared directory, users can delete only their own files, not others’.
+application : /tmp
+```sh
+ls -ld /tmp
+drwxrwxrwt 10 root root /tmp
+```
+
+#### SUID
+When a file is executed, it runs as the file owner, not the user.
+application : Changing /etc/shadow needs root, but users must change passwords.
+```sh
+ls -l /usr/bin/passwd
+-rwsr-xr-x 1 root root /usr/bin/passwd
+```
+
+
+
+#### umask 
+umask defines default permission for directory
+!!! with umask we can't set execute permision 
+
+
+      user                    group                      other
+-----------------         --------------           -----------------
+R       W       X         R       W       X        R       W       X    
+1       1       0         1       1       0        0       0       0
+
+0 0 2^0=1                  0 0 2^1=1                2^2, 2^1,2^0=7
+
+umask 117 dirctory_1   >>   RW- RW- ---
+
+
+```sh
+mkdir /mydire
+umask 777 /mydire
+touch /mydire/file
+ls -lah /mydire
+rm -rf /mydire
+
+
+
+mkdir /mydire
+umask 707 /mydire
+touch /mydire/file
+ls -lah /mydire
+rm -rf /mydire
+
+
+```
+
+#### file attribute
+Linux file attributes are filesystem flags that add an extra protection layer beyond permissions and ACLs, controlling how files can be modified, deleted, or written.
+
+```sh
+touch file
+echo hello > file
+lsattr
+chattr +i file  # Immutable attribute (+i) . File cannot be modified, deleted, renamed, or linked — even by root (unless attribute is removed).
+
+lsattr
+rm -rf file
+echo 344 > file
+vim file
+----
+# read-only file
+fsasaf
+----
+
+chattr -i file # remove Immutable
+```
+
+Use cases:
+Protect critical configs:
+* /etc/passwd
+* /etc/resolv.conf
+* Prevent accidental deletion
+
+
+```sh
+chattr +a file  # Append-only attribute (+a) - File can only be appended, not modified or deleted.
+
+
+rm -rf file
+echo hello2 > file
+echo `date` >> file
+
+
+
+## Undeletable directory (+i on directory)
+chattr +i /etc/nginx
+# Prevent creation, deletion, or renaming of files inside directory.
+
+
+## Synchronous write (+S)
+chattr +S dbfile
+# All changes are written immediately to disk.
+
+
+# tips
+## ACLs, chmod, umask don’t override attributes
+# Root must remove attributes first:
+
+```
+
+
