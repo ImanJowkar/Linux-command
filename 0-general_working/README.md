@@ -963,6 +963,16 @@ xz -d file.xz
 
 # Disk management
 
+
+| **Swappiness** | **Behavior**                                      |
+| -------------- | ------------------------------------------------- |
+| 0              | Avoid swap as much as possible; use RAM only.     |
+| 5–10           | Rarely swap; only under high memory pressure.     |
+| 60 (default)   | Moderate swap usage; balances RAM and swap.       |
+| 100            | Aggressively swap; moves RAM pages to swap early. |
+
+
+
 ```sh
 # Max inode is : 2^32
 
