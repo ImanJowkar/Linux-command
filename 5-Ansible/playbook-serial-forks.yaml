@@ -1,0 +1,14 @@
+- hosts: all
+  gather_facts: false
+  serial: 3
+  tasks:
+    - name: test
+      shell: echo hello
+      register: myvar
+
+    - name: show vars
+      debug:
+       msg: "{{ myvar.stdout_lines }}"
+
+    - name: Sleep for 5 seconds
+      shell: sleep 5

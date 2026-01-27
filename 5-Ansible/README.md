@@ -55,8 +55,7 @@ ansible all -m gather_facts | grep -i distribution
 
 ansible servers -m command -a uptime
 ansible servers -m command -a who
-ansible servers -m command -a "apt install nginx" --become --ask-become-pass
-
+ansible servers -m command -a "apt install nginx" --become --ask-become-pass  
 ansible all -m command -a "cat /etc/os-release" --user=iman --become --ask-become-pass --become-user=root
 
 # gathering facts
@@ -88,6 +87,89 @@ ansible-playbook playbook.yaml --start-at-task "the task name"
 
 ```
 
+
+## play
+
+```sh
+### A play is a set of tasks that run on a group of hosts.
+# Example playbook with multiple plays
+
+------
+# Example Playbook with 3 Plays
+
+# Play 1: Configure Web Servers
+- name: Configure Web Servers
+  hosts: webservers
+  become: yes
+  tasks:
+    - name: Install Nginx
+      apt:
+        name: nginx
+        state: present
+        update_cache: yes
+
+    - name: Start Nginx
+      service:
+        name: nginx
+        state: started
+        enabled: yes
+
+    - name: Copy website index file
+      copy:
+        src: files/index.html
+        dest: /var/www/html/index.html
+
+# Play 2: Configure Database Servers
+- name: Configure Database Servers
+  hosts: dbservers
+  become: yes
+  tasks:
+    - name: Install PostgreSQL
+      apt:
+        name: postgresql
+        state: present
+        update_cache: yes
+
+    - name: Ensure PostgreSQL service is running
+      service:
+        name: postgresql
+        state: started
+        enabled: yes
+
+    - name: Create a database
+      postgresql_db:
+        name: myappdb
+
+# Play 3: Configure Load Balancer Servers
+- name: Configure Load Balancers
+  hosts: loadbalancers
+  become: yes
+  tasks:
+    - name: Install HAProxy
+      apt:
+        name: haproxy
+        state: present
+        update_cache: yes
+
+    - name: Copy HAProxy configuration
+      template:
+        src: templates/haproxy.cfg.j2
+        dest: /etc/haproxy/haproxy.cfg
+        owner: root
+        group: root
+        mode: 0644
+
+    - name: Ensure HAProxy service is running
+      service:
+        name: haproxy
+        state: started
+        enabled: yes
+
+-------
+
+
+```
+
 ## Serial and Forks
 ```sh
 # forks and serial
@@ -112,6 +194,8 @@ ansible-playbook playbook.yaml -u iman -f 2   # change forks  (how many SSH conn
       shell: "sleep 5"
 ----
 
+ansible-playbook playbook-serial-forks.yaml -u root -f 2  # change forks=2
+
 
 ```
 
@@ -120,22 +204,95 @@ ansible-playbook playbook.yaml -u iman -f 2   # change forks  (how many SSH conn
 # Handlers in Ansible = Like functions
 # notify = how you call that “function”
 ----
-- hosts: webservers
-  become: yes
+tasks:
+  - name: Update app config
+    ansible.builtin.copy:
+      src: app.conf
+      dest: /etc/myapp/app.conf
+    notify:
+      - Restart MyApp
+      - Send Alert
 
-  tasks:
-    - name: Install Apache
-      yum:
-        name: httpd
-        state: latest
-      notify: restart apache   
+handlers:
+  - name: Restart MyApp
+    ansible.builtin.systemd:
+      name: myapp
+      state: restarted
 
-  handlers:
-    - name: restart apache    
-      service:
-        name: httpd
-        state: restarted
+  - name: Send Alert
+    ansible.builtin.debug:
+      msg: "App config was changed, please check logs."
+
 ----
+
+
+### when handlers run 
+# Both tasks update files on the same host.
+# Both notify Restart MyApp.
+
+# What happens:
+# Even though Restart MyApp was notified twice, it runs only once at the end of the play for that host.
+# This prevents unnecessary restarts and ensures efficiency.
+------
+
+tasks:
+  - name: Update config A
+    ansible.builtin.copy:
+      src: configA.conf
+      dest: /etc/myapp/configA.conf
+    notify: Restart MyApp
+
+  - name: Update config B
+    ansible.builtin.copy:
+      src: configB.conf
+      dest: /etc/myapp/configB.conf
+    notify: Restart MyApp
+
+handlers:
+  - name: Restart MyApp
+    ansible.builtin.service:
+      name: myapp
+      state: restarted
+------
+
+# 2. When is a handler executed?
+# A handler executes at the end of the play if any task notified it and the task reported a change (changed: true).
+# It is not executed if no task notifies it or if the task did not change anything.
+
+
+# 3. Can a handler be notified multiple times? What happens then?
+# Yes, a handler can be notified multiple times.
+# Ansible ensures it runs only once at the end of the play, no matter how many times it was notified.
+
+
+
+# 5. Can a handler notify another handler? Explain with an example.
+# Yes, a handler can notify another handler using notify.
+-------
+handlers:
+  - name: Reload App Service
+    ansible.builtin.systemd:
+      name: myapp
+      state: reloaded
+    notify: Send Alert
+
+  - name: Send Alert
+    ansible.builtin.debug:
+      msg: "App service was reloaded"
+-------
+
+# 6. How do you force a handler to run immediately instead of at the end of the play?
+# Answer: Use meta: flush_handlers
+-----
+tasks:
+  - name: Update config
+    ansible.builtin.copy:
+      src: app.conf
+      dest: /etc/myapp/app.conf
+    notify: Restart MyApp
+
+  - meta: flush_handlers  # Forces immediate execution of notified handlers
+-----
 
 
 ```
@@ -242,20 +399,24 @@ family: ["jowkar", "ra", "jow"]
 
 ```sh
 ansible-vault create playbook1.yaml
+
+# edit encrypted file
 ansible-vault edit playbook1.yaml
 ansible-vault encrypt playbook1.yaml
-ansible-vault encrypt playbook1.yaml
-ansible-vault encrypt --vault-id devops@prompt  playbook1.yaml
-ansible-vault encrypt --vault-id devops@pass  playbook1.yaml  # we have to have a file called pass which stored passowrd on it.
+ansible-vault encrypt install-lxc.yaml
 
-ansible-vault decrypt --vault-id devops@prompt  playbook1.yaml
+# run the playbook but ask the password first
+ansible-playbook playbook1.yaml --ask-vault-pass
+
+# decrypt the encrypted playbook 
+ansible-vault decrypt playbook1.yaml
 
 
 
 ansible-vault rekey playbook-install-node-exporter.yaml
 ansible-vault view playbook1.yaml
 
-ansible-playbook playbook1.yaml --ask-vault-pass
+
 
 
 
