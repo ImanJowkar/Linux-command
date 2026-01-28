@@ -3346,7 +3346,17 @@ rpm -qa | grep bind
 
 ## Permission in linux
 
-#### POSIX Permission
+#### POSIX Permission 
+normal permision in linux rwx, 
+```sh
+
+chmod u+x file.sh # add executable permision for user owner
+chmod a-x file.sh # remove executable permision for all(user, group, other)
+chmod 740 file.sh   # user=rwx, group=r, o=nothing
+
+
+
+```
 
 #### ACL 
 
@@ -3380,13 +3390,6 @@ ls -l file.txt
 ```
 `+` means ACL present
 
-
-#### mask
-
-```sh
-
-
-```
 
 #### Sticky Bit
 In a shared directory, users can delete only their own files, not others’.
