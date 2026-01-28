@@ -3494,3 +3494,27 @@ chattr +S dbfile
 ```
 
 
+## list of open file (lsof)
+
+```sh
+
+
+lsof -u iman # provides a list of files opened by the specified user.
+
+lsof -c mariadb    # This command can list out all the files opened by a particular process.
+lsof -c nginx
+
+
+lsof -p 32323  # files opened by a particular PID can be checked
+
+lsof -i   # list all open port
+
+
+
+
+
+
+
+```
+
+
