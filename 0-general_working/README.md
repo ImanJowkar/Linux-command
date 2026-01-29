@@ -3249,7 +3249,7 @@ apt install tcpdump
 dnf install tcpdump
 
 
-# Traffic Monitoring
+# Traffic capturing
 
 # Capture all packets on an interface
 tcpdump -i eth0
@@ -3285,7 +3285,23 @@ tcpdump -i eth0 -w icmp.pcap icmp
 # show traffic for specific port except one ip address.
 tcpdump -i ens160 tcp port 22 and not host 192.168.85.1
 
+# Extract http user agent
+tcpdump -nn -A -s1500 -l | grep "User-Agent:"
+
+
+
 ```
+
+## termshark
+```sh
+apt install termshark
+
+
+
+```
+
+
+
 
 
 ## ping vs fping
@@ -3353,7 +3369,7 @@ normal permision in linux rwx,
 chmod u+x file.sh # add executable permision for user owner
 chmod a-x file.sh # remove executable permision for all(user, group, other)
 chmod 740 file.sh   # user=rwx, group=r, o=nothing
-
+chmod go-rwx myfile
 
 
 ```
