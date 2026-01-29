@@ -105,7 +105,7 @@ imanjowkar.ir.  IN SOA  ns1.imanjowkar.ir. admin.imanjowkar.ir. (
                                         3H )    ; minimum
         NS      ns1
         NS      ns2
-        A       127.0.0.1
+        A       192.168.96.100
         AAAA    ::1
 
 ns1     A       192.168.96.150
@@ -146,6 +146,7 @@ zone "imanjowkar.ir" IN {
         type slave;
         file "imanjowkar.ir.db";
         masters { 192.168.96.150; };
+        masterfile-format text;  # this is optional
 };
 
 -----
@@ -154,8 +155,55 @@ named-checkconf
 echo $?
 
 
+#################################### Secondary on ubuntu ####################################
+## setup salve or secondary dns server
+# setup another server and install the bind9 package on it
+
+sudo add-apt-repository ppa:isc/bind
+sudo apt update
+
+sudo apt install bind9 bind9-dnsutils bind9-doc
+
+# named -v
+# BIND 9.18.39-0ubuntu0.24.04.1-Ubuntu (Extended Support Version) <id:>
+
+named -v
+BIND 9.20.13-1+ubuntu24.04.1+deb.sury.org+1-Ubuntu (Stable Release) <id:>
+
+
+
+vim /etc/bind/named.conf.options
+-----
+acl allowedclients {
+        192.168.85.0/24;
+};
+
+
+options {
+        directory "/var/cache/bind";
+        dnssec-validation no;
+        //listen-on-v6 { any; };
+        listen-on { 192.168.85.170; };
+        recursion no;
+        allow-query { allowedclients; };
+        version none;
+        hostname none;
+
+};
+
+
+zone "imanjowkar.ir" IN {
+        type slave;
+        file "imanjowkar.ir.db";
+        masters { 192.168.85.90; };
+        masterfile-format text;
+};
+-------
+
+
 
 ```
+
 
 
 
