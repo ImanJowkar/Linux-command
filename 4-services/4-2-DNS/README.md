@@ -20,6 +20,7 @@ dpkg -L nginx     # show you the files added by nginx
 dpkg -L haproxy   # show you the files added by haproxy
 
 
+cp /etc/named.conf /etc/named.conf.backup
 vim /etc/named.conf
 ------
 listen-on port 53 { any; };
