@@ -80,11 +80,20 @@ recursion no;
 
 # add at the end of the file
 
-zone "imanjowkar.ir" IN {
+zone "imanjowkar.ir." IN {
         type master;
         file "imanjowkar.ir.db";
         allow-transfer { 192.168.96.11; };
 };
+
+
+
+zone "bia2bagh.ir." IN {
+        type master;
+        file "bia2bagh.ir.db";
+        allow-transfer { 192.168.85.170; };
+};
+
 -----
 
 named-checkconf
@@ -127,7 +136,7 @@ ww      CNAME   zabbix
 named-checkzone imanjowkar.ir /var/named/imanjowkar.ir.db
 
 
-#################################### Secondary ####################################
+#################################### Secondary on rocky linux ####################################
 ## setup salve or secondary dns server
 # setup another server and install the bind9 package on it
 
@@ -142,13 +151,20 @@ recursion no;
 
 
 # add at the end of the file
-zone "imanjowkar.ir" IN {
+zone "imanjowkar.ir." IN {
         type slave;
         file "imanjowkar.ir.db";
         masters { 192.168.96.150; };
-        masterfile-format text;  # this is optional
+        masterfile-format text;  # this is optional, # remove in production and let it to store in binary format
 };
 
+
+
+zone "bia2bagh.ir." IN {
+        type slave;
+        file "bia2bagh.ir.db";
+        masters { 192.168.85.90; };
+};
 -----
 
 named-checkconf
@@ -192,11 +208,18 @@ options {
 };
 
 
-zone "imanjowkar.ir" IN {
+zone "imanjowkar.ir." IN {
         type slave;
         file "imanjowkar.ir.db";
         masters { 192.168.85.90; };
-        masterfile-format text;
+        masterfile-format text;         # remove in production and let it to store in binary format
+};
+
+
+zone "bia2bagh.ir." IN {
+        type slave;
+        file "bia2bagh.ir.db";
+        masters { 192.168.85.90; };
 };
 -------
 
@@ -210,10 +233,56 @@ zone "imanjowkar.ir" IN {
 
 
 ## Forwarders
-
+How to add a forwarder to a cache only server
 ```sh
+
+dnf install bind bind-utils bind-chroot
+cp /etc/named.conf /etc/named.conf.backup
+
+vim /etc/named.conf /etc/named.conf
+---------
+options {
+        listen-on port 53 { any; };
+        listen-on-v6 port 53 { none; };
+        allow-query     { 192.168.0.0/16; 127.0.0.0/8; };
+        recursion yes;
+.
+.
+.
+
+
+
+};
+
+
+
+zone "imanjowkar.ir." IN {
+        type forward;
+        forward only;
+        forwarders { 192.168.85.90; 192.168.85.170; };
+};
+
+
+
+
+zone "bia2bagh.ir." IN {
+        type forward;
+        forward only;
+        forwarders { 192.168.85.90; 192.168.85.170; };
+};
+-------
+
+
+
+
+systemctl restart named
 
 
 
 
 ```
+
+
+## Split-horizon DNS
+Different answers based on source network
+Internal vs external IPs
