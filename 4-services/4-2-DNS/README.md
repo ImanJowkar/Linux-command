@@ -1,6 +1,7 @@
 # Setup DNS-server
 [ref](https://www.digitalocean.com/community/tutorials/how-to-configure-bind-as-a-private-network-dns-server-on-ubuntu-20-04)
 
+![img](img/1.png)
 ### `we have 3 types of dns server: `
 * `cache only dns server (recursive)`
 * `Authoritative (master and slave)`
