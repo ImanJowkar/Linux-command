@@ -25,13 +25,44 @@ dpkg -L haproxy   # show you the files added by haproxy
 cp /etc/named.conf /etc/named.conf.backup
 vim /etc/named.conf
 ------
-listen-on port 53 { any; };
-listen-on-v6 port 53 { none; };
-allow-query     { localhost; 192.168.96.0/24; };
-recursion yes;
+
+acl allowedclients {
+        192.168.85.0/24;
+};
+
+
+options {
+        directory "/var/cache/bind";
+        dnssec-validation auto;
+        //listen-on-v6 { any; };
+        listen-on { 192.168.85.88; };
+        recursion yes;
+        allow-query { allowedclients; };
+        version none;
+        hostname none;
+
+
+        forwarders {
+                1.1.1.1;
+                8.8.8.8;
+                4.2.2.4;
+        };
+        forward only; 
+
+};
+
+
 ------
+
+named-checkconf
+echo $?
+
+
+
 systemctl restart named
 
+
+ss -nlup
 
 firewall-cmd --add-port=53/udp --permanent
 firewall-cmd --add-port=53/tcp --permanent
@@ -429,11 +460,11 @@ ww      CNAME   zabbix
 
 
 shiraz  IN  NS  ns1.shiraz.bia2bagh.ir.
-shiraz  IN  NS  ns2.shiraz.bia2bagh.ir.
+;shiraz  IN  NS  ns2.shiraz.bia2bagh.ir.
 
 ; Glue record
 ns1.shiraz  IN  A   10.10.10.1
-ns2.shiraz  IN  A   10.10.10.2
+;ns2.shiraz  IN  A   10.10.10.2
 ----
 
 
@@ -456,8 +487,7 @@ dig +noall +answer aparat.com
 
 dig +noall +answer aparat.com +stats
 
-dig version.bind txt -c CH @ns1.bia2bagh.ir
-dig version.bind txt -c CH @ns1.dnsmadeeasy.com
+dig @192.168.85.88 version.bind txt CH
 
 dig smtp.gmail.com +trace
 
