@@ -1,12 +1,13 @@
 # Setup DNS-server
 [ref](https://www.digitalocean.com/community/tutorials/how-to-configure-bind-as-a-private-network-dns-server-on-ubuntu-20-04)
 
+![2](img/2.png)
+
 ![img](img/1.png)
 ### `we have 3 types of dns server: `
 * `cache only dns server (recursive)`
 * `Authoritative (master and slave)`
 * `forwarders`
-
 
 `port number: 53/udp for dns query, 53/tcp for zone transfer`
 
@@ -113,15 +114,22 @@ imanjowkar.ir.  IN SOA  ns1.imanjowkar.ir. admin.imanjowkar.ir. (
                                         10      ; retry
                                         1W      ; expire
                                         3H )    ; minimum
-        NS      ns1
-        NS      ns2
-        A       192.168.96.100
-        AAAA    ::1
 
-ns1     A       192.168.96.150
-ns2     A       192.168.96.11
+; add nameserver here
 
-zabbix  A       192.168.96.100
+@       60      NS      ns1.imanjowkar.ir.
+@       60      NS      ns2.imanjowkar.ir.
+
+ns1     60      A       192.168.85.170
+ns2     60      A       192.168.85.90
+
+
+; add records here
+
+@       44      A       4.1.2.1
+
+zabbix  23      A       192.168.96.100
+*       11      A       10.10.10.1      ; wildcard record
 
 @       MX      10      mail1
 @       MX      20      mail2
@@ -132,6 +140,7 @@ ftp     A       192.168.4.2
 
 www     CNAME   zabbix
 ww      CNAME   zabbix
+
 ----------
 
 named-checkzone imanjowkar.ir /var/named/imanjowkar.ir.db
@@ -283,7 +292,173 @@ systemctl restart named
 
 ```
 
+# Setup dns server on ubuntu 
+```sh
+sudo add-apt-repository ppa:isc/bind
+sudo apt update
 
-## Split-horizon DNS
+sudo apt install bind9 bind9-dnsutils bind9-doc
+
+# named -v
+# BIND 9.18.39-0ubuntu0.24.04.1-Ubuntu (Extended Support Version) <id:>
+
+named -v
+
+
+
+
+
+
+
+
+```
+
+
+
+
+## Split-horizon DNS (View)
 Different answers based on source network
 Internal vs external IPs
+
+```sh
+
+
+
+```
+
+
+## DNS Delegation
+I purchased the domain a.com and created a DNS zone for it. As the company grew, I opened a new branch in Shiraz. Now I want to create a subdomain called shiraz.a.com, manage it as a separate DNS zone in Shiraz, and create additional subdomains under shiraz.a.com. How can this be done, and what is this concept called in DNS?
+
+`a.com `→ parent zone
+
+`shiraz.a.com` → child zone
+
+The parent zone delegates authority for `shiraz.a.com` to another DNS server (for the Shiraz branch)
+
+```css
+a.com (Parent Zone)
+ ├── www.a.com
+ ├── mail.a.com
+ └── shiraz.a.com  → delegated to Shiraz DNS servers
+        ├── app.shiraz.a.com
+        ├── db.shiraz.a.com
+        └── vpn.shiraz.a.com
+```
+
+
+```sh
+# Step 1: Create a DNS server for Shiraz
+In Shiraz, you need authoritative DNS servers for the new zone:
+        ns1.shiraz.a.com
+        ns2.shiraz.a.com
+
+# step 2: Step 2: Create the child zone on Shiraz DNS
+
+# Step 3: Delegate shiraz.a.com from the parent zone
+
+# Step 4: Add glue records (very important)
+Because ns1.shiraz.a.com is inside the delegated zone, the parent must provide its IP:
+
+
+
+
+# Teh dns server: 192.168.1.1,192.168.1.2
+# shiraz dns server: 10.10.10.1, 10.10.10.1
+
+
+# Parent DNS - main dns server (located in HQ)(192.168.1.1) - ubuntu 
+vim /etc/bind/named.conf.options
+-----
+acl allowedclients {
+        192.168.85.0/24;
+};
+
+
+options {
+        directory "/var/cache/bind";
+        dnssec-validation no;
+        //listen-on-v6 { any; };
+        listen-on { 192.168.85.170; };
+        recursion no;
+        allow-query { allowedclients; };
+        version none;
+        hostname none;
+
+};
+
+zone "bia2bagh.ir." IN {
+        type master;
+        file "bia2bagh.ir.db";
+};
+-----
+
+vim /var/cache/bind/bia2bagh.ir.db
+----
+$TTL 1D
+bia2bagh.ir.  IN SOA  ns1.bia2bagh.ir. admin.bia2bagh.ir. (
+                                        0       ; serial
+                                        60      ; refresh
+                                        10      ; retry
+                                        1W      ; expire
+                                        3H )    ; minimum
+
+@       IN  NS  ns1.bia2bagh.ir.
+@       IN  NS  ns2.bia2bagh.ir.
+ns1     IN  A   192.168.85.1
+ns2     IN  A   192.168.85.2
+
+
+zabbix  A       192.168.96.100
+
+@       MX      10      mail1
+@       MX      20      mail2
+
+mail1   A       192.168.1.1
+mail2   A       192.168.20.1
+ftp     A       192.168.4.2
+
+www     CNAME   zabbix
+ww      CNAME   zabbix
+
+
+
+; -------------------------
+; Delegation to Shiraz
+; -------------------------
+
+
+shiraz  IN  NS  ns1.shiraz.bia2bagh.ir.
+shiraz  IN  NS  ns2.shiraz.bia2bagh.ir.
+
+; Glue record
+ns1.shiraz  IN  A   10.10.10.1
+ns2.shiraz  IN  A   10.10.10.2
+----
+
+
+### Child DNS (Shiraz) — shiraz.a.com - now on shiraz dns server (10.10.10.1, 10.10.10.2) - rockylinux
+dnf install bind bind-utils bind-chroot
+
+
+
+
+
+```
+
+
+
+# dig 
+```sh
+dig aparat.com
+dig +short aparat.com
+dig +noall +answer aparat.com
+
+dig +noall +answer aparat.com +stats
+
+dig version.bind txt -c CH @ns1.bia2bagh.ir
+dig version.bind txt -c CH @ns1.dnsmadeeasy.com
+
+dig smtp.gmail.com +trace
+
+```
