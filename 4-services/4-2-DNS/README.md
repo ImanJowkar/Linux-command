@@ -494,7 +494,7 @@ dnf install bind bind-utils bind-chroot
 
 vim /etc/named.conf
 -------
-zone "shiraz.bia2bagh.ir" {
+zone "shiraz.bia2bagh.ir." {
     type master;
     file "shiraz.bia2bagh.ir.db";
 };
