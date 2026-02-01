@@ -176,6 +176,43 @@ ww      CNAME   zabbix
 
 named-checkzone imanjowkar.ir /var/named/imanjowkar.ir.db
 
+vim /var/named/bia2bagh.ir.db
+-------
+$TTL 1D
+bia2bagh.ir.  IN SOA  ns1.bia2bagh.ir. admin.bia2bagh.ir. (
+                                        0       ; serial
+                                        60      ; refresh
+                                        10      ; retry
+                                        1W      ; expire
+                                        3H )    ; minimum
+
+; add nameserver here
+
+@       60      NS      ns1.bia2bagh.ir.
+
+ns1     60      A       192.168.85.90
+
+
+; add records here
+
+@       44      A       4.1.2.1
+
+zabbix  23      A       192.168.96.100
+
+@       MX      10      mail1
+@       MX      20      mail2
+
+mail1   A       192.168.1.1
+mail2   A       192.168.20.1
+ftp     A       192.168.4.2
+
+www     CNAME   zabbix
+ww      CNAME   zabbix
+
+-------
+
+
+
 
 #################################### Secondary on rocky linux ####################################
 ## setup salve or secondary dns server
@@ -379,26 +416,8 @@ a.com (Parent Zone)
 
 
 ```sh
-# Step 1: Create a DNS server for Shiraz
-In Shiraz, you need authoritative DNS servers for the new zone:
-        ns1.shiraz.a.com
-        ns2.shiraz.a.com
+# paranet dns server
 
-# step 2: Step 2: Create the child zone on Shiraz DNS
-
-# Step 3: Delegate shiraz.a.com from the parent zone
-
-# Step 4: Add glue records (very important)
-Because ns1.shiraz.a.com is inside the delegated zone, the parent must provide its IP:
-
-
-
-
-# Teh dns server: 192.168.1.1,192.168.1.2
-# shiraz dns server: 10.10.10.1, 10.10.10.1
-
-
-# Parent DNS - main dns server (located in HQ)(192.168.1.1) - ubuntu 
 vim /etc/bind/named.conf.options
 -----
 acl allowedclients {
@@ -468,10 +487,53 @@ ns1.shiraz  IN  A   10.10.10.1
 ----
 
 
-### Child DNS (Shiraz) — shiraz.a.com - now on shiraz dns server (10.10.10.1, 10.10.10.2) - rockylinux
+
 dnf install bind bind-utils bind-chroot
 
 
+
+vim /etc/named.conf
+-------
+zone "shiraz.bia2bagh.ir" {
+    type master;
+    file "shiraz.bia2bagh.ir.db";
+};
+-------
+
+
+
+vim /var/named/shiraz.bia2bagh.ir.db
+-------
+$TTL 86400
+@   IN  SOA ns1.shiraz.bia2bagh.ir. admin.shiraz.bia2bagh.ir. (
+                2026010101  ; Serial
+                3600        ; Refresh
+                1800        ; Retry
+                604800      ; Expire
+                86400 )     ; Minimum TTL
+
+
+
+; Name server for Shiraz zone
+@       IN  NS  ns1.shiraz.bia2bagh.ir.
+
+
+; DNS server A record
+ns1     IN  A   192.168.85.33
+
+
+
+
+; -------------------------
+; Shiraz subdomains
+; -------------------------
+
+app     IN  A   10.10.10.10
+db      IN  A   10.10.10.20
+vpn     IN  A   10.10.10.30
+
+
+-------
 
 
 
