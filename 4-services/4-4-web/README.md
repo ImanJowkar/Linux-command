@@ -14,7 +14,7 @@ packages:
 URL=>   protocol://<domain>:<port>/path/to/local/file/?var1=val1&var2=val2
 
 # basic Setup Linux server
-```
+```sh
 sudo apt update
 sudo apt install net-tools
 sudo hostnamectl set-hostname web-server
@@ -31,10 +31,7 @@ systemctl stop nginx
 
 
 # Installation
-```
-
-
-
+```sh
 
 sudo apt update                 # update the repository index
 sudo apt install apache2        # install the apache web-server
@@ -52,7 +49,7 @@ sudo apt install nginx          # install nginx web server
 
 # Lets Begin
 
-```
+```sh
 NGINX
 ------
 
@@ -99,9 +96,6 @@ HTTP  Response: (Status Code, Reponse code)
 
 
 
-
-
-
 curl http://192.168.56.10/
 curl http://192.168.56.10:82/file2
 
@@ -116,4 +110,28 @@ ps -auxf | grep nginx | grep -v grep
 ```
 
 
+## install on rockylinux
+```sh
+
+dnf install httpd
+
+vim /etc/httpd/conf/httpd.conf
+----
+ServerRoot "/etc/httpd"
+
+DocumentRoot "/var/www/html"
+
+# only on specific ip
+Listen 12.34.56.78:80
+
+# on all ip address
+
+Listen 80
+
+
+----
+
+
+
+```
  
