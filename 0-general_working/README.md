@@ -3530,6 +3530,49 @@ lsof -i   # list all open port
 
 
 
+```
+
+## ulimit
+ulimit is a Linux command that limits how many system resources a user or process can use.
+
+```sh
+ulimit -Sn  # show limit for max open files
+ulimit -n 1000
+
+
+
+python3 - <<EOF
+files=[]
+while True:
+    files.append(open("test.txt"))
+EOF
+
+
+vim /etc/security/limits.conf
+-----
+* soft nofile unlimited
+* hard nofile unlimited
+-----
+
+ulimit -u 100  # max process which a user can run 
+for i in {1..200}; do sleep 100 & done
+
+
+
+
+ulimit -v 512000   # limit virtual memory
+
+python3 - <<EOF
+a=[]
+while True:
+    a.append("A"*10**6)
+EOF
+
+
+ulimit -Sn   # soft
+ulimit -Hn   # hard
+
+
 
 
 
