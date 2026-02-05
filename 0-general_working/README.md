@@ -3574,8 +3574,13 @@ ulimit -Hn   # hard
 
 
 
+vim /etc/security/limits.conf
+----
 
 
+iman  soft  maxlogin  1
+iman  hard  maxlogin  3
+----
 
 ```
 
