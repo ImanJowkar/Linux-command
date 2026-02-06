@@ -423,3 +423,38 @@ ansible-vault view playbook1.yaml
 
 
 ```
+
+## Role
+.
+├── ansible.cfg
+├── inventory
+│   └── inventory.ini
+├── roles
+│   └── setup-website
+│       ├── defaults
+│       │   └── main.yaml
+│       ├── files
+│       ├── handlers
+│       │   └── main.yaml
+│       ├── meta
+│       │   └── main.yaml
+│       ├── tasks
+│       │   └── main.yaml
+│       ├── templates
+│       └── vars
+│           └── main.yaml
+└── setup-website.yaml
+```sh
+
+ansible-galaxy init my_role
+ansible-galaxy init my_role1
+ansible-galaxy init my_role2
+
+
+ansible-playbook -i inventory/inventory.ini setup-website.yaml
+
+ansible-playbook -i inventory/inventory.ini setup-website.yaml  --tag show_ip_add
+ansible-playbook -i inventory/inventory.ini setup-website.yaml  --tag "show_ip_addr,sleep"
+
+
+```

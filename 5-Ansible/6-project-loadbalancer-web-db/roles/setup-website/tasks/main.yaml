@@ -1,0 +1,16 @@
+- name: Set hostname
+  hostname:
+    name: "{{ inventory_hostname }}"
+  tags: set_hostname
+
+- name: doing something - sleep
+  shell: |
+    sleep 6
+  tags: sleep
+  delegate_to: loadbalancer
+
+
+- name: show ansible_hostname and ip addresses
+  debug:
+    msg: "the host: {{ inventory_hostname }} has the ip address : {{ ansible_host }}"
+  tags: show_ip_addr
