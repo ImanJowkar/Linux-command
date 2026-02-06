@@ -425,6 +425,7 @@ ansible-vault view playbook1.yaml
 ```
 
 ## Role
+```sh
 .
 ├── ansible.cfg
 ├── inventory
@@ -444,6 +445,8 @@ ansible-vault view playbook1.yaml
 │       └── vars
 │           └── main.yaml
 └── setup-website.yaml
+```
+
 ```sh
 
 ansible-galaxy init my_role
@@ -453,8 +456,23 @@ ansible-galaxy init my_role2
 
 ansible-playbook -i inventory/inventory.ini setup-website.yaml
 
-ansible-playbook -i inventory/inventory.ini setup-website.yaml  --tag show_ip_add
-ansible-playbook -i inventory/inventory.ini setup-website.yaml  --tag "show_ip_addr,sleep"
+ansible-playbook -i inventory/inventory.ini setup-website.yaml --tag show_ip_add
+ansible-playbook -i inventory/inventory.ini setup-website.yaml --tag "show_ip_addr,sleep"
+ansible-playbook -i inventory/inventory.ini setup-website.yaml --skip-tags set_hostname
+
+
+ansible-playbook -i inventory/inventory.ini setup-website.yaml --step   # ask you which task have to run or not
+
+ansible-playbook -i inventory/inventory.ini setup-website.yaml --list-tasks
+ansible-playbook -i inventory/inventory.ini setup-website.yaml --syntax-check
+
+ansible-playbook -i inventory/inventory.ini setup-website.yaml --check  # dry-run, Note: Some Ansible modules do not support check mode (--check) and may still execute changes or fail when run in this mode.
+
+
+ansible-playbook -i inventory/inventory.ini setup-website.yaml --flush-cache  # remove gathering facts cache and again run gathering facts
+
+
+
 
 
 ```
