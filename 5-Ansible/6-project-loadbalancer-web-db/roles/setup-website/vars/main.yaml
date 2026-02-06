@@ -1,0 +1,10 @@
+fname: "iman"
+age: 27
+
+
+var1:
+  fname: "1"
+  age: 55
+  family:
+    bro: "hossein"
+    bro2: "11aad"

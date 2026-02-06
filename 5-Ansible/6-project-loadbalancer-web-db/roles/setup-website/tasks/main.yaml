@@ -14,3 +14,10 @@
   debug:
     msg: "the host: {{ inventory_hostname }} has the ip address : {{ ansible_host }}"
   tags: show_ip_addr
+
+
+- name: show vars
+  debug:
+    msg: "{{ var1.family.bro }}"
+  tags: show vars
+

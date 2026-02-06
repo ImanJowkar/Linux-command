@@ -1,0 +1,8 @@
+#SPDX-License-Identifier: MIT-0
+---
+# tasks file for myrole
+- name: doing something - sleep in myrole role
+  shell: |
+    sleep 6
+  tags: sleep
+  delegate_to: loadbalancer
