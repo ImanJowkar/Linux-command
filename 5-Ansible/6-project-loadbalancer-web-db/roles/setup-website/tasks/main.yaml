@@ -21,3 +21,18 @@
     msg: "{{ var1.family.bro }}"
   tags: show vars
 
+- name: show vars
+  debug:
+    msg: "{{ dns_servers2 }}"
+  tags: show vars
+
+
+- name: Show interface config
+  debug:
+    msg: "Interface {{ interface.name }} has IP {{ interface.ip }}"
+
+
+- name: Configure interfaces
+  debug:
+    msg: "Configuring {{ item.name }} with IP {{ item.ip }}"
+  loop: "{{ interfaces }}"

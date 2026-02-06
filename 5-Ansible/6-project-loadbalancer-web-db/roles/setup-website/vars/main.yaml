@@ -8,3 +8,28 @@ var1:
   family:
     bro: "hossein"
     bro2: "11aad"
+
+# list
+dns_servers:
+  - 8.8.8.8
+  - 1.1.1.1
+
+dns_servers2: [1.1.1.1, 2.2.2.2]
+
+
+# dict
+interface:
+  name: GigabitEthernet0/1
+  ip: 192.168.1.1
+  mask: 255.255.255.0
+
+
+## list of dict
+
+interfaces:
+  - name: GigabitEthernet0/1
+    ip: 192.168.1.1
+    mask: 255.255.255.0
+  - name: GigabitEthernet0/2
+    ip: 192.168.2.1
+    mask: 255.255.255.0
