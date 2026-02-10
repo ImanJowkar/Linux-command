@@ -3585,3 +3585,72 @@ iman  hard  maxlogin  3
 ```
 
 
+## set proxy for docker, apt, dnf, curl, and wget
+```sh
+# curl 
+curl --proxy http://proxy.host.internal:3128 https://yahoo.com/file.txt
+curl -x http://proxy.host.internal:3128 https://yahoo.com/file.txt
+
+# apt
+vim /etc/apt/apt.conf.d/proxy.conf
+-----
+Acquire::http::Proxy "http://proxy.host.internal:3128";
+Acquire::https::Proxy "http://proxy.host.internal:3128";
+-----
+
+
+
+# wget 
+export http_proxy="http://proxy.host.internal:3128"
+export https_proxy="http://proxy.host.internal:3128"
+
+# or add in wgetrc
+vim /etc/wgetrc
+----
+use_proxy = on
+http_proxy="http://proxy.host.internal:3128"
+https_proxy="http://proxy.host.internal:3128"
+----
+
+
+# docker
+vim /usr/lib/systemd/system/docker.service
+-----
+Environment=HTTP_PROXY="http://proxy.host.internal:3128"
+Environment=HTTPS_PROXY="http://proxy.host.internal:3128"
+-----
+
+systemctl daemon-reload
+systemctl restart docker
+
+
+# or add in docker compsoe file
+vim docker-compose.yaml
+-----
+version: '3'
+services:
+  mysvc:
+  image: nginx:alpine
+  environment:
+    - HTTP_PROXY="http://proxy.host.internal:3128"
+    - HTTPS_PROXY="http://proxy.host.internal:3128";
+
+-----
+
+# dnf 
+vim /etc/dnf/dnf.conf
+----
+
+proxy=http://proxy.host.internal:3128
+# proxy_username=username
+# proxy_password=password
+---
+
+# yum 
+vim /etc/yum.conf
+----
+proxy=http://proxy.host.internal:3232
+# proxy_username=username
+# proxy_password=password
+----
+```
