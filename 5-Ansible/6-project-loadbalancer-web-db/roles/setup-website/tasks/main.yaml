@@ -24,7 +24,7 @@
 - name: show vars
   debug:
     msg: "{{ dns_servers2 }}"
-  tags: show vars
+  tags: show vars dns
 
 
 - name: Show interface config
