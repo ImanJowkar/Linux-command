@@ -1,0 +1,23 @@
+- name: Install Zabbix repo (Debian family)
+  apt:
+    deb: "{{ zabbix_repos.Ubuntu }}"
+  tags: "install-zbx"
+
+- name: Update apt cache
+  apt:
+    update_cache: yes
+  tags: "install-zbx"
+
+- name: Install Zabbix Agent
+  apt:
+    name: zabbix-agent2
+    state: present
+  tags: "install-zbx"
+
+- name: Enable and start Zabbix Agent
+  systemd:
+    name: zabbix-agent2
+    enabled: yes
+    state: started
+  tags: "install-zbx"
+

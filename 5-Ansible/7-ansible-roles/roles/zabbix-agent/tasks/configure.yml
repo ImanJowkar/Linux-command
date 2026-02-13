@@ -1,0 +1,20 @@
+
+- name: Create an empty file in for zabbix agent configuration
+  ansible.builtin.file:
+    path: "{{ local_config_file_name }}"
+    state: touch
+
+
+- name: Update Zabbix agent configuration
+  lineinfile:
+    path: "{{ local_config_file_name }}"
+    regexp: '^(#\s*)?{{ item.key }}\s*='
+    line: '{{ item.key }}={{ item.value }}'
+  loop:
+    - { key: 'Server', value: "{{ zabbix_server }}" }
+    - { key: 'ServerActive', value: "{{ zabbix_server }}" }
+    - { key: 'Hostname', value: "{{ zabbix_hostname }}" }
+    - { key: 'HostMetadata', value: "{{ zabbix_hostmetadata }}" }
+  notify: Restart Zabbix Agent
+  tags: config-agent
+

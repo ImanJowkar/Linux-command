@@ -1,0 +1,40 @@
+#SPDX-License-Identifier: MIT-0
+---
+
+# - name: show variable on ubuntu linux
+#   debug:
+#     msg: "{{ zabbix_repos.Ubuntu }}"
+#   when: ansible_facts["distribution"] == "Ubuntu"
+
+# - name: show variable on Rocky linux
+#   debug:
+#     msg: "{{ zabbix_repos.Rocky }}"
+#   when: ansible_facts["distribution"] == "Rocky"
+
+
+# - name: show variable on Rocky linux
+#   debug:
+#     msg: "{{ zabbix_server_active }}"
+#   when: ansible_facts["distribution"] == "Rocky"
+
+- name: Install Zabbix Agent on Ubuntu
+  include_tasks: install-ubuntu.yml
+  when: ansible_facts["distribution"] == "Ubuntu"
+
+- name: Install Zabbix Agent on Rocky linux
+  include_tasks: install_rocky.yml
+  when: ansible_facts["distribution"] == "Rocky"
+
+- name: Configure Zabbix Agent
+  include_tasks: configure.yml
+
+- name: config firewall for accepting the zabbix requests
+  include_tasks: firewalld.yml
+  when: ansible_facts["distribution"] == "Rocky"
+
+
+- name: config firewall for accepting the zabbix requests
+  include_tasks: ufw.yml
+  when: ansible_facts["distribution"] == "Ubuntu"
+
+

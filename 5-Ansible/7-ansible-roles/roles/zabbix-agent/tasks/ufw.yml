@@ -1,0 +1,5 @@
+- name: Allow port 10050/tcp
+  ufw:
+    rule: allow
+    port: 10050
+    proto: tcp

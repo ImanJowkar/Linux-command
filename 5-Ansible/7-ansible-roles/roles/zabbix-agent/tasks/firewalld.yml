@@ -1,0 +1,8 @@
+
+- name: Open port 10050/tcp in firewalld
+  firewalld:
+    port: 10050/tcp
+    permanent: yes       # Add to permanent config
+    state: enabled       # Enable the port
+    immediate: yes       # Apply to runtime immediately
+

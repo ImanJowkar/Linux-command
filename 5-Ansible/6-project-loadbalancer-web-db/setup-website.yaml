@@ -1,9 +1,10 @@
 ---
 - hosts: all
+  serial: 2
   vars: 
     dns_servers2:
     - 1.1.4.4
     - 2.2.4.4
   roles:
-    - setup-website
+    # - setup-website
     - myrole

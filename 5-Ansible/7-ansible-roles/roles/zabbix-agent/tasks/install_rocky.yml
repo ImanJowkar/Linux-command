@@ -1,0 +1,16 @@
+- name: Install Zabbix repo (RedHat family)
+  yum:
+    name: "{{ zabbix_repos.Rocky }}"
+    state: present
+    disable_gpg_check: yes
+
+- name: Install Zabbix Agent
+  yum:
+    name: zabbix-agent2
+    state: present
+
+- name: Enable and start Zabbix Agent
+  systemd:
+    name: zabbix-agent2
+    enabled: yes
+    state: started

@@ -53,6 +53,8 @@ ansible all -m gather_facts
 ansible all -m gather_facts --limit 192.168.93.151
 ansible all -m gather_facts | grep -i distribution
 
+
+
 ansible servers -m command -a uptime
 ansible servers -m command -a who
 ansible servers -m command -a "apt install nginx" --become --ask-become-pass  
@@ -61,6 +63,8 @@ ansible all -m command -a "cat /etc/os-release" --user=iman --become --ask-becom
 # gathering facts
 ansible servers -m setup
 ansible servers -m setup -a "filter=ansible_all_ipv4_addresses"
+ansible all -m setup -a "filter=ansible_distribution,ansible_distribution_version"
+ansible all -m setup -a "filter=ansible_distribution*"
 
 
 

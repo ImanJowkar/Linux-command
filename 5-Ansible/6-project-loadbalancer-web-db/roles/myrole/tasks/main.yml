@@ -1,8 +1,19 @@
 #SPDX-License-Identifier: MIT-0
 ---
 # tasks file for myrole
-- name: doing something - sleep in myrole role
-  shell: |
-    sleep 6
-  tags: sleep
-  delegate_to: loadbalancer
+
+- name: copy app.sh
+  copy: 
+    src: app.sh
+    dest: ~/app.sh
+    backup: yes
+
+- name: testing script module
+  script: app.sh
+  tags: running script
+
+
+# - name: running sleep
+#   command: sleep 5
+#   tags: sleep
+

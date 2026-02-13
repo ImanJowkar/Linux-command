@@ -1,0 +1,4 @@
+#SPDX-License-Identifier: MIT-0
+---
+# vars file for zabbix-agent
+# zabbix_server_active: "fdsafd"
