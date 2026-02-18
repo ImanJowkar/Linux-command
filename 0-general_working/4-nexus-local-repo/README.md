@@ -18,6 +18,9 @@ tree .
 
 
 cd nginx/certs
+
+openssl genrsa -out nexus.key 4096
+
 openssl req -new -x509 -key nexus.key -out nexus.crt -days 3650 -subj "/C=US/ST=YourState/L=YourCity/O=YourCompany/OU=IT/CN=repo.nexus.org"
 
 
