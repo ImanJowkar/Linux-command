@@ -4,6 +4,24 @@
 ### install nexus
 
 ```sh
+tree .
+.
+├── docker-compose.yaml
+├── .env
+└── nginx
+    ├── certs
+    │   ├── nexus.crt
+    │   └── nexus.key
+    ├── nginx.conf
+    └── templates
+        └── nexus.conf.template
+
+
+cd nginx/certs
+openssl req -new -x509 -key nexus.key -out nexus.crt -days 3650 -subj "/C=US/ST=YourState/L=YourCity/O=YourCompany/OU=IT/CN=repo.nexus.org"
+
+
+
 
 docker compose up -d
 

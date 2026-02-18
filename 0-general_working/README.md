@@ -3654,3 +3654,13 @@ proxy=http://proxy.host.internal:3232
 # proxy_password=password
 ----
 ```
+
+
+## pip 
+```sh
+pip install package_name \
+  --index-url http://repo.example.com/simple \
+  --trusted-host repo.example.com
+
+
+```
