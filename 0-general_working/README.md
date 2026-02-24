@@ -3664,3 +3664,23 @@ pip install package_name \
 
 
 ```
+
+## OpenLdap
+```sh
+dnf install epel-release
+dnf install openldap-clients openldap-servers
+
+
+firewall-cmd --add-port=636/tcp --permanent
+firewall-cmd --add-port=389/tcp --permanent
+firewall-cmd --reload
+
+rpm -qa | grep openldap
+
+systemctl enable --now slapd.service
+
+systemctl status slapd.service
+
+
+
+```
