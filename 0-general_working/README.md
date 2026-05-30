@@ -3241,7 +3241,7 @@ systemctl restart nginx
 ```
 
 
-## tcpdump
+## tcpdump and wireshark
 
 ```sh
 
@@ -3290,6 +3290,21 @@ tcpdump -nn -A -s1500 -l | grep "User-Agent:"
 
 
 
+# capture all traffic on 8080 port
+sudo tcpdump -n -i any port 8080
+
+
+
+## filter in wireshark
+ip.src == 192.168.10.1
+ip.src != 192.168.10.1
+
+ip.det == 192.168.10.1
+
+(tcp) && !(ip.dst==1.1.1.1)
+
+
+tcp.port == 8585
 ```
 
 ## termshark
@@ -3682,5 +3697,51 @@ systemctl enable --now slapd.service
 systemctl status slapd.service
 
 
+
+```
+
+
+## Rocky and ubuntu  offline installation for packages
+
+```sh
+# rocky linux
+sudo dnf install -y dnf-plugins-core
+
+mkdir ~/offline-packages
+cd ~/offline-packages
+
+sudo dnf download --resolve --alldeps <package-name>
+
+
+sudo dnf download --resolve --alldeps nginx
+
+tar czf nginx_bundle.tar.gz *.rpm
+
+scp nginx_bundle.tar.gz user@offline-server:/tmp/
+
+
+cd /tmp
+tar xzf nginx_bundle.tar.gz
+
+sudo dnf install -y ./*.rpm
+
+
+
+
+# ubuntu
+mkdir ~/offline-packages
+cd ~/offline-packages
+
+apt-rdepends <package-name> | grep -v "^ " | sort -u | xargs apt download
+
+apt-rdepends nginx | grep -v "^ " | sort -u | xargs apt download
+
+tar czf nginx_bundle.tar.gz *.deb
+scp nginx_bundle.tar.gz user@offline-server:/tmp/
+
+cd /tmp
+tar xzf nginx_bundle.tar.gz
+
+sudo apt install ./ *.deb
 
 ```
