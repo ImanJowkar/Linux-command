@@ -67,6 +67,7 @@ apt install iotop sysstat lsof dstat bash-completion vim nano tar zip unzip wget
 dnf install iotop sysstat lsof dstat bash-completion vim nano tar zip unzip wget curl git net-tools  traceroute htop tcpdump apt-transport-https rsync jq tree tmux iperf3
  
 
+apt install sysstat
 # by def , show cpu info 
 sar 1
 sar 1 10
@@ -74,6 +75,11 @@ sar -b 1  # show block device info
 sar -d 1  # per block device info
 
 sar -n TCP 1
+
+
+# Check network traffic per interface
+sar -n DEV 1
+
 
 ss -nltp   # check for tcp listen interface
 ss -nlup   # check for udp listen interface
@@ -84,7 +90,7 @@ ps auxf | less  # for finding which command run by which user
 du -sh /*
 
 lsof file.txt  # show file opened by a file
- while true; do lsof data.file ;done
+while true; do lsof data.file ;done
  
 watch -n 5 ls -lah 
 ```
@@ -3743,5 +3749,84 @@ cd /tmp
 tar xzf nginx_bundle.tar.gz
 
 sudo apt install ./ *.deb
+
+```
+
+## tcp connection in linux
+
+```sh
+# Show all listening TCP ports
+sudo ss -tlnp
+# -t  TCP
+# -l  listening sockets
+# -n  numeric ports/IPs, no DNS lookup
+# -p  show process name/PID
+
+
+# Show all listening UDP ports
+sudo ss -ulnp
+
+# -u  UDP
+# -l  listening
+# -n  numeric
+# -p  process
+
+
+
+# Show currently established TCP connections
+sudo ss -tnp state established
+watch sudo ss -tnp state established
+
+# show connections to a specific remote IP
+watch ss -tnp dst google.com
+
+```
+
+`Recv-Q` and `Send-Q` show queued data for a socket.
+
+**Recv-Q** = data received by the server but not yet read by the application.
+
+**Send-Q** = data sent by the application but not yet delivered/acknowledged by the remote side.
+ 
+
+```sh
+
+# Check if a port is open from outside
+# tcp
+nc -vz 192.168.1.1 22
+echo $?
+
+
+# udp
+nc -vzu 192.168.1.1 53
+echo $?
+
+# packet capture
+# tcp
+sudo tcpdump -i any tcp
+
+
+# upd
+sudo tcpdump -i any udp
+```
+
+
+
+
+
+
+## Kubernetes
+```sh
+# basic command
+
+
+
+
+```
+
+## Debug
+```sh
+
+
 
 ```
