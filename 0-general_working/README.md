@@ -3815,6 +3815,11 @@ sudo tcpdump -i any udp
 
 
 
+
+
+
+
+
 ## Kubernetes
 ```sh
 vim pod.yaml
@@ -3886,8 +3891,379 @@ kubectl delete pod -n test -l app=test
 
 # set annotation 
 kubectl annotate pod mypod ip="3.3.3.3"
+kubectl annotate pod mypod owner="Iman Jowkar"
+
+## deplayment
+vim app1.yaml
+-----
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-prod-deployment
+spec:
+  replicas: 3
+  selector:
+    matchExpressions:
+      - key: app
+        operator: In
+        values:
+          - web
+      - key: environment
+        operator: In
+        values:
+          - prod
+
+  template:
+    metadata:
+      labels:
+        app: web
+        environment: prod
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:latest
+          ports:
+            - containerPort: 80
+----
+
+vim app2.yaml
+-----
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+spec:
+  replicas: 3
+
+  selector:
+    matchLabels:
+      app: nginx
+
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:latest
+          ports:
+            - containerPort: 80
+-----
+
+# deamonset
+--------
+
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: nginx-daemonset
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app: nginx-daemon
+
+  template:
+    metadata:
+      labels:
+        app: nginx-daemon
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:latest
+          ports:
+            - containerPort: 80
+
+--------
+
+kubectl label node node01 dedicated=daemon
+
+-----
+
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: nginx-specific-node
+spec:
+  selector:
+    matchLabels:
+      app: nginx-specific-node
+
+  template:
+    metadata:
+      labels:
+        app: nginx-specific-node
+    spec:
+      nodeSelector:
+        dedicated: daemon
+      containers:
+        - name: nginx
+          image: nginx:latest
+          ports:
+            - containerPort: 80
 
 
+-----
+
+
+# svc 
+vim app.yaml
+----
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: nginx
+
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:latest
+          ports:
+            - containerPort: 80
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-service
+spec:
+  type: ClusterIP
+  selector:
+    app: nginx
+  ports:
+    - port: 8080
+      targetPort: 80
+
+----
+
+curl svc-ip:8080
+
+
+
+
+# probe in k8s
+Startup  = Has the app finished starting?
+Readiness = Can the app receive traffic now?
+Liveness  = Is the app stuck and needs restart?
+
+# In Kubernetes, liveness and readiness probes are health checks performed by the kubelet on containers inside a Pod. A probe can use HTTP, TCP, gRPC, or an exec command to decide whether the application is healthy. Kubernetes uses the result to either restart the container or remove the Pod from Service traffic.
+
+
+# 1. Liveness Probe
+## A liveness probe answers this question:
+## Is the application still alive, or should Kubernetes restart it?
+# If the liveness probe fails repeatedly, Kubernetes assumes the container is unhealthy and restarts it.
+
+
+# Container is running
+# Application health check fails
+# Kubernetes restarts the container
+# Application gets a fresh start
+
+
+
+# 2. Readiness Probe
+# A readiness probe answers this question:
+# Is the application ready to receive traffic?
+
+# If the readiness probe fails, Kubernetes does not restart the container. Instead, it removes the Pod from the Service endpoints. That means traffic will not be sent to that Pod until it becomes ready again.
+
+# Pod starts
+# Readiness check fails
+# Service does not send traffic yet
+# Application finishes startup
+# Readiness check succeeds
+# Service starts sending traffic
+
+
+| Probe              | Purpose                           | If it fails                                        |
+| ------------------ | --------------------------------- | -------------------------------------------------- |
+| **startupProbe**   | Gives app time to start           | Container is not checked by liveness/readiness yet |
+| **readinessProbe** | Checks if Pod can receive traffic | Pod is removed from Service traffic                |
+| **livenessProbe**  | Checks if app is alive            | Container is restarted                             |
+
+
+vim app.yaml
+-----
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: probe-demo
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: probe-demo
+  template:
+    metadata:
+      labels:
+        app: probe-demo
+    spec:
+      containers:
+      - name: app
+        image: nginx:1.27
+        ports:
+        - containerPort: 80
+
+        startupProbe:
+          httpGet:
+            path: /
+            port: 80
+          periodSeconds: 5
+          failureThreshold: 6
+
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 80
+          periodSeconds: 5
+          failureThreshold: 1
+
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 80
+          periodSeconds: 10
+          failureThreshold: 3
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: probe-demo-svc
+spec:
+  selector:
+    app: probe-demo
+  ports:
+  - port: 80
+    targetPort: 80
+
+
+-----
+
+
+kubectl get ep
+kubectl exec -ti pod/probe-demo-7c6f7c4f7f-x6w7c -- bash
+curl localhost
+curl localhost/ready
+echo ready > /usr/share/nginx/html/ready
+curl localhost/ready
+kubectl exec deploy/probe-demo -- sh -c 'echo ready > /usr/share/nginx/html/ready'
+exit
+
+kubectl get ep
+
+
+# now exec and remove the /ready file
+kubectl exec -ti pod/probe-demo-7c6f7c4f7f-x6w7c -- bash
+rm -rf /usr/share/nginx/html/ready
+exit
+kubectl get ep
+
+
+
+# Simulate Liveness Failure
+kubectl exec -ti pod/probe-demo-7c6f7c4f7f-x6w7c -- bash
+rm -rf /usr/share/nginx/html/index.html
+exit
+kubectl get ep
+
+kubectl logs -f pod/lasdfj
+kubectl logs -f pod/lasdfj --previous
+
+
+```
+
+| Option                          | Meaning                                                                             |
+| ------------------------------- | ----------------------------------------------------------------------------------- |
+| `initialDelaySeconds`           | Wait this many seconds after container starts before the first probe runs           |
+| `periodSeconds`                 | How often Kubernetes runs the probe                                                 |
+| `timeoutSeconds`                | How long Kubernetes waits for probe response before considering it failed           |
+| `successThreshold`              | How many successful checks are needed to mark the probe successful                  |
+| `failureThreshold`              | How many failed checks are needed before Kubernetes takes action                    |
+| `terminationGracePeriodSeconds` | Grace period before forcefully killing the container after liveness/startup failure |
+
+
+
+```sh
+
+#change to node role 
+kubectl label node node01 node-role.kubernetes.io/worker=worker1
+kubectl label node node02 node-role.kubernetes.io/worker=worker2
+
+# remove label
+kubectl label node node01 node-role.kubernetes.io/worker-
+
+
+
+# job vs cronjob
+# Job runs a task once until it completes.
+
+vim job.yaml
+----
+
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: one-time-job
+spec:
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: hello
+          image: busybox
+          command: ["sh", "-c", "echo Hello from Job && sleep 5"]
+
+----
+kubectl apply -f job.yaml
+kubectl get jobs
+kubectl get pods
+
+
+# CronJob runs a Job on a schedule, like Linux cron.
+
+vim cronjob.yaml
+----
+
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: scheduled-job
+spec:
+  schedule: "*/1 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: hello
+              image: busybox
+              command: ["sh", "-c", "echo Hello from CronJob && date"]
+
+----
+kubectl apply -f cronjob.yaml
+kubectl get cronjobs
+kubectl get jobs
+
+
+
+*/1 * * * *   every minute
+0 * * * *     every hour
+*/5 * * * *   every 5 minute
 
 ```
 
