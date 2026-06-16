@@ -3817,12 +3817,80 @@ sudo tcpdump -i any udp
 
 ## Kubernetes
 ```sh
-# basic command
+vim pod.yaml
+--------------
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-dev
+  labels:
+    app: nginx
+    env: dev
+    tier: frontend
+spec:
+  containers:
+    - name: nginx
+      image: nginx:latest
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-prod
+  labels:
+    app: nginx
+    env: prod
+    tier: frontend
+spec:
+  containers:
+    - name: nginx
+      image: nginx:latest
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: redis-prod
+  labels:
+    app: redis
+    env: prod
+    tier: backend
+spec:
+  containers:
+    - name: redis
+      image: redis:latest
 
+------------------
+kubectl get pods --show-labels
+kubectl get pods -l app=nginx
+kubectl get pods -l env=prod
+
+# AND operation with labels
+kubectl get pods -l app=nginx,env=prod
+kubectl get pods -l env=prod,tier=backend
+
+# OR operation with labels
+kubectl get pods -l 'app in (nginx,redis)'
+kubectl get pods -l 'env in (dev,prod)'
+
+
+# NOT / exclusion selectors
+kubectl get pods -l 'env!=dev'
+kubectl get pods -l 'app notin (nginx)'
+
+# set lable on kubernetes nodes
+
+kubectl label node node1 disk=10k
+kubectl label node node2 disk=nvme
+
+
+kubectl delete pod -n test -l app=test
+
+# set annotation 
+kubectl annotate pod mypod ip="3.3.3.3"
 
 
 
 ```
+
 
 ## Debug
 ```sh
