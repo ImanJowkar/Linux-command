@@ -4050,6 +4050,35 @@ spec:
 curl svc-ip:8080
 
 
+kubectl describe nginx-service
+# sessionAffinity in a Kubernetes Service controls whether traffic from the same client should keep going to the same Pod.
+
+sessionAffinity: None  # That means requests can be load-balanced across different Pods.
+
+sessionAffinity: ClientIP # Kubernetes tries to send requests from the same client IP to the same backend Pod.
+
+vim svc.yaml
+----
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-service
+spec:
+  type: ClusterIP
+  sessionAffinity: ClientIP
+  selector:
+    app: nginx
+  ports:
+    - port: 80
+      targetPort: 80
+-----
+
+
+
+
+
+
 
 
 # probe in k8s
