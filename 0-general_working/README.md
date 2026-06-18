@@ -4213,6 +4213,9 @@ kubectl logs -f pod/lasdfj
 kubectl logs -f pod/lasdfj --previous
 
 
+
+
+
 ```
 
 | Option                          | Meaning                                                                             |
@@ -4223,6 +4226,114 @@ kubectl logs -f pod/lasdfj --previous
 | `successThreshold`              | How many successful checks are needed to mark the probe successful                  |
 | `failureThreshold`              | How many failed checks are needed before Kubernetes takes action                    |
 | `terminationGracePeriodSeconds` | Grace period before forcefully killing the container after liveness/startup failure |
+
+
+```sh
+# full example
+vim cm.yaml
+-----
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-health-config
+data:
+  default.conf: |
+    server {
+        listen 80;
+
+        location / {
+            return 200 "Hello from Nginx\n";
+        }
+
+        location /healthz {
+            return 200 "alive\n";
+        }
+
+        location /ready {
+            return 200 "ready\n";
+        }
+    }
+
+
+-----
+
+
+vim dep.yaml
+----
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-health-demo
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: nginx-health-demo
+  template:
+    metadata:
+      labels:
+        app: nginx-health-demo
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:1.27
+          ports:
+            - containerPort: 80
+
+          volumeMounts:
+            - name: nginx-config
+              mountPath: /etc/nginx/conf.d
+
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: 80
+            periodSeconds: 5
+            failureThreshold: 10
+
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 80
+            periodSeconds: 5
+            failureThreshold: 3
+
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 80
+            periodSeconds: 10
+            failureThreshold: 3
+
+      volumes:
+        - name: nginx-config
+          configMap:
+            name: nginx-health-config
+
+
+----
+
+
+vim svc.yaml
+
+----
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-health-service
+spec:
+  selector:
+    app: nginx-health-demo
+  ports:
+    - port: 80
+      targetPort: 80
+
+----
+
+
+```
 
 
 
@@ -4294,7 +4405,168 @@ kubectl get jobs
 0 * * * *     every hour
 */5 * * * *   every 5 minute
 
+
+
+
 ```
+
+
+### svc
+
+```sh
+### Service types in k8s
+# 1- ExternalName
+vim svc.yaml
+----
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: external-google
+spec:
+  type: ExternalName
+  externalName: google.com
+
+----
+
+
+kubectl run test-client --image=busybox:1.36 -it --rm -- sh
+nslookup external-google
+
+
+```
+
+| Type           | به کجا وصل می‌شود؟           | کاربرد                                |
+| -------------- | ---------------------------- | ------------------------------------- |
+| `ClusterIP`    | Podهای داخل کلاستر           | ارتباط داخلی بین سرویس‌ها             |
+| `NodePort`     | باز کردن سرویس روی پورت Node | دسترسی از بیرون با IP نود             |
+| `LoadBalancer` | ساخت Load Balancer خارجی     | دسترسی استاندارد از اینترنت           |
+| `ExternalName` | یک DNS خارجی                 | وصل شدن از داخل کلاستر به سرویس خارجی |
+
+
+
+#### ExternalName - simple Load balancer for external services
+```sh
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: external-web-service
+spec:
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+
+---
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: external-web-service
+subsets:
+  - addresses:
+      - ip: 192.168.10.11
+      - ip: 192.168.10.12
+      - ip: 192.168.10.13
+    ports:
+      - port: 80
+        protocol: TCP
+
+```
+
+#### ExternalName - same way with endpoint slice
+```sh
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: external-web-service
+spec:
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 80
+
+---
+
+apiVersion: discovery.k8s.io/v1
+kind: EndpointSlice
+metadata:
+  name: external-web-service-1
+  labels:
+    kubernetes.io/service-name: external-web-service
+addressType: IPv4
+ports:
+  - name: http
+    protocol: TCP
+    port: 80
+endpoints:
+  - addresses:
+      - "192.168.10.11"
+  - addresses:
+      - "192.168.10.12"
+  - addresses:
+      - "192.168.10.13"
+```
+
+#### HeadLess 
+```sh
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-demo
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx-demo
+  template:
+    metadata:
+      labels:
+        app: nginx-demo
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:1.27
+          ports:
+            - containerPort: 80
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-headless
+spec:
+  clusterIP: None
+  selector:
+    app: nginx-demo
+  ports:
+    - port: 80
+      targetPort: 80
+
+
+kubectl run test-client --image=busybox:1.36 -it --rm -- sh
+nslookup nginx-headless
+
+
+
+```
+
+
+### Volume 
+
+```sh
+
+
+
+```
+
+
+
+
 
 
 ## Debug
