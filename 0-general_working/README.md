@@ -3821,7 +3821,6 @@ sudo tcpdump -i any udp
 
 
 ## Kubernetes
-
 ### pod
 ```sh
 vim pod.yaml
@@ -4024,7 +4023,17 @@ spec:
 
 ### svc 
 
+| Service Type   | What it Connects To     | Simple Explanation                                                                          |
+| -------------- | ----------------------- | ------------------------------------------------------------------------------------------- |
+| `ClusterIP`    | Pods inside the cluster | Used for communication between applications inside Kubernetes. Not accessible from outside. |
+| `NodePort`     | A port on every Node    | Exposes the service outside the cluster using `<NodeIP>:<Port>`.                            |
+| `LoadBalancer` | External Load Balancer  | Exposes the service to the internet with a public IP (common in cloud providers).           |
+| `ExternalName` | External DNS name       | Creates a DNS alias to an external service (e.g., database or API outside Kubernetes).      |
+
+
 ```sh
+
+kubectl create ns dev
 
 vim app.yaml
 ----
@@ -4032,6 +4041,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: nginx-deployment
+  namespace: dev
 spec:
   replicas: 2
   selector:
@@ -4053,6 +4063,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: nginx-service
+  namespace: dev
 spec:
   type: ClusterIP
   selector:
@@ -4080,6 +4091,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: nginx-service
+  namespace: dev
 spec:
   type: ClusterIP
   sessionAffinity: ClientIP
@@ -4094,12 +4106,16 @@ spec:
 
 ### Service types in k8s
 # 1- ExternalName
+# ExternalName is a Service type that maps a Kubernetes Service name to an external DNS name.
+# Instead of forwarding traffic to Pods, Kubernetes returns a DNS alias (CNAME).
+
 vim svc.yaml
 ----
 apiVersion: v1
 kind: Service
 metadata:
   name: external-google
+  namespace: dev
 spec:
   type: ExternalName
   externalName: google.com
@@ -4108,27 +4124,21 @@ spec:
 kubectl run test-client --image=busybox:1.36 -it --rm -- sh
 nslookup external-google
 
-```
 
-
-| Type           | به کجا وصل می‌شود؟           | کاربرد                                |
-| -------------- | ---------------------------- | ------------------------------------- |
-| `ClusterIP`    | Podهای داخل کلاستر           | ارتباط داخلی بین سرویس‌ها             |
-| `NodePort`     | باز کردن سرویس روی پورت Node | دسترسی از بیرون با IP نود             |
-| `LoadBalancer` | ساخت Load Balancer خارجی     | دسترسی استاندارد از اینترنت           |
-| `ExternalName` | یک DNS خارجی                 | وصل شدن از داخل کلاستر به سرویس خارجی |
+# what is CNAME
+example.com.      IN A      192.168.1.10
+www.example.com.  IN CNAME  example.com.
 
 
 
-```sh
+
 
 #### ExternalName - simple Load balancer for external services
-
-
 apiVersion: v1
 kind: Service
 metadata:
   name: external-web-service
+  namespace: dev
 spec:
   ports:
     - protocol: TCP
@@ -4136,10 +4146,12 @@ spec:
       targetPort: 80
 
 ---
+
 apiVersion: v1
 kind: Endpoints
 metadata:
   name: external-web-service
+  namespace: dev
 subsets:
   - addresses:
       - ip: 192.168.10.11
@@ -4150,6 +4162,9 @@ subsets:
         protocol: TCP
 
 
+kubectl -n dev run test-client --image=busybox:1.36 -it --rm -- sh
+wget  external-web-service
+
 
 
 
@@ -4158,6 +4173,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: external-web-service
+  namespace: dev
 spec:
   ports:
     - name: http
@@ -4171,6 +4187,7 @@ apiVersion: discovery.k8s.io/v1
 kind: EndpointSlice
 metadata:
   name: external-web-service-1
+  namespace: dev
   labels:
     kubernetes.io/service-name: external-web-service
 addressType: IPv4
@@ -4189,42 +4206,56 @@ endpoints:
 
 #### HeadLess 
 ---
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: nginx-demo
-spec:
-  replicas: 3
-  selector:
-    matchLabels:
-      app: nginx-demo
-  template:
-    metadata:
-      labels:
-        app: nginx-demo
-    spec:
-      containers:
-        - name: nginx
-          image: nginx:1.27
-          ports:
-            - containerPort: 80
----
 
+kubectl create ns dev
+------
 apiVersion: v1
 kind: Service
 metadata:
-  name: nginx-headless
+  name: svc-sts
+  namespace: dev
 spec:
   clusterIP: None
   selector:
-    app: nginx-demo
+    app: nginx-sts
   ports:
-    - port: 80
+    - name: http
+      port: 80
       targetPort: 80
 
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: nginx-sts
+  namespace: dev
+spec:
+  serviceName: svc-sts
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx-sts
+  template:
+    metadata:
+      labels:
+        app: nginx-sts
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:1.25
+          ports:
+            - containerPort: 80
+              name: http
 
-kubectl run test-client --image=busybox:1.36 -it --rm -- sh
-nslookup nginx-headless
+
+
+kubectl -n dev run test-client --image=busybox:1.36 -it --rm -- sh
+nslookup svc-sts
+
+nslookup nginx-sts-0.svc-sts.dev.svc.cluster.local
+nslookup nginx-sts-1.svc-sts.dev.svc.cluster.local
+nslookup nginx-sts-2.svc-sts.dev.svc.cluster.local
+
 
 
 
@@ -4232,6 +4263,15 @@ nslookup nginx-headless
 
 
 ### probe in k8s
+
+
+| Probe              | Purpose                           | If it fails                                        |
+| ------------------ | --------------------------------- | -------------------------------------------------- |
+| **startupProbe**   | Gives app time to start           | Container is not checked by liveness/readiness yet |
+| **readinessProbe** | Checks if Pod can receive traffic | Pod is removed from Service traffic                |
+| **livenessProbe**  | Checks if app is alive            | Container is restarted                             |
+
+
 ```sh
 
 Startup  = Has the app finished starting?
@@ -4246,12 +4286,125 @@ Liveness  = Is the app stuck and needs restart?
 ## Is the application still alive, or should Kubernetes restart it?
 # If the liveness probe fails repeatedly, Kubernetes assumes the container is unhealthy and restarts it.
 
+vim app.yaml
+# exec command
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: liveness-exec-demo
+spec:
+  restartPolicy: Always
+  containers:
+  - name: app
+    image: busybox:1.36
+    command:
+    - sh
+    - -c
+    - |
+      touch /tmp/healthy
+      sleep 30
+      rm -f /tmp/healthy
+      sleep 3600
+    livenessProbe:
+      exec:
+        command:
+        - cat
+        - /tmp/healthy
+      initialDelaySeconds: 5
+      periodSeconds: 5
+      failureThreshold: 2
+---
 
-# Container is running
-# Application health check fails
-# Kubernetes restarts the container
-# Application gets a fresh start
 
+# http request
+
+vim app.yaml
+---
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: liveness-http-demo
+spec:
+  restartPolicy: Always
+  containers:
+  - name: app
+    image: python:3.12-alpine
+    command:
+    - sh
+    - -c
+    - |
+      cat > /app.py <<'PY'
+      from http.server import BaseHTTPRequestHandler, HTTPServer
+      import time
+
+      started = time.time()
+
+      class Handler(BaseHTTPRequestHandler):
+          def do_GET(self):
+              if self.path == "/healthz":
+                  if time.time() - started < 30:
+                      self.send_response(200)
+                      self.end_headers()
+                      self.wfile.write(b"ok")
+                  else:
+                      self.send_response(500)
+                      self.end_headers()
+                      self.wfile.write(b"broken")
+              else:
+                  self.send_response(200)
+                  self.end_headers()
+                  self.wfile.write(b"hello")
+
+      HTTPServer(("0.0.0.0", 8080), Handler).serve_forever()
+      PY
+      python /app.py
+    ports:
+    - containerPort: 8080
+    livenessProbe:
+      httpGet:
+        path: /healthz
+        port: 8080
+      initialDelaySeconds: 5
+      periodSeconds: 5
+      failureThreshold: 2
+
+---
+```
+```sh
+### tcp check
+
+vim app.yaml
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: liveness-tcp-demo
+spec:
+  restartPolicy: Always
+  containers:
+  - name: app
+    image: busybox:1.36
+    command:
+    - sh
+    - -c
+    - |
+      nc -lk -p 8080 &
+      SERVER_PID=$!
+      sleep 30
+      kill $SERVER_PID
+      sleep 3600
+    ports:
+    - containerPort: 8080
+    livenessProbe:
+      tcpSocket:
+        port: 8080
+      initialDelaySeconds: 5
+      periodSeconds: 5
+      failureThreshold: 2
+
+---
 
 
 # 2. Readiness Probe
@@ -4260,21 +4413,74 @@ Liveness  = Is the app stuck and needs restart?
 
 # If the readiness probe fails, Kubernetes does not restart the container. Instead, it removes the Pod from the Service endpoints. That means traffic will not be sent to that Pod until it becomes ready again.
 
-# Pod starts
-# Readiness check fails
-# Service does not send traffic yet
-# Application finishes startup
-# Readiness check succeeds
-# Service starts sending traffic
 
 
-| Probe              | Purpose                           | If it fails                                        |
-| ------------------ | --------------------------------- | -------------------------------------------------- |
-| **startupProbe**   | Gives app time to start           | Container is not checked by liveness/readiness yet |
-| **readinessProbe** | Checks if Pod can receive traffic | Pod is removed from Service traffic                |
-| **livenessProbe**  | Checks if app is alive            | Container is restarted                             |
+vim app.yml
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: readiness-http-demo
+spec:
+  containers:
+  - name: app
+    image: python:3.12-alpine
+    command:
+    - sh
+    - -c
+    - |
+      cat > /app.py <<'PY'
+      from http.server import BaseHTTPRequestHandler, HTTPServer
+      import time
+
+      started = time.time()
+
+      class Handler(BaseHTTPRequestHandler):
+
+          def do_GET(self):
+
+              if self.path == "/ready":
+
+                  if time.time() - started > 30:
+                      self.send_response(200)
+                      self.end_headers()
+                      self.wfile.write(b"READY")
+                  else:
+                      self.send_response(503)
+                      self.end_headers()
+                      self.wfile.write(b"NOT READY")
+
+              else:
+                  self.send_response(200)
+                  self.end_headers()
+                  self.wfile.write(b"HELLO")
+
+      HTTPServer(("0.0.0.0",8080),Handler).serve_forever()
+      PY
+
+      python /app.py
+
+    ports:
+    - containerPort: 8080
+
+    readinessProbe:
+      httpGet:
+        path: /ready
+        port: 8080
+      periodSeconds: 5
+
+---
 
 
+```
+
+
+
+
+```sh
+
+
+# example 1 - full
 vim app.yaml
 -----
 
@@ -4297,7 +4503,6 @@ spec:
         image: nginx:1.27
         ports:
         - containerPort: 80
-
         startupProbe:
           httpGet:
             path: /
@@ -4341,6 +4546,8 @@ curl localhost
 curl localhost/ready
 echo ready > /usr/share/nginx/html/ready
 curl localhost/ready
+exit
+
 kubectl exec deploy/probe-demo -- sh -c 'echo ready > /usr/share/nginx/html/ready'
 exit
 
@@ -4410,79 +4617,112 @@ data:
 -----
 
 
-vim dep.yaml
-----
+# full example
+vim app.yaml
+
+---
 
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: nginx-health-demo
+  name: probe-demo
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
-      app: nginx-health-demo
+      app: probe-demo
   template:
     metadata:
       labels:
-        app: nginx-health-demo
+        app: probe-demo
     spec:
       containers:
-        - name: nginx
-          image: nginx:1.27
-          ports:
-            - containerPort: 80
+      - name: app
+        image: python:3.12-alpine
+        ports:
+        - containerPort: 8080
 
-          volumeMounts:
-            - name: nginx-config
-              mountPath: /etc/nginx/conf.d
+        command:
+        - sh
+        - -c
+        - |
+          cat > /app.py <<'PY'
+          from http.server import BaseHTTPRequestHandler, HTTPServer
+          import time
 
-          startupProbe:
-            httpGet:
-              path: /healthz
-              port: 80
-            periodSeconds: 5
-            failureThreshold: 10
+          started = time.time()
 
-          readinessProbe:
-            httpGet:
-              path: /ready
-              port: 80
-            periodSeconds: 5
-            failureThreshold: 3
+          class Handler(BaseHTTPRequestHandler):
+              def do_GET(self):
+                  uptime = time.time() - started
 
-          livenessProbe:
-            httpGet:
-              path: /healthz
-              port: 80
-            periodSeconds: 10
-            failureThreshold: 3
+                  if self.path == "/startup":
+                      # بعد از 20 ثانیه یعنی برنامه startup را رد کرده
+                      if uptime > 20:
+                          self.send_response(200)
+                          self.end_headers()
+                          self.wfile.write(b"STARTED")
+                      else:
+                          self.send_response(503)
+                          self.end_headers()
+                          self.wfile.write(b"STARTING")
 
-      volumes:
-        - name: nginx-config
-          configMap:
-            name: nginx-health-config
+                  elif self.path == "/ready":
+                      # بعد از 35 ثانیه یعنی آماده گرفتن ترافیک است
+                      if uptime > 35:
+                          self.send_response(200)
+                          self.end_headers()
+                          self.wfile.write(b"READY")
+                      else:
+                          self.send_response(503)
+                          self.end_headers()
+                          self.wfile.write(b"NOT READY")
+
+                  elif self.path == "/live":
+                      # بعد از 90 ثانیه عمداً خراب می‌شود تا liveness ری‌استارت کند
+                      if uptime < 90:
+                          self.send_response(200)
+                          self.end_headers()
+                          self.wfile.write(b"ALIVE")
+                      else:
+                          self.send_response(500)
+                          self.end_headers()
+                          self.wfile.write(b"DEAD")
+
+                  else:
+                      self.send_response(200)
+                      self.end_headers()
+                      self.wfile.write(b"HELLO")
+
+          HTTPServer(("0.0.0.0", 8080), Handler).serve_forever()
+          PY
+
+          python /app.py
+
+        startupProbe:
+          httpGet:
+            path: /startup
+            port: 8080
+          periodSeconds: 5
+          failureThreshold: 10
+
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8080
+          periodSeconds: 5
+          failureThreshold: 1
+
+        livenessProbe:
+          httpGet:
+            path: /live
+            port: 8080
+          periodSeconds: 5
+          failureThreshold: 2
 
 
-----
+---
 
-
-vim svc.yaml
-
-----
-
-apiVersion: v1
-kind: Service
-metadata:
-  name: nginx-health-service
-spec:
-  selector:
-    app: nginx-health-demo
-  ports:
-    - port: 80
-      targetPort: 80
-
-----
 
 
 ```
@@ -4493,8 +4733,6 @@ spec:
 ### job and cornjob
 
 ```sh
-
-
 
 # job vs cronjob
 # Job runs a task once until it completes.
@@ -4555,67 +4793,18 @@ kubectl get jobs
 
 
 
-
-```
-
-
-
-
-
-### STS
-
-```sh
-
-kubectl create ns dev
-
-apiVersion: v1
-kind: Service
-metadata:
-  name: nginx-sts
-  namespace: dev
-spec:
-  clusterIP: None
-  selector:
-    app: nginx-sts
-  ports:
-    - name: http
-      port: 80
-      targetPort: 80
-
----
-apiVersion: apps/v1
-kind: StatefulSet
-metadata:
-  name: nginx-sts
-  namespace: dev
-spec:
-  serviceName: nginx-sts
-  replicas: 3
-  selector:
-    matchLabels:
-      app: nginx-sts
-  template:
-    metadata:
-      labels:
-        app: nginx-sts
-    spec:
-      containers:
-        - name: nginx
-          image: nginx:1.25
-          ports:
-            - containerPort: 80
-              name: http
-
-
-
-kubectl -n dev run test-client --image=busybox:1.36 -it --rm -- sh
-nslookup nginx-sts
-
-
 ```
 
 
 ### taint and toleration
+
+| Effect             | Meaning                                                                                    |
+| ------------------ | ------------------------------------------------------------------------------------------ |
+| `NoSchedule`       | Pods will not be scheduled on the node unless they tolerate the taint. Existing pods stay. |
+| `PreferNoSchedule` | Kubernetes tries to avoid scheduling pods there, but it is not strict.                     |
+| `NoExecute`        | New pods need a toleration, and existing pods without toleration are evicted.              |
+
+
 ```sh
 # see the taint
 kubectl describe node worker-1 | grep -i taints
@@ -4703,19 +4892,149 @@ spec:
             - containerPort: 80
 ```
 
-| Effect             | Meaning                                                                                    |
-| ------------------ | ------------------------------------------------------------------------------------------ |
-| `NoSchedule`       | Pods will not be scheduled on the node unless they tolerate the taint. Existing pods stay. |
-| `PreferNoSchedule` | Kubernetes tries to avoid scheduling pods there, but it is not strict.                     |
-| `NoExecute`        | New pods need a toleration, and existing pods without toleration are evicted.              |
 
 
 
-
-### Volume 
+### initcontainer  and sidecar
 
 ```sh
 
+apiVersion: v1
+kind: Pod
+metadata:
+  name: app-with-init
+spec:
+  initContainers:
+    - name: wait-for-db
+      image: busybox
+      command:
+        - sh
+        - -c
+        - |
+          until nc -z postgres-service.dev.svc.cluster.local 5432; do
+            echo "Waiting for database..."
+            sleep 2
+          done
+          echo "Database is ready"
+
+  containers:
+    - name: main-app
+      image: nginx
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-service
+  namespace: dev
+spec:
+  ports:
+    - name: postgres
+      protocol: TCP
+      port: 5432
+      targetPort: 5432
+
+---
+
+apiVersion: discovery.k8s.io/v1
+kind: EndpointSlice
+metadata:
+  name: external-web-service-1
+  namespace: dev
+  labels:
+    kubernetes.io/service-name: postgres-service
+addressType: IPv4
+ports:
+  - name: postgres
+    protocol: TCP
+    port: 5432
+endpoints:
+  - addresses:
+      - "172.30.1.2"
+
+
+
+
+apt install postgresql
+kubectl logs -f pod/app-with-init -c wait-for-db
+systemctl start postgresl
+systemctl stop postgresl
+
+
+
+
+
+# another initcontainer
+
+initContainers:
+- name: wait-for-elastic
+  image: curlimages/curl
+  command:
+    - sh
+    - -c
+    - |
+      until curl -s http://elasticsearch:9200 >/dev/null; do
+        echo "Waiting for Elasticsearch..."
+        sleep 5
+      done
+
+
+
+
+# another one
+initContainers:
+- name: wait-for-dns
+  image: busybox
+  command:
+    - sh
+    - -c
+    - |
+      until nslookup mysql; do
+        echo "Waiting for DNS..."
+        sleep 3
+      done
+
+
+
+
+
+# sidecar
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: sidecar-log-example
+spec:
+  volumes:
+    - name: log-volume
+      emptyDir: {}
+
+  containers:
+    - name: main-app
+      image: busybox
+      command:
+        - sh
+        - -c
+        - |
+          while true; do
+            echo "$(date) app log message" >> /var/log/app/app.log
+            sleep 5
+          done
+      volumeMounts:
+        - name: log-volume
+          mountPath: /var/log/app
+
+    - name: log-reader-sidecar
+      image: busybox
+      command:
+        - sh
+        - -c
+        - |
+          tail -f /var/log/app/app.log
+      volumeMounts:
+        - name: log-volume
+          mountPath: /var/log/app
 
 
 ```
