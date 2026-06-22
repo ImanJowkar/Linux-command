@@ -3821,6 +3821,8 @@ sudo tcpdump -i any udp
 
 
 ## Kubernetes
+
+### pod
 ```sh
 vim pod.yaml
 --------------
@@ -3893,16 +3895,29 @@ kubectl delete pod -n test -l app=test
 kubectl annotate pod mypod ip="3.3.3.3"
 kubectl annotate pod mypod owner="Iman Jowkar"
 
-## deplayment
+
+#change to node role 
+kubectl label node node01 node-role.kubernetes.io/worker=worker1
+kubectl label node node02 node-role.kubernetes.io/worker=worker2
+
+# remove label
+kubectl label node node01 node-role.kubernetes.io/worker-
+
+```
+
+### deplayment
+
+```sh
 vim app1.yaml
 -----
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: web-prod-deployment
 spec:
   replicas: 3
-  selector:
+  selector:  # Between different matchExpressions, it is AND. # app must be web AND environment must be prod
     matchExpressions:
       - key: app
         operator: In
@@ -3950,10 +3965,12 @@ spec:
           ports:
             - containerPort: 80
 -----
+```
 
-# deamonset
+### daemonset
+```sh
+
 --------
-
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
@@ -3963,7 +3980,6 @@ spec:
   selector:
     matchLabels:
       app: nginx-daemon
-
   template:
     metadata:
       labels:
@@ -3979,8 +3995,8 @@ spec:
 
 kubectl label node node01 dedicated=daemon
 
+# run daemonset pod on specific node with node selector
 -----
-
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
@@ -4002,15 +4018,16 @@ spec:
           image: nginx:latest
           ports:
             - containerPort: 80
-
-
 -----
 
+```
 
-# svc 
+### svc 
+
+```sh
+
 vim app.yaml
 ----
-
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -4031,7 +4048,6 @@ spec:
           image: nginx:latest
           ports:
             - containerPort: 80
-
 ---
 apiVersion: v1
 kind: Service
@@ -4076,12 +4092,148 @@ spec:
 
 
 
+### Service types in k8s
+# 1- ExternalName
+vim svc.yaml
+----
+apiVersion: v1
+kind: Service
+metadata:
+  name: external-google
+spec:
+  type: ExternalName
+  externalName: google.com
+
+----
+kubectl run test-client --image=busybox:1.36 -it --rm -- sh
+nslookup external-google
+
+```
+
+
+| Type           | به کجا وصل می‌شود؟           | کاربرد                                |
+| -------------- | ---------------------------- | ------------------------------------- |
+| `ClusterIP`    | Podهای داخل کلاستر           | ارتباط داخلی بین سرویس‌ها             |
+| `NodePort`     | باز کردن سرویس روی پورت Node | دسترسی از بیرون با IP نود             |
+| `LoadBalancer` | ساخت Load Balancer خارجی     | دسترسی استاندارد از اینترنت           |
+| `ExternalName` | یک DNS خارجی                 | وصل شدن از داخل کلاستر به سرویس خارجی |
+
+
+
+```sh
+
+#### ExternalName - simple Load balancer for external services
+
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: external-web-service
+spec:
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+
+---
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: external-web-service
+subsets:
+  - addresses:
+      - ip: 192.168.10.11
+      - ip: 192.168.10.12
+      - ip: 192.168.10.13
+    ports:
+      - port: 80
+        protocol: TCP
 
 
 
 
 
-# probe in k8s
+#### ExternalName - same way with endpoint slice
+apiVersion: v1
+kind: Service
+metadata:
+  name: external-web-service
+spec:
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 80
+
+---
+
+apiVersion: discovery.k8s.io/v1
+kind: EndpointSlice
+metadata:
+  name: external-web-service-1
+  labels:
+    kubernetes.io/service-name: external-web-service
+addressType: IPv4
+ports:
+  - name: http
+    protocol: TCP
+    port: 80
+endpoints:
+  - addresses:
+      - "192.168.10.11"
+  - addresses:
+      - "192.168.10.12"
+  - addresses:
+      - "192.168.10.13"
+
+
+#### HeadLess 
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-demo
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx-demo
+  template:
+    metadata:
+      labels:
+        app: nginx-demo
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:1.27
+          ports:
+            - containerPort: 80
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-headless
+spec:
+  clusterIP: None
+  selector:
+    app: nginx-demo
+  ports:
+    - port: 80
+      targetPort: 80
+
+
+kubectl run test-client --image=busybox:1.36 -it --rm -- sh
+nslookup nginx-headless
+
+
+
+```
+
+
+### probe in k8s
+```sh
+
 Startup  = Has the app finished starting?
 Readiness = Can the app receive traffic now?
 Liveness  = Is the app stuck and needs restart?
@@ -4337,14 +4489,10 @@ spec:
 
 
 
+
+### job and cornjob
+
 ```sh
-
-#change to node role 
-kubectl label node node01 node-role.kubernetes.io/worker=worker1
-kubectl label node node02 node-role.kubernetes.io/worker=worker2
-
-# remove label
-kubectl label node node01 node-role.kubernetes.io/worker-
 
 
 
@@ -4411,149 +4559,157 @@ kubectl get jobs
 ```
 
 
-### svc
+
+
+
+### STS
 
 ```sh
-### Service types in k8s
-# 1- ExternalName
-vim svc.yaml
-----
+
+kubectl create ns dev
 
 apiVersion: v1
 kind: Service
 metadata:
-  name: external-google
-spec:
-  type: ExternalName
-  externalName: google.com
-
-----
-
-
-kubectl run test-client --image=busybox:1.36 -it --rm -- sh
-nslookup external-google
-
-
-```
-
-| Type           | به کجا وصل می‌شود؟           | کاربرد                                |
-| -------------- | ---------------------------- | ------------------------------------- |
-| `ClusterIP`    | Podهای داخل کلاستر           | ارتباط داخلی بین سرویس‌ها             |
-| `NodePort`     | باز کردن سرویس روی پورت Node | دسترسی از بیرون با IP نود             |
-| `LoadBalancer` | ساخت Load Balancer خارجی     | دسترسی استاندارد از اینترنت           |
-| `ExternalName` | یک DNS خارجی                 | وصل شدن از داخل کلاستر به سرویس خارجی |
-
-
-
-#### ExternalName - simple Load balancer for external services
-```sh
-
-apiVersion: v1
-kind: Service
-metadata:
-  name: external-web-service
-spec:
-  ports:
-    - protocol: TCP
-      port: 80
-      targetPort: 80
-
----
-apiVersion: v1
-kind: Endpoints
-metadata:
-  name: external-web-service
-subsets:
-  - addresses:
-      - ip: 192.168.10.11
-      - ip: 192.168.10.12
-      - ip: 192.168.10.13
-    ports:
-      - port: 80
-        protocol: TCP
-
-```
-
-#### ExternalName - same way with endpoint slice
-```sh
-
-apiVersion: v1
-kind: Service
-metadata:
-  name: external-web-service
-spec:
-  ports:
-    - name: http
-      protocol: TCP
-      port: 80
-      targetPort: 80
-
----
-
-apiVersion: discovery.k8s.io/v1
-kind: EndpointSlice
-metadata:
-  name: external-web-service-1
-  labels:
-    kubernetes.io/service-name: external-web-service
-addressType: IPv4
-ports:
-  - name: http
-    protocol: TCP
-    port: 80
-endpoints:
-  - addresses:
-      - "192.168.10.11"
-  - addresses:
-      - "192.168.10.12"
-  - addresses:
-      - "192.168.10.13"
-```
-
-#### HeadLess 
-```sh
-
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: nginx-demo
-spec:
-  replicas: 3
-  selector:
-    matchLabels:
-      app: nginx-demo
-  template:
-    metadata:
-      labels:
-        app: nginx-demo
-    spec:
-      containers:
-        - name: nginx
-          image: nginx:1.27
-          ports:
-            - containerPort: 80
----
-
-apiVersion: v1
-kind: Service
-metadata:
-  name: nginx-headless
+  name: nginx-sts
+  namespace: dev
 spec:
   clusterIP: None
   selector:
-    app: nginx-demo
+    app: nginx-sts
   ports:
-    - port: 80
+    - name: http
+      port: 80
       targetPort: 80
 
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: nginx-sts
+  namespace: dev
+spec:
+  serviceName: nginx-sts
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx-sts
+  template:
+    metadata:
+      labels:
+        app: nginx-sts
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:1.25
+          ports:
+            - containerPort: 80
+              name: http
 
-kubectl run test-client --image=busybox:1.36 -it --rm -- sh
-nslookup nginx-headless
 
+
+kubectl -n dev run test-client --image=busybox:1.36 -it --rm -- sh
+nslookup nginx-sts
 
 
 ```
+
+
+### taint and toleration
+```sh
+# see the taint
+kubectl describe node worker-1 | grep -i taints
+kubectl get nodes -o custom-columns=NAME:.metadata.name,TAINTS:.spec.taints
+
+# See tolerations on a pod
+kubectl describe pod db-pod
+
+
+
+
+
+kubectl taint nodes <node-name> <key>=<value>:<effect>
+
+# add taint
+kubectl taint nodes worker-1 dedicated=database:NoSchedule
+kubectl taint nodes controlplane node-role.kubernetes.io/master:NoSchedule
+
+
+
+# remove taint
+kubectl taint nodes worker-1 dedicated=database:NoSchedule-
+
+# pod without tolerate
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx
+spec:
+  containers:
+  - name: nginx
+    image: nginx
+
+
+---
+# pod with tolerate
+apiVersion: v1
+kind: Pod
+metadata:
+  name: db-pod
+spec:
+  tolerations:
+  - key: "dedicated"
+    operator: "Equal"
+    value: "database"
+    effect: "NoSchedule"
+
+  containers:
+  - name: nginx
+    image: nginx
+
+
+
+
+
+# deamonset with toleration
+
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: nginx-daemonset
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app: nginx-daemon
+
+  template:
+    metadata:
+      labels:
+        app: nginx-daemon
+    spec:
+      tolerations:
+        - key: "node-role.kubernetes.io/control-plane"
+          operator: "Exists"
+          effect: "NoSchedule"
+        - key: "node-role.kubernetes.io/master"
+          operator: "Exists"
+          effect: "NoSchedule"
+
+      containers:
+        - name: nginx
+          image: nginx:latest
+          ports:
+            - containerPort: 80
+```
+
+| Effect             | Meaning                                                                                    |
+| ------------------ | ------------------------------------------------------------------------------------------ |
+| `NoSchedule`       | Pods will not be scheduled on the node unless they tolerate the taint. Existing pods stay. |
+| `PreferNoSchedule` | Kubernetes tries to avoid scheduling pods there, but it is not strict.                     |
+| `NoExecute`        | New pods need a toleration, and existing pods without toleration are evicted.              |
+
+
 
 
 ### Volume 
