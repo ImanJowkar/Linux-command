@@ -4037,6 +4037,7 @@ kubectl create ns dev
 
 vim app.yaml
 ----
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -4587,146 +4588,6 @@ kubectl logs -f pod/lasdfj --previous
 | `terminationGracePeriodSeconds` | Grace period before forcefully killing the container after liveness/startup failure |
 
 
-```sh
-# full example
-vim cm.yaml
------
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: nginx-health-config
-data:
-  default.conf: |
-    server {
-        listen 80;
-
-        location / {
-            return 200 "Hello from Nginx\n";
-        }
-
-        location /healthz {
-            return 200 "alive\n";
-        }
-
-        location /ready {
-            return 200 "ready\n";
-        }
-    }
-
-
------
-
-
-# full example
-vim app.yaml
-
----
-
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: probe-demo
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: probe-demo
-  template:
-    metadata:
-      labels:
-        app: probe-demo
-    spec:
-      containers:
-      - name: app
-        image: python:3.12-alpine
-        ports:
-        - containerPort: 8080
-
-        command:
-        - sh
-        - -c
-        - |
-          cat > /app.py <<'PY'
-          from http.server import BaseHTTPRequestHandler, HTTPServer
-          import time
-
-          started = time.time()
-
-          class Handler(BaseHTTPRequestHandler):
-              def do_GET(self):
-                  uptime = time.time() - started
-
-                  if self.path == "/startup":
-                      # بعد از 20 ثانیه یعنی برنامه startup را رد کرده
-                      if uptime > 20:
-                          self.send_response(200)
-                          self.end_headers()
-                          self.wfile.write(b"STARTED")
-                      else:
-                          self.send_response(503)
-                          self.end_headers()
-                          self.wfile.write(b"STARTING")
-
-                  elif self.path == "/ready":
-                      # بعد از 35 ثانیه یعنی آماده گرفتن ترافیک است
-                      if uptime > 35:
-                          self.send_response(200)
-                          self.end_headers()
-                          self.wfile.write(b"READY")
-                      else:
-                          self.send_response(503)
-                          self.end_headers()
-                          self.wfile.write(b"NOT READY")
-
-                  elif self.path == "/live":
-                      # بعد از 90 ثانیه عمداً خراب می‌شود تا liveness ری‌استارت کند
-                      if uptime < 90:
-                          self.send_response(200)
-                          self.end_headers()
-                          self.wfile.write(b"ALIVE")
-                      else:
-                          self.send_response(500)
-                          self.end_headers()
-                          self.wfile.write(b"DEAD")
-
-                  else:
-                      self.send_response(200)
-                      self.end_headers()
-                      self.wfile.write(b"HELLO")
-
-          HTTPServer(("0.0.0.0", 8080), Handler).serve_forever()
-          PY
-
-          python /app.py
-
-        startupProbe:
-          httpGet:
-            path: /startup
-            port: 8080
-          periodSeconds: 5
-          failureThreshold: 10
-
-        readinessProbe:
-          httpGet:
-            path: /ready
-            port: 8080
-          periodSeconds: 5
-          failureThreshold: 1
-
-        livenessProbe:
-          httpGet:
-            path: /live
-            port: 8080
-          periodSeconds: 5
-          failureThreshold: 2
-
-
----
-
-
-
-```
-
 
 
 
@@ -5039,8 +4900,63 @@ spec:
 
 ```
 
+### affinity
 
 
+`Node Affinity` → "Which Nodes does this Pod want to run on?"
+`Pod Affinity` → "Which Pods does this Pod want to be near?"
+`Pod Anti-Affinity` → "Which Pods does this Pod want to stay away from?"
+
+```sh
+
+
+kubectl label node node01 disktype=ssd
+kubectl label node controlplane disktype=hdd
+kubectl get nodes --show-labels
+
+vim app.yaml
+----------
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx
+
+  template:
+    metadata:
+      labels:
+        app: nginx
+
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: disktype
+                operator: In
+                values:
+                - ssd
+
+      containers:
+      - name: nginx
+        image: nginx
+
+-----------
+
+
+# how can i set zone in kubernetes?
+kubectl label node master-node topology.kubernetes.io/zone=zone-a
+kubectl label node worker-node topology.kubernetes.io/zone=zone-b
+kubectl get nodes -L topology.kubernetes.io/zone
+
+
+```
 
 
 
