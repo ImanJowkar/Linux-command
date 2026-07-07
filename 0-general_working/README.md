@@ -4620,6 +4620,32 @@ kubectl get jobs
 kubectl get pods
 
 
+vim job.yaml
+----
+
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: example-job
+spec:
+  backoffLimit: 3
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: app
+        image: busybox
+        command: ["sh", "-c", "exit 1"]
+
+
+---
+‍‍
+‍‍‍‍```
+restartPolicy: OnFailure
+restartPolicy: Never
+
+
+```sh
 # CronJob runs a Job on a schedule, like Linux cron.
 
 vim cronjob.yaml
