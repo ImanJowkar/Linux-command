@@ -4777,6 +4777,80 @@ spec:
           image: nginx:latest
           ports:
             - containerPort: 80
+
+
+
+
+# we have another important toleration, it can tolerate all taint
+
+tolerations:
+  - operator: Exists
+
+
+kubectl taint node worker-1 environment=production:NoSchedule
+------------------
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: node-agent
+spec:
+  selector:
+    matchLabels:
+      app: node-agent
+  template:
+    metadata:
+      labels:
+        app: node-agent
+    spec:
+      containers:
+        - name: agent
+          image: nginx:1.27
+
+---------------
+
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: node-agent
+spec:
+  selector:
+    matchLabels:
+      app: node-agent
+  template:
+    metadata:
+      labels:
+        app: node-agent
+    spec:
+      tolerations:
+        - key: environment
+          operator: Equal
+          value: production
+          effect: NoSchedule
+
+      containers:
+        - name: agent
+          image: nginx:1.27
+
+----------------
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: monitoring-agent
+spec:
+  selector:
+    matchLabels:
+      app: monitoring-agent
+  template:
+    metadata:
+      labels:
+        app: monitoring-agent
+    spec:
+      tolerations:
+        - operator: Exists
+
+      containers:
+        - name: agent
+          image: nginx:1.27
 ```
 
 
