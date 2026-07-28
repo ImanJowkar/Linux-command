@@ -13,7 +13,7 @@ services:
       DOMAIN_NAME: ${DOMAIN_NAME}
 
     volumes:
-      #- ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/templates:/etc/nginx/templates:ro
       - ./nginx/certs/:/etc/nginx/certs/
 
