@@ -1,9 +1,19 @@
+## call a webhook
 
 ```sh
 
-apt update
-apt install certbot
-certbot certonly --manual --preferred-challenges=dns -d biatobagh.ir -d '*.biatobagh.ir' --agree-tos
+curl -X POST https://nnnn.biatobagh.ir/webhook-test/user-info \
+-H "Content-Type: application/json" \
+-d '{
+    "name":"Iman",
+    "age":28
+}'
+
+
+
+# python call webhook
+python3 -m venv venv
+pip install faker requests
 
 
 
