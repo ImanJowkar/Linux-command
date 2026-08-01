@@ -3,7 +3,7 @@
 ```sh
 
 # n8n webhook
-curl -X POST https://nnnn.biatobagh.ir/webhook-test/user-info \
+curl -X POST https://nnnn.biatobagh.ir/webhook-ca/user-info \
 -H "Content-Type: application/json" \
 -d '{
     "name":"Iman",
@@ -12,9 +12,10 @@ curl -X POST https://nnnn.biatobagh.ir/webhook-test/user-info \
 
 
 
-# bale apis
+# get update
 curl "https://tapi.bale.ai/botYOUR_BOT_TOKEN/getUpdates"
 
+# send msg with curl
 curl -X POST \
   "https://tapi.bale.ai/botYOUR_BOT_TOKEN/sendMessage" \
   -H "Content-Type: application/json" \
@@ -23,6 +24,27 @@ curl -X POST \
     "text": "Test message from Zabbix"
   }'
 
+
+
+
+```
+
+```sh
+
+# set webhook in bale bot for recv data
+curl https://tapi.bale.ai/botYOUR_BOT_TOKEN/getWebhookInfo
+
+
+#set webhook for test
+curl https://tapi.bale.ai/botYOUR_BOT_TOKEN/setWebhook?url=https://n8n.biatobagh.ir/webhook-test/reci-data
+
+# set webhook for production
+curl https://tapi.bale.ai/botYOUR_BOT_TOKEN/setWebhook?url=https://n8n.biatobagh.ir/webhook/reci-data
+
+
+
+
+https://n8n.biatobagh.ir/webhook-test/reci-data
 
 ```
 

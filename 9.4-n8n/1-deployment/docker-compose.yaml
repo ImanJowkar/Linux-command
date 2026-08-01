@@ -18,7 +18,7 @@ services:
       - ./nginx/certs/:/etc/nginx/certs/
 
   postgres:
-    image: postgres:16
+    image: hub.hamdocker.ir/postgres:16
     restart: always
     environment:
       - POSTGRES_USER
@@ -36,7 +36,7 @@ services:
       retries: 10
 
   n8n:
-    image: n8nio/n8n:2.32.5
+    image: hub.hamdocker.ir/n8nio/n8n:2.32.5
     restart: always
     environment:
       - DB_TYPE=postgresdb
@@ -72,7 +72,7 @@ services:
         condition: service_healthy
 
   n8n-runner:
-    image: n8nio/runners:2.32.5-87db96e-distroless
+    image: hub.hamdocker.ir/n8nio/runners:2.32.5-87db96e-distroless
     restart: always
     environment:
       - N8N_RUNNERS_AUTH_TOKEN=${RUNNERS_AUTH_TOKEN}
