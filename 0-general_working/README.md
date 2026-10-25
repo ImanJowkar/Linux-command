@@ -2423,6 +2423,21 @@ lsof -i :22
 
 ```
 
+# Find Process Name by Port
+```sh
+ss -ntlp | grep 8080
+# file pid
+lsof -i :8080 
+
+systemctl status $pid
+
+systemctl cat service-port.service
+
+ps -auxf | grep python
+```
+
+
+
 
 ## NIC Bonding
 NIC Bonding like ether-channel in cisco devices
@@ -3763,6 +3778,7 @@ sudo ss -tlnp
 # -p  show process name/PID
 
 
+
 # Show all listening UDP ports
 sudo ss -ulnp
 
@@ -3773,9 +3789,23 @@ sudo ss -ulnp
 
 
 
+# syn-sent connection
+ss -nt state syn-sent
+
+
+
 # Show currently established TCP connections
 sudo ss -tnp state established
 watch sudo ss -tnp state established
+ss -ntp state close-wait
+
+# important command
+ss -tan | awk 'NR>1 {print $1}' | sort | uniq -c
+ss -ntp state close-wait
+
+
+
+
 
 # show connections to a specific remote IP
 watch ss -tnp dst google.com
@@ -3808,13 +3838,48 @@ sudo tcpdump -i any tcp
 
 # upd
 sudo tcpdump -i any udp
+
+
+### listen on specific port in tcp for testing
+# solution-1-------- online chat
+nc -lk -v 5000 # listen on port
+
+nc -v 192.168.85.160 5000
+
+
+
+# solution 2 --------- 
+echo "TCP TEST" | nc -v 192.168.85.160 5000
 ```
 
 
 
 
 
+## update or upgrade plan in linux
+```sh
+# rockylinux
+sudo dnf updateinfo list security
+sudo dnf updateinfo info security
+sudo dnf upgrade --security   --exclude='zabbix*'   --exclude='mariadb*'
 
+
+
+# ubuntu
+
+
+sudo apt update
+
+dpkg -l | grep -Ei 'zabbix|mariadb'
+
+apt-mark showhold
+
+sudo unattended-upgrade --dry-run --debug
+
+sudo unattended-upgrade -v
+
+
+```
 
 
 
