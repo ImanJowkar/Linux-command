@@ -284,8 +284,8 @@ ss -nlpt
 # login with elastic user, 
 ```
 
-
-# filebeats
+# Beats
+## filebeats
 
 ```sh
 rpm -i filebeat-9.5.5-x86_64.rpm
@@ -323,7 +323,7 @@ systemctl enable filebeat.service --now
 
 ```
 
-## enable nginx module
+### enable nginx module
 ```sh
 filebeat modules list
 filebeat modules enable nginx
@@ -360,7 +360,7 @@ curl web.test.local:8080
 
 ```
 
-## enable system module
+### enable system module
 ```sh
 filebeat modules enable system
 vim /etc/filebeat/modules.d/system.yml
@@ -384,14 +384,14 @@ systemctl restart filebeat.service
 
 ```
 
-## enable postgresql module
+### enable postgresql module
 ```sh
 
 
 
 ```
 
-## enable iptables module
+### enable iptables module
 ```sh
 
 
@@ -399,7 +399,7 @@ systemctl restart filebeat.service
 ```
 
 
-## enable netflow module
+### enable netflow module
 ```sh
 filebeat modules enable netflow
 
@@ -466,7 +466,7 @@ end
 ```
 
 
-## enable cisco module for reading syslog from cisco devices
+### enable cisco module for reading syslog from cisco devices
 ```sh
 filebeat modules enable cisco
 
@@ -519,7 +519,7 @@ event.module: "cisco"
 
 
 
-# metricbeat
+## metricbeat
 ```sh
 rpm -i metricbeat-9.5.5-x86_64.rpm
 
@@ -560,7 +560,7 @@ metricbeat setup -e
 systemctl enable --now  metricbeat.service
 ```
 
-## enable nginx module
+### enable nginx module
 ```sh
 metricbeat modules list | grep nginx
 
@@ -626,7 +626,7 @@ bash app.sh
 
 ```
 
-## enable postgresql module
+### enable postgresql module
 [install postgresql](https://www.postgresql.org/download/linux/redhat/)
 ```sh
 # Install the repository RPM:
@@ -747,7 +747,7 @@ vim /etc/metricbeat/modules.d/postgresql.yml
 systemctl restart metricbeat
 
 ```
-## enable docker module
+### enable docker module
 ```sh
 sudo dnf -y install dnf-plugins-core
 sudo dnf config-manager --add-repo https://download.docker.com/linux/rhel/docker-ce.repo
@@ -785,8 +785,16 @@ systemctl restart metricbeat
 
 ```
 
+### enable mongodb module
+```sh
 
-# packetbeat
+
+```
+
+
+
+
+## packetbeat
 
 ```sh
 rpm -i packetbeat-9.5.5-x86_64.rpm
@@ -819,7 +827,7 @@ systemctl enable --now packetbeat
 ```
 
 
-# Heartbeat
+## Heartbeat
 ```sh
 rpm -i heartbeat-9.5.5-x86_64.rpm
 
@@ -893,13 +901,6 @@ systemctl enable --now heartbeat-elastic.service
 
 # Elastic Agent
 
-## Stand-alone
-```sh
-
-
-
-```
-
 ## Managed by fleet server
 ```sh
 
@@ -937,7 +938,9 @@ systemctl restart kibana
 
 
 # logstash
+![alt text](img/11.png)
 ```sh
+
 
 
 ```
@@ -954,6 +957,9 @@ systemctl restart kibana
 
 
 ```
+
+
+
 
 
 ## example sneding custom data to elastic using python
@@ -992,8 +998,8 @@ docker run -d \
 
 ```
 
-
-# Example - 1 - Read Bind9 log and sending logs to elastic
+# Examples
+## Example - 1 - Read Bind9 log and sending logs to elastic
 ```sh
 
 sudo dnf install -y bind bind-utils
@@ -1223,7 +1229,7 @@ bash app.sh
 ![alt text](img/9.png)
 
 
-# Example - 2 - Application Performance & API Monitoring
+## Example - 2 - Application Performance & API Monitoring
 ```sh
 
 PUT api-monitoring
@@ -1422,11 +1428,11 @@ GET api-monitoring/_count
 
 
 
-# Example 3 - 
+## Example 3 - 
 
 
 
-# Example - 4 - Global Security Event Monitoring & Alerting
+## Example - 4 - Global Security Event Monitoring & Alerting
 ```sh
 # create index in elastic
 PUT geo-security-events
@@ -1517,7 +1523,8 @@ for i in range(500):
 
 ```
 
-# add node to cluster
+# Clustering
+## add node to cluster
 ![img](img/3.png)
 ### node 1 - 30.240
 ```sh
@@ -1612,8 +1619,8 @@ curl --cacert /etc/elasticsearch/certs/http_ca.crt -u elastic https://172.16.30.
 
 
 
-### monitor nodes
-##### node1
+## monitor nodes
+#### node1
 ```sh
 
 curl --cacert /etc/elasticsearch/certs/http_ca.crt -u elastic 'https://172.16.30.240:9200/_cluster/health?pretty'
@@ -1658,7 +1665,7 @@ metricbeat test modules elasticsearch
 systemctl restart metricbeat
 
 ```
-##### node2
+#### node2
 
 ```sh
 rpm -i metricbeat-9.5.5-x86_64.rpm
@@ -1710,7 +1717,7 @@ systemctl restart metricbeat
 
 ```
 
-##### node3
+#### node3
 
 ```sh
 rpm -i metricbeat-9.5.5-x86_64.rpm
