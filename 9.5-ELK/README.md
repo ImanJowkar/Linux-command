@@ -36,7 +36,6 @@ sudo dnf install elasticsearch-<SPECIFIC.VERSION.NUMBER>
 
 
 # or you can download the rpm or deb file directly
-this is the sha file
 wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-9.5.5-x86_64.rpm
 wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-9.5.5-x86_64.rpm.sha512
 shasum -a 512 -c elasticsearch-9.5.5-x86_64.rpm.sha512
@@ -68,11 +67,14 @@ systemctl restart elasticsearch.service
 # Check Elasticsearch cluster health
 curl -k -u elastic https://localhost:9200/_cluster/health?pretty
 
-curl  --cacert /etc/elasticsearch/certs/http_ca.crt -u elastic https://localhost:9200/_cluster/health?pretty
+curl -k -u elastic:QJMqrf9u56nPHR=H6mRn https://localhost:9200/_cluster/health?pretty
+
+curl  --cacert /etc/elasticsearch/certs/http_ca.crt -u elastic:QJMqrf9u56nPHR=H6mRn https://localhost:9200/_cluster/health?pretty
+
 
 # ?v --> verbose
 # List all nodes in the cluster
-curl -k -u elastic https://localhost:9200/_cat/nodes?v
+curl -k -u elastic:QJMqrf9u56nPHR=H6mRn https://localhost:9200/_cat/nodes?v
 
 # List all Elasticsearch indices
 curl -k -u elastic https://localhost:9200/_cat/indices?v
@@ -81,24 +83,22 @@ curl -k -u elastic https://localhost:9200/_cat/indices?v
 curl -k -u elastic "https://localhost:9200/_cat/indices?v&expand_wildcards=all"
 
 
-# Count all indices in Elasticsearch
-curl -k -u elastic "https://localhost:9200/_cat/indices?format=json&expand_wildcards=all" | jq 'length'
-
-
 
 # work with index
 # Create a new index named students
-curl -k -u elastic -X PUT "https://localhost:9200/students"
+curl -k -u elastic:QJMqrf9u56nPHR=H6mRn -X PUT "https://localhost:9200/students"
+
+
 
 
 
 # Display the students index information
-curl -k -u elastic "https://localhost:9200/_cat/indices/students?v"
+curl -k -u elastic:QJMqrf9u56nPHR=H6mRn "https://localhost:9200/_cat/indices/students?v"
 
 
 
 # Insert a student document with ID 1
-curl -k -u elastic -X PUT "https://localhost:9200/students/_doc/1?refresh=wait_for" \
+curl -k -u elastic:QJMqrf9u56nPHR=H6mRn -X PUT "https://localhost:9200/students/_doc/1" \
 -H "Content-Type: application/json" \
 -d '{
   "name": "Ali",
@@ -109,17 +109,17 @@ curl -k -u elastic -X PUT "https://localhost:9200/students/_doc/1?refresh=wait_f
 
 
 # Retrieve the student document by ID
-curl -k -u elastic "https://localhost:9200/students/_doc/1?pretty"
+curl -k -u elastic:QJMqrf9u56nPHR=H6mRn "https://localhost:9200/students/_doc/1?pretty"
 
 
 # Count documents in the students index
-curl -k -u elastic "https://localhost:9200/students/_count?pretty"
+curl -k -u elastic:QJMqrf9u56nPHR=H6mRn "https://localhost:9200/students/_count?pretty"
 
 
 
 
 # Create a new student document with ID 2
-curl -k -u elastic -X PUT "https://localhost:9200/students/_create/2" \
+curl -k -u elastic:QJMqrf9u56nPHR=H6mRn -X PUT "https://localhost:9200/students/_create/2" \
 -H "Content-Type: application/json" \
 -d '{
   "name": "Sara",
@@ -128,7 +128,7 @@ curl -k -u elastic -X PUT "https://localhost:9200/students/_create/2" \
 }'
 
 
-curl -k -u elastic -X PUT "https://localhost:9200/students/_create/10" \
+curl -k -u elastic:QJMqrf9u56nPHR=H6mRn -X PUT "https://localhost:9200/students/_create/3" \
 -H "Content-Type: application/json" \
 -d '{
   "name": "ali",
@@ -137,7 +137,7 @@ curl -k -u elastic -X PUT "https://localhost:9200/students/_create/10" \
   "city": "shiraz"
 }'
 
-curl -k -u elastic -X PUT "https://localhost:9200/students/_create/11" \
+curl -k -u elastic:QJMqrf9u56nPHR=H6mRn -X PUT "https://localhost:9200/students/_create/11" \
 -H "Content-Type: application/json" \
 -d '{
   "name": "mohammad",
@@ -148,11 +148,11 @@ curl -k -u elastic -X PUT "https://localhost:9200/students/_create/11" \
 
 
 # Retrieve student document with ID 2
-curl -k -u elastic "https://localhost:9200/students/_doc/2?pretty"
+curl -k -u elastic:QJMqrf9u56nPHR=H6mRn "https://localhost:9200/students/_doc/2?pretty"
 
 
 # Update the age of student with ID 2
-curl -k -u elastic -X POST "https://localhost:9200/students/_update/2" \
+curl -k -u elastic:QJMqrf9u56nPHR=H6mRn -X POST "https://localhost:9200/students/_update/2" \
 -H "Content-Type: application/json" \
 -d '{
   "doc": {
@@ -163,16 +163,16 @@ curl -k -u elastic -X POST "https://localhost:9200/students/_update/2" \
 
 
 # Delete student document with ID 2
-curl -k -u elastic -X DELETE "https://localhost:9200/students/_doc/2"
+curl -k -u elastic:QJMqrf9u56nPHR=H6mRn -X DELETE "https://localhost:9200/students/_doc/2"
 
 
 # Count all documents in the students index
-curl -k -u elastic "https://localhost:9200/students/_count?pretty"
+curl -k -u elastic:QJMqrf9u56nPHR=H6mRn "https://localhost:9200/students/_count?pretty"
 
 
 
 # Retrieve all documents from the students index
-curl -k -u elastic -X GET "https://localhost:9200/students/_search?pretty" \
+curl -k -u elastic:QJMqrf9u56nPHR=H6mRn -X GET "https://localhost:9200/students/_search?pretty" \
 -H "Content-Type: application/json" \
 -d '{
   "query": {
@@ -183,7 +183,7 @@ curl -k -u elastic -X GET "https://localhost:9200/students/_search?pretty" \
 
 
 # Search for students named Ali
-curl -k -u elastic -X GET "https://localhost:9200/students/_search?pretty" \
+curl -k -u elastic:QJMqrf9u56nPHR=H6mRn -X GET "https://localhost:9200/students/_search?pretty" \
 -H "Content-Type: application/json" \
 -d '{
   "query": {
@@ -195,7 +195,7 @@ curl -k -u elastic -X GET "https://localhost:9200/students/_search?pretty" \
 
 
 # Find students between 20 and 30 years old
-curl -k -u elastic -X GET "https://localhost:9200/students/_search?pretty" \
+curl -k -u elastic:QJMqrf9u56nPHR=H6mRn -X GET "https://localhost:9200/students/_search?pretty" \
 -H "Content-Type: application/json" \
 -d '{
   "query": {
@@ -210,19 +210,7 @@ curl -k -u elastic -X GET "https://localhost:9200/students/_search?pretty" \
 
 
 
-# now go tho kibana and search from dev tools
-# create index with mapping
-PUT /students_v2
-{
-  "mappings": {
-    "properties": {
-      "name": { "type": "text" },
-      "age": { "type": "integer" },
-      "email": { "type": "keyword" },
-      "created_at": { "type": "date" }
-    }
-  }
-}
+
 
 
 ```
@@ -273,7 +261,6 @@ map.tilemap.url: "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
 map.tilemap.options.attribution: "© OpenStreetMap contributors"
 map.tilemap.options.maxZoom: 19
 
-
 ----
 
 systemctl enable --now kibana.service
@@ -281,7 +268,197 @@ ss -nlpt
 
 
 
+
+
 # login with elastic user, 
+
+
+
+
+# Dev-Tools
+# now go tho kibana and search from dev tools
+# create index with mapping
+PUT /students_v2
+{
+  "settings": {
+    "number_of_shards": 3,
+    "number_of_replicas": 1
+  },
+  "mappings": {
+    "properties": {
+      "name": {
+        "type": "text"
+      },
+      "age": {
+        "type": "integer"
+      },
+      "email": {
+        "type": "keyword"
+      },
+      "created_at": {
+        "type": "date"
+      }
+    }
+  }
+}
+
+# show index setting
+GET /students_v2/_settings?pretty
+
+# show mapping in index
+GET /students_v2/_mapping?pretty
+
+# show both of them in one
+GET /students_v2?pretty
+
+
+
+# create index
+PUT /students_v4
+
+# show created index
+GET /_cat/indices/students_v4
+
+
+# insert document
+PUT /students_v4/_doc/1
+{
+  "name": "Ali",
+  "age": 25,
+  "course": "Elasticsearch"
+}
+
+# retrive document
+GET students_v4/_doc/1
+
+# Count documents in the students index
+GEt /students_v4/_count
+
+# Create a new student document with ID 2
+PUT /students_v4/_create/2
+{
+  "name": "Sara",
+  "age": 23,
+  "course": "Linux"
+}
+
+# Create a new student document with ID 3
+PUT /students_v4/_create/3
+{
+  "name": "mohsen",
+  "age": 50,
+  "course": "sysadmin"
+}
+
+# Create a new student document with ID 11
+PUT /students_v4/_create/11
+{
+  "name": "mohsen",
+  "age": 50,
+  "course": "sysadmin",
+  "city": "shiraz"
+}
+
+
+# retrive document with id 3
+GET students_v4/_doc/3
+
+
+
+# Update the age of student with ID 2
+POST /students_v4/_update/11
+{
+  "doc": {
+    "age": 43,
+    "name": "iman"
+  }
+}
+
+# retrive document with id 11
+GET students_v4/_doc/11
+
+
+
+# retrive document with id 2
+GET students_v4/_doc/2
+
+# Delete student document with ID 2
+DELETE /students_v4/_doc/2
+
+
+# retrive document with id 2
+GET students_v4/_doc/2
+
+
+# Count all documents in the students index
+GET students_v4/_count
+
+
+# Retrieve all documents from the students index
+GET /students_v4/_search
+{
+  "query": {
+    "match_all": {}
+  }
+}
+
+# Search for students named Ali
+GET /students_v4/_search
+{
+  "query": {
+    "match": {
+      "name": "Ali"
+    }
+  }
+}
+
+
+
+
+# Find students between 20 and 30 years old
+GET /students_v4/_search
+{
+  "query": {
+    "range": {
+      "age": {
+        "gte": 20,
+        "lte": 30
+      }
+    }
+  }
+}
+
+
+
+
+
+
+# setup ssl/tls for kibana web interface
+mkdir -p /etc/kibana/cert
+cd /etc/kibana/cert
+dnf install openssl
+openssl req -x509 -nodes -days 365 \
+  -newkey rsa:2048 \
+  -keyout kibana.key \
+  -out kibana.crt \
+  -subj "/CN=localhost" \
+  -addext "subjectAltName=DNS:localhost,IP:127.0.0.1,IP:172.16.30.241"
+
+# openssl pkey -in kibana.key -pubout -out kibana.pub
+
+chown -R  kibana: cert/
+
+vim /etc/kibana/kibana.yml
+----
+server.ssl.enabled: true
+server.ssl.certificate: /etc/kibana/cert/kibana.crt
+server.ssl.key: /etc/kibana/cert/kibana.key
+----
+
+systemctl restart  kibana.service
+
+
+
 ```
 
 # Beats
