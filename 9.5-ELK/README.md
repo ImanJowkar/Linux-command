@@ -561,21 +561,6 @@ systemctl restart filebeat.service
 
 ```
 
-### enable postgresql module
-```sh
-
-
-
-```
-
-### enable iptables module
-```sh
-
-
-
-```
-
-
 ### enable netflow module
 ```sh
 filebeat modules enable netflow
@@ -692,6 +677,135 @@ send log 7 TEST_DEBUG
 
 # filetr in kibana
 event.module: "cisco" 
+```
+
+### read and change custom log
+```sh
+
+# /var/log/shop-api/access.log
+vim app.py
+------
+#!/usr/bin/env python3
+"""Generate synthetic API access logs for a Filebeat/Elasticsearch training lab."""
+import argparse
+import ipaddress
+import random
+import time
+from datetime import datetime, timezone
+from pathlib import Path
+
+ENDPOINTS = [
+    ('GET', '/api/products'), ('GET', '/api/orders'),
+    ('POST', '/api/login'), ('POST', '/api/orders'),
+    ('GET', '/api/users'), ('DELETE', '/api/cart'),
+    ('PUT', '/api/profile'), ('GET', '/api/health'),
+]
+NETWORKS = [ipaddress.ip_network('192.168.10.0/24'), ipaddress.ip_network('10.20.30.0/24'), ipaddress.ip_network('172.16.30.0/24')]
+
+def log_line(rng):
+    method, path = rng.choice(ENDPOINTS)
+    roll = rng.random()
+    status = 200 if roll < .61 else 201 if roll < .69 else 400 if roll < .77 else 401 if roll < .84 else 404 if roll < .91 else 500 if roll < .97 else 503
+    duration = rng.randint(15, 250) if status < 500 else rng.randint(450, 3500)
+    if rng.random() < .08:  # occasional slow requests
+        duration += rng.randint(500, 1800)
+    level = 'ERROR' if status >= 500 else 'WARN' if status >= 400 else 'INFO'
+    network = rng.choice(NETWORKS)
+    client_ip = str(network.network_address + rng.randint(1, network.num_addresses - 2))
+    timestamp = datetime.now(timezone.utc).isoformat(timespec='milliseconds').replace('+00:00', 'Z')
+    return f'{timestamp} {level} service=shop-api client={client_ip} method={method} path={path} status={status} duration_ms={duration}\n'
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--file', default='/var/log/shop-api/access.log')
+    parser.add_argument('--interval', type=float, default=1.0, help='Seconds between events')
+    parser.add_argument('--count', type=int, default=0, help='Number of events; 0 means continuous')
+    parser.add_argument('--seed', type=int, default=None)
+    args = parser.parse_args()
+    if args.interval < 0 or args.count < 0:
+        parser.error('--interval and --count must be non-negative')
+    rng = random.Random(args.seed)
+    path = Path(args.file)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    n = 0
+    try:
+        with path.open('a', encoding='utf-8', buffering=1) as logfile:
+            while not args.count or n < args.count:
+                logfile.write(log_line(rng))
+                n += 1
+                if args.interval:
+                    time.sleep(args.interval)
+    except KeyboardInterrupt:
+        pass
+    print(f'Wrote {n} events to {path}')
+
+if __name__ == '__main__':
+    main()
+
+------
+
+# create ingest pipline
+PUT _ingest/pipeline/shop-api-parser
+{
+  "description": "Parse Shop API logs",
+  "processors": [
+    {
+      "grok": {
+        "field": "message",
+        "patterns": [
+          "%{TIMESTAMP_ISO8601:temp_timestamp} %{LOGLEVEL:log.level} service=%{NOTSPACE:service.name} client=%{IP:client.ip} method=%{WORD:http.request.method} path=%{NOTSPACE:url.path} status=%{INT:http.response.status_code:int} duration_ms=%{INT:duration_ms:int}"
+        ]
+      }
+    },
+    {
+      "date": {
+        "field": "temp_timestamp",
+        "formats": ["ISO8601"],
+        "target_field": "@timestamp"
+      }
+    },
+    {
+      "remove": {
+        "field": "temp_timestamp"
+      }
+    }
+  ]
+}
+
+
+# test the parser
+POST _ingest/pipeline/shop-api-parser/_simulate
+{
+  "docs": [
+    {
+      "_source": {
+        "message": "2026-11-02T10:52:59.763Z ERROR service=shop-api client=10.20.30.84 method=PUT path=/api/profile status=500 duration_ms=520"
+      }
+    }
+  ]
+}
+
+sudo vim /etc/filebeat/filebeat.yml
+-----------
+- type: filestream
+  id: shop-api-lab
+  enabled: true
+  paths:
+    - /var/log/shop-api/access.log
+  pipeline: shop-api-parser
+  fields:
+    environment: lab
+    application: shop-api
+    server_role: application
+    team: devops
+    location: tehran
+    project: grok-training
+  fields_under_root: true
+-----------
+
+systemctl restart filebeat.service
+
+
 ```
 
 
@@ -1114,27 +1228,113 @@ systemctl restart kibana
 ```
 
 
-# logstash
+# connect beats to logstash
 ![alt text](img/11.png)
 ```sh
+rpm -i logstash-9.5.5-x86_64.rpm
 
 
 
 ```
 
+# grok
+```sh
+#log
+192.168.1.10 admin 200
 
-## connect to redis
+#grok pattern
+%{IP:client.ip} %{WORD:user.name} %{NUMBER:http.response.status_code:int}
+
+
+##########################
+# log
+client=172.16.30.241 domain=epr.elastic.co status=NOERROR
+
+# grok pattern
+client=%{IP:client.ip} domain=%{HOSTNAME:dns.question.name} status=%{WORD:dns.response_code}
+
+##########################
+
+# log
+2026-11-02 09:30:15 client=192.168.1.50 domain=mail.google.com type=AAAA status=NOERROR
+
+# grok pattern
+^%{TIMESTAMP_ISO8601:timestamp} client=%{IP:client.ip} domain=%{HOSTNAME:dns.question.name} type=%{WORD:dns.question.type} status=%{WORD:dns.response_code}$
+
+############################
+#log
+user=admin ip=192.168.1.20 status=failed
+
+# grok pattern
+user=%{WORD:user.name} ip=%{IP:source.ip} status=%{WORD:event.outcome}
+
+
+#############################
+#log
+client=10.10.20.5 domain=google.com type=AAAA
+
+client=%{IP:client.ip} domain=%{HOSTNAME:dns.question.name} type=%{WORD:dns.question.type}
+
+
+############################
+# log
+2026-11-02T10:25:30Z 192.168.1.15 GET /login 404
+
+%{TIMESTAMP_ISO8601:timestamp} %{IP:client.ip} %{WORD:http.request.method} %{URIPATH:url.path} %{INT:http.response.status_code:int}
+
+##########################
+#log
+ERROR user authentication failed for ali reza
+
+%{LOGLEVEL:log.level} %{GREEDYDATA:message}
+
+##########################
+#log
+src=172.16.1.10 dst=8.8.8.8 port=53 action=ALLOW
+
+src=%{IP:source.ip} dst=%{IP:destination.ip} port=%{INT:destination.port:int} action=%{WORD:event.action}
+
+
+##########################
+# log
+02-Nov-2026 10:35:22.456 client=172.16.30.241 port=53122 query=mail.google.com type=AAAA status=NOERROR
+
+%{MONTHDAY:day}-%{MONTH:month}-%{YEAR:year} %{TIME:time} client=%{IP:client.ip} port=%{INT:client.port:int} query=%{HOSTNAME:dns.question.name} type=%{WORD:dns.question.type} status=%{WORD:dns.response_code}
+
+
+
+##########################
+#log
+02-Nov-2026 07:56:09.413 queries: info: client @0x7f2904012b98 172.16.30.241#57808 (epr.elastic.co): query: epr.elastic.co IN AAAA + (172.16.30.241)
+
+#grok
+
+%{MONTHDAY:day}-%{MONTH:month}-%{YEAR:year} %{TIME:time} %{WORD:log.category}: %{LOGLEVEL:log.level}: client %{NOTSPACE:client.id} %{IP:client.ip}#%{INT:client.port:int} \(%{HOSTNAME:client.name}\): query: %{HOSTNAME:dns.question.name} IN %{WORD:dns.question.type} %{NOTSPACE:dns.flags} \(%{IP:server.ip}\)
+
+##########################
+#log
+2026-11-02T11:15:30Z FW01 src=10.20.30.40:54321 dst=8.8.8.8:53 proto=UDP action=ALLOW
+
+#grok
+%{TIMESTAMP_ISO8601:@timestamp} %{HOSTNAME:host.name} src=%{IP:source.ip}:%{INT:source.port:int} dst=%{IP:destination.ip}:%{INT:destination.port:int} proto=%{WORD:network.transport} action=%{WORD:event.action}
+
+##########################
+#log
+2026-11-02 12:45:33.125 ERROR [auth-service] user=ali.reza ip=192.168.10.15 message=Authentication failed due to invalid password
+
+%{TIMESTAMP_ISO8601:@timestamp} %{LOGLEVEL:log.level} \[%{DATA:service.name}\] user=%{NOTSPACE:user.name} ip=%{IP:source.ip} message=%{GREEDYDATA:message}
+
+```
+
+
+## connect beats to redis
 ```sh
 
+# install redis
 
-```
-
-## connect beats to logstash
-```sh
 
 
 ```
-
 
 
 
@@ -1176,7 +1376,241 @@ docker run -d \
 ```
 
 # Examples
-## Example - 1 - Read Bind9 log and sending logs to elastic
+## Example - 1 - Read Bind9 log and sending logs to elastic without extracting date
+```sh
+
+sudo dnf install -y bind bind-utils
+sudo systemctl enable --now named
+
+vim /etc/named.conf
+-----
+        listen-on port 53 { 172.16.30.241; };
+        allow-query     { 172.16.30.0/24; };
+        recursion yes;
+-----
+
+sudo named-checkconf
+echo $?
+systemctl restart named
+
+dig @172.16.30.241 yahoo.com
+
+# enable dns query log
+sudo mkdir -p /var/log/named
+sudo chown named:named /var/log/named
+sudo chmod 750 /var/log/named
+
+```
+![alt text](img/4.png)
+
+```sh
+vim /etc/named.conf
+----------
+logging {
+    channel default_debug {
+        file "data/named.run";
+        severity dynamic;
+    };
+
+    channel query_log {
+        file "/var/log/named/query.log" versions 5 size 20m;
+        severity info;
+        print-time yes;
+        print-category yes;
+        print-severity yes;
+    };
+
+    category queries {
+        query_log;
+    };
+};
+----------
+
+sudo named-checkconf
+echo $?
+
+sudo systemctl restart named
+sudo rndc querylog on
+
+
+dig @172.16.30.241 yahoo.com
+dig @172.16.30.241 mx yahoo.com
+dig @172.16.30.241 aaa yahoo.com
+dig @172.16.30.241 aaaa yahoo.com
+dig @172.16.30.241 txt yahoo.com
+
+
+
+tail -f /var/log/named/query.log
+
+
+
+vim /etc/filebeat/filebeat.yml
+----
+filebeat.inputs:
+# Each - is an input. Most options can be set at the input level, so
+# you can use different inputs for various configurations.
+# Below are the input-specific configurations.
+
+# filestream is an input for collecting log messages from files.
+- type: filestream
+
+  # Unique ID among all inputs, an ID is required.
+  id: my-filestream-id
+
+  # Change to true to enable this input configuration.
+  enabled: false
+
+  # Paths that should be crawled and fetched. Glob based paths.
+  paths:
+    - /var/log/*.log
+    #- c:\programdata\elasticsearch\logs\*
+
+# DNS Query Logs
+- type: filestream
+  id: bind-dns-logs
+  enabled: true
+  paths:
+    - /var/log/named/query.log
+  fields:
+    log_type: dns
+    server_role: dns
+  fields_under_root: true
+
+----
+
+sudo filebeat test config -e
+
+systemctl restart filebeat.service
+
+# filter in kibana discover
+log_type: dns
+
+```
+![alt text](img/5.png)
+
+
+```sh
+
+# create pipeline
+PUT _ingest/pipeline/dns-query-parser
+{
+  "description": "Parse BIND DNS query logs",
+  "processors": [
+    {
+      "grok": {
+        "field": "message",
+        "patterns": [
+          "%{MONTHDAY:tmp.day}-%{MONTH:tmp.month}-%{YEAR:tmp.year} %{TIME:tmp.time} queries: %{LOGLEVEL:log.level}: client %{NOTSPACE:tmp.client_id} %{IP:client.ip}#%{NUMBER:client.port:long} \\(%{DATA:tmp.domain}\\): query: %{DATA:dns.question.name} IN %{WORD:dns.question.type} %{GREEDYDATA:dns.flags} \\(%{IP:dns.server.ip}\\)"
+        ]
+      }
+    },
+    {
+      "set": {
+        "field": "event.category",
+        "value": ["network"]
+      }
+    },
+    {
+      "remove": {
+        "field": "tmp",
+        "ignore_missing": true
+      }
+    }
+  ]
+}
+
+
+
+## simulate the pipeline
+
+POST _ingest/pipeline/dns-query-parser/_simulate
+{
+  "docs": [
+    {
+      "_source": {
+        "message": "30-Oct-2026 11:16:45.091 queries: info: client @0x7f28fc0036a8 172.16.30.242#33687 (digikala.com): query: digikala.com IN A +E(0)K (172.16.30.241)"
+      }
+    }
+  ]
+}
+
+
+
+# now edit filebeat.yaml
+vim /etc/filebeat/filebeat.yml
+---------
+- type: filestream
+  id: bind-dns-logs
+  enabled: true
+  paths:
+    - /var/log/named/query.log
+  fields:
+    log_type: dns
+    server_role: dns
+  fields_under_root: true
+  # add this
+  pipeline: dns-query-parser
+----------
+systemctl restart filebeat.service
+
+for i in {1..100}; do dig @172.16.30.241 faradars.org +short > /dev/null; done
+
+
+```
+
+![alt text](img/6.png)
+![alt text](img/6.5.png)
+![alt text](img/7.png)
+
+```sh
+
+# script for sending dns query 
+vim app.sh
+------
+#!/bin/bash
+
+DNS_SERVER="172.16.30.241"
+
+DOMAINS=(
+  google.com
+  youtube.com
+  github.com
+  microsoft.com
+  cloudflare.com
+  amazon.com
+  openai.com
+  wikipedia.org
+  facebook.com
+  example.com
+)
+
+TYPES=(A AAAA MX TXT NS CNAME)
+
+for i in {1..500}; do
+    DOMAIN=${DOMAINS[$RANDOM % ${#DOMAINS[@]}]}
+    TYPE=${TYPES[$RANDOM % ${#TYPES[@]}]}
+
+    dig @"$DNS_SERVER" "$DOMAIN" "$TYPE" \
+        +time=1 +tries=1 > /dev/null
+
+    sleep 0.1
+done
+
+echo "500 DNS queries generated!"
+------
+
+bash app.sh
+
+```
+
+![alt text](img/8.png)
+![alt text](img/9.png)
+
+
+
+# Examples
+## Example - 1.1 - Read Bind9 log and sending logs to elastic with extracting date
 ```sh
 
 sudo dnf install -y bind bind-utils
@@ -1292,7 +1726,8 @@ log_type: dns
 
 ```sh
 # create pipeline
-PUT _ingest/pipeline/dns-query-parser
+
+PUT _ingest/pipeline/dns-query-parser-1-1
 {
   "description": "Parse BIND DNS query logs",
   "processors": [
@@ -1302,6 +1737,20 @@ PUT _ingest/pipeline/dns-query-parser
         "patterns": [
           "%{MONTHDAY:tmp.day}-%{MONTH:tmp.month}-%{YEAR:tmp.year} %{TIME:tmp.time} queries: %{LOGLEVEL:log.level}: client %{NOTSPACE:tmp.client_id} %{IP:client.ip}#%{NUMBER:client.port:long} \\(%{DATA:tmp.domain}\\): query: %{DATA:dns.question.name} IN %{WORD:dns.question.type} %{GREEDYDATA:dns.flags} \\(%{IP:dns.server.ip}\\)"
         ]
+      }
+    },
+{
+      "set": {
+        "field": "tmp.timestamp",
+        "value": "{{tmp.day}}-{{tmp.month}}-{{tmp.year}} {{tmp.time}}"
+      }
+    },
+    {
+      "date": {
+        "field": "tmp.timestamp",
+        "formats": ["dd-MMM-yyyy HH:mm:ss.SSS"],
+        "target_field": "@timestamp",
+        "timezone": "Asia/Tehran"
       }
     },
     {
@@ -1322,7 +1771,7 @@ PUT _ingest/pipeline/dns-query-parser
 
 ## simulate the pipeline
 
-POST _ingest/pipeline/dns-query-parser/_simulate
+POST _ingest/pipeline/dns-query-parser-1-1/_simulate
 {
   "docs": [
     {
@@ -1348,7 +1797,7 @@ vim /etc/filebeat/filebeat.yml
     server_role: dns
   fields_under_root: true
   # add this
-  pipeline: dns-query-parser
+  pipeline: dns-query-parser-1-1
 ----------
 systemctl restart filebeat.service
 
@@ -1404,6 +1853,11 @@ bash app.sh
 
 ![alt text](img/8.png)
 ![alt text](img/9.png)
+
+
+
+
+
 
 
 ## Example - 2 - Application Performance & API Monitoring
@@ -1952,6 +2406,16 @@ vim /etc/kibana/kibana.yml
 ------
 elasticsearch.hosts: ["https://172.16.30.240:9200", "https://172.16.30.242:9200", "https://172.16.30.243:9200"]
 ------
+
+
+```
+
+
+## ILM and Rollover(Index Lifecycle management)
+
+```sh
+
+GET /filebeat-9.5.5/_ilm/explain
 
 
 ```
