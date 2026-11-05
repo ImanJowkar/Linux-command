@@ -15,6 +15,18 @@ https://www.elastic.co/downloads/
 
 dnf install lsof bash-completion vim nano tar zip unzip wget curl git net-tools traceroute htop tcpdump rsync jq tree tmux iperf3
  
+# install and configure ntp server
+dnf install chrony
+
+vim /etc/chrony.conf
+----
+pool ntp.day.ir iburst
+
+----
+systemctl restart chronyd
+timedatectl set-timezone Asia/Tehran
+
+
 
 # you can use official repository 
 vim /etc/yum.repos.d/elasticsearch.repo
@@ -679,67 +691,333 @@ send log 7 TEST_DEBUG
 event.module: "cisco" 
 ```
 
-### read and change custom log
+[filebeat input type](https://www.elastic.co/docs/reference/beats/filebeat/configuration-filebeat-options)
+### read custom log and add property
+#### example 1 - send custom data
+```sh
+sudo mkdir -p /var/log/myapp
+
+echo "User logged in successfully" | sudo tee /var/log/myapp/app.log
+echo "Database connection failed" | sudo tee -a /var/log/myapp/app.log
+
+vim /etc/filebeat/filebeat.yml
+------
+filebeat.inputs:
+- type: filestream
+  id: myapp-logs
+  enabled: true
+  paths:
+    - /var/log/myapp/app.log
+  fields:
+    name: lab-log
+  fields_under_root: true
+
+# or you can use this pattern
+filebeat.inputs:
+- type: filestream
+  id: myapp-logs
+  enabled: true
+  paths:
+    - /var/log/myapp/app.log
+
+  processors:
+  - add_fields:
+      target: custom
+      fields:
+        environment: "lab"
+        application: "myapp"
+        department: "IT"
+        server_role: "application"
+
+------
+
+# kql: custom.department :"IT" 
+
+```
+
+
+#### example 2 - send custom data(timezone--> Asia/tehran)
+```sh
+# log type
+# 2026-11-04 10:30:00 | ERROR | payment-service | Payment failed
+
+PUT _ingest/pipeline/myapp-pipeline
+{
+  "description": "My first ingest pipeline",
+  "processors": [
+    {
+      "grok": {
+        "field": "message",
+        "patterns": [
+          "%{TIMESTAMP_ISO8601:custom.log_time} \\| %{LOGLEVEL:log.level} \\| %{DATA:service.name} \\| %{GREEDYDATA:custom.description}"
+        ]
+      }
+    },
+    {
+      "date": {
+        "field": "custom.log_time",
+        "formats": ["yyyy-MM-dd HH:mm:ss"],
+        "target_field": "@timestamp",
+        "timezone": "Asia/Tehran"
+      }
+    },
+    {
+      "set": {
+        "field": "custom.environment",
+        "value": "lab"
+      }
+    }
+  ]
+}
+
+
+# test pipeline
+POST _ingest/pipeline/myapp-pipeline/_simulate
+{
+  "docs": [
+    {
+      "_source": {
+        "message": "2026-11-04 10:30:00 | ERROR | payment-service | Payment failed"
+      }
+    }
+  ]
+}
+
+
+
+vim /etc/filebeat/filebeat.yml
+------
+filebeat.inputs:
+  - type: filestream
+    id: myapp-logs
+    enabled: true
+    paths:
+      - /var/log/myapp/app.log
+  pipeline: "myapp-pipeline"
+------
+
+echo "2026-11-04 12:40:00 | INFO | auth-service | User logged in" | sudo tee -a /var/log/myapp/app.log
+echo "2026-11-04 09:41:00 | ERROR | payment-service | Payment failed" | sudo tee -a /var/log/myapp/app.log
+echo "2026-11-04 11:42:00 | WARN | database-service | Connection timeout" | sudo tee -a /var/log/myapp/app.log
+echo "2026-11-04 18:43:00 | DEBUG | api-service | Request received" | sudo tee -a /var/log/myapp/app.log
+echo "2026-11-04 20:44:00 | INFO | order-service | Order created successfully" | sudo tee -a /var/log/myapp/app.log
+
+vim app.sh
+------
+#!/bin/bash
+
+LOG_FILE="/var/log/myapp/app.log"
+
+mkdir -p "$(dirname "$LOG_FILE")"
+
+while true; do
+    TIMESTAMP=$(TZ=Asia/Tehran date '+%Y-%m-%d %H:%M:%S')
+
+    case $((RANDOM % 4)) in
+        0)
+            LEVEL="INFO"
+            SERVICE="order-service"
+            MESSAGE="Order created successfully"
+            ;;
+        1)
+            LEVEL="ERROR"
+            SERVICE="payment-service"
+            MESSAGE="Payment failed"
+            ;;
+        2)
+            LEVEL="WARN"
+            SERVICE="database-service"
+            MESSAGE="Connection timeout"
+            ;;
+        3)
+            LEVEL="DEBUG"
+            SERVICE="api-service"
+            MESSAGE="Request received"
+            ;;
+    esac
+
+    echo "$TIMESTAMP | $LEVEL | $SERVICE | $MESSAGE" >> "$LOG_FILE"
+
+    sleep $((RANDOM % 4))
+done
+------
+
+```
+
+![test](img/12.png)
+
+
+
+
+#### example 3 - send custom data(timezone --> UTC)
 ```sh
 
 # /var/log/shop-api/access.log
 vim app.py
 ------
-#!/usr/bin/env python3
-"""Generate synthetic API access logs for a Filebeat/Elasticsearch training lab."""
+
 import argparse
-import ipaddress
 import random
 import time
 from datetime import datetime, timezone
 from pathlib import Path
 
+# Endpoint-specific response time settings
 ENDPOINTS = [
-    ('GET', '/api/products'), ('GET', '/api/orders'),
-    ('POST', '/api/login'), ('POST', '/api/orders'),
-    ('GET', '/api/users'), ('DELETE', '/api/cart'),
-    ('PUT', '/api/profile'), ('GET', '/api/health'),
+    {"method": "GET", "path": "/api/products", "min_ms": 20, "max_ms": 100, "slow_chance": 0.05},
+    {"method": "GET", "path": "/api/orders", "min_ms": 200, "max_ms": 700, "slow_chance": 0.30},
+    {"method": "POST", "path": "/api/login", "min_ms": 100, "max_ms": 400, "slow_chance": 0.20},
+    {"method": "POST", "path": "/api/orders", "min_ms": 800, "max_ms": 1800, "slow_chance": 0.50},
+    {"method": "GET", "path": "/api/users", "min_ms": 30, "max_ms": 150, "slow_chance": 0.05},
+    {"method": "DELETE", "path": "/api/cart", "min_ms": 100, "max_ms": 350, "slow_chance": 0.10},
+    {"method": "PUT", "path": "/api/profile", "min_ms": 400, "max_ms": 900, "slow_chance": 0.25},
+    {"method": "GET", "path": "/api/health", "min_ms": 5, "max_ms": 30, "slow_chance": 0.00},
 ]
-NETWORKS = [ipaddress.ip_network('192.168.10.0/24'), ipaddress.ip_network('10.20.30.0/24'), ipaddress.ip_network('172.16.30.0/24')]
+
+# Fixed client IP addresses
+CLIENT_IPS = [
+    "10.20.30.10",
+    "10.20.30.20",
+    "10.20.30.30",
+    "10.20.30.40",
+    "10.20.30.50",
+    "192.168.10.10",
+    "192.168.10.20",
+    "192.168.10.30",
+    "172.16.30.10",
+    "172.16.30.20",
+]
+
+# Relative traffic share for each IP
+IP_WEIGHTS = [25, 20, 15, 12, 10, 7, 5, 3, 2, 1]
+
+SLOW_EXTRA_MIN_MS = 500
+SLOW_EXTRA_MAX_MS = 1800
+
 
 def log_line(rng):
-    method, path = rng.choice(ENDPOINTS)
+    endpoint = rng.choice(ENDPOINTS)
+
+    method = endpoint["method"]
+    path = endpoint["path"]
+
     roll = rng.random()
-    status = 200 if roll < .61 else 201 if roll < .69 else 400 if roll < .77 else 401 if roll < .84 else 404 if roll < .91 else 500 if roll < .97 else 503
-    duration = rng.randint(15, 250) if status < 500 else rng.randint(450, 3500)
-    if rng.random() < .08:  # occasional slow requests
-        duration += rng.randint(500, 1800)
-    level = 'ERROR' if status >= 500 else 'WARN' if status >= 400 else 'INFO'
-    network = rng.choice(NETWORKS)
-    client_ip = str(network.network_address + rng.randint(1, network.num_addresses - 2))
-    timestamp = datetime.now(timezone.utc).isoformat(timespec='milliseconds').replace('+00:00', 'Z')
-    return f'{timestamp} {level} service=shop-api client={client_ip} method={method} path={path} status={status} duration_ms={duration}\n'
+    status = (
+        200 if roll < 0.61 else
+        201 if roll < 0.69 else
+        400 if roll < 0.77 else
+        401 if roll < 0.84 else
+        404 if roll < 0.91 else
+        500 if roll < 0.97 else
+        503
+    )
+
+    # Response time based on endpoint configuration
+    duration = rng.randint(
+        endpoint["min_ms"],
+        endpoint["max_ms"]
+    )
+
+    # Add occasional latency spikes
+    if rng.random() < endpoint["slow_chance"]:
+        duration += rng.randint(
+            SLOW_EXTRA_MIN_MS,
+            SLOW_EXTRA_MAX_MS
+        )
+
+    level = (
+        "ERROR" if status >= 500 else
+        "WARN" if status >= 400 else
+        "INFO"
+    )
+
+    # Choose from only 10 fixed client IPs
+    client_ip = rng.choices(
+        CLIENT_IPS,
+        weights=IP_WEIGHTS,
+        k=1
+    )[0]
+
+    timestamp = (
+        datetime.now(timezone.utc)
+        .isoformat(timespec="milliseconds")
+        .replace("+00:00", "Z")
+    )
+
+    return (
+        f"{timestamp} {level} "
+        f"service=shop-api "
+        f"client={client_ip} "
+        f"method={method} "
+        f"path={path} "
+        f"status={status} "
+        f"duration_ms={duration}\n"
+    )
+
 
 def main():
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--file', default='/var/log/shop-api/access.log')
-    parser.add_argument('--interval', type=float, default=1.0, help='Seconds between events')
-    parser.add_argument('--count', type=int, default=0, help='Number of events; 0 means continuous')
-    parser.add_argument('--seed', type=int, default=None)
+    parser = argparse.ArgumentParser(
+        description="Generate synthetic shop-api logs"
+    )
+
+    parser.add_argument(
+        "--file",
+        default="/var/log/shop-api/access.log",
+        help="Output log file"
+    )
+    parser.add_argument(
+        "--interval",
+        type=float,
+        default=1.0,
+        help="Seconds between events"
+    )
+    parser.add_argument(
+        "--count",
+        type=int,
+        default=0,
+        help="Number of events; 0 means continuous"
+    )
+    parser.add_argument(
+        "--seed",
+        type=int,
+        default=None,
+        help="Random seed"
+    )
+
     args = parser.parse_args()
+
     if args.interval < 0 or args.count < 0:
-        parser.error('--interval and --count must be non-negative')
+        parser.error(
+            "--interval and --count must be non-negative"
+        )
+
     rng = random.Random(args.seed)
+
     path = Path(args.file)
     path.parent.mkdir(parents=True, exist_ok=True)
+
     n = 0
+
     try:
-        with path.open('a', encoding='utf-8', buffering=1) as logfile:
+        with path.open(
+            "a",
+            encoding="utf-8",
+            buffering=1
+        ) as logfile:
             while not args.count or n < args.count:
                 logfile.write(log_line(rng))
                 n += 1
+
                 if args.interval:
                     time.sleep(args.interval)
+
     except KeyboardInterrupt:
         pass
-    print(f'Wrote {n} events to {path}')
 
-if __name__ == '__main__':
+    print(f"Wrote {n} events to {path}")
+
+
+if __name__ == "__main__":
     main()
 
 ------
@@ -761,7 +1039,8 @@ PUT _ingest/pipeline/shop-api-parser
       "date": {
         "field": "temp_timestamp",
         "formats": ["ISO8601"],
-        "target_field": "@timestamp"
+        "target_field": "@timestamp",
+        "timezone": "UTC"
       }
     },
     {
@@ -794,21 +1073,35 @@ sudo vim /etc/filebeat/filebeat.yml
     - /var/log/shop-api/access.log
   pipeline: shop-api-parser
   fields:
-    environment: lab
     application: shop-api
-    server_role: application
     team: devops
-    location: tehran
     project: grok-training
   fields_under_root: true
 -----------
 
+
+
+sudo python3 app3.py   --file /var/log/shop-api/access.log   --interval 0.1   --count 10000
+
 systemctl restart filebeat.service
 
 
+TZ=Asia/Tehran date -d '2026-11-05T07:34:00.663Z' '+%Y-%m-%d %H:%M:%S.%3N %Z'
+
 ```
 
+![alt text](img/13.png)
+![alt text](img/14.png)
 
+![alt text](img/15.png)
+
+
+![alt text](img/16.png)
+
+![alt text](img/17.png)
+
+
+count(kql='http.response.status_code >= 500') / count()
 
 ## metricbeat
 ```sh

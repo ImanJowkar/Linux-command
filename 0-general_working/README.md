@@ -1078,7 +1078,7 @@ rm -rf /swap.img
 
 # create swap
 # 4G swap
-dd if=/dev/zero of=/swapfile bs=1M count=4000
+dd if=/dev/zero of=/swapfile bs=1M count=10000
 chmod 600 /swapfile
 mkswap /swapfile
 swapon /swapfile
