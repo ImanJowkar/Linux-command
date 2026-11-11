@@ -5156,3 +5156,11 @@ add list=cloudflare-ipv4 address=131.0.72.0/22 comment="Cloudflare IPv4"
 
 
 ```
+
+# make cpu online
+```sh
+echo 1 > /sys/devices/system/cpu/cpu3/online
+
+
+
+```

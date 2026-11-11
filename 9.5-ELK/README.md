@@ -58,6 +58,9 @@ sudo rpm --install elasticsearch-9.5.5-x86_64.rpm
 # Configure Elasticsearch as a Single Node
 vim /etc/elasticsearch/elasticsearch.yml
 -----
+
+node.name: el-node1-ir
+
 #  Add the following configuration:
 discovery.type: single-node
 #  Comment the following setting if it exists:
@@ -3417,7 +3420,7 @@ elasticsearch.hosts: ["https://172.16.30.240:9200", "https://172.16.30.242:9200"
 ```
 
 
-# ILM , Rollover and Index Template and data stream
+# ILM, Rollover, Index Template and data stream
 
 ### example - 1
 ```sh
@@ -3792,60 +3795,314 @@ GET logs-shop-production/_search
 ```sh
 
 
-PUT _ilm/policy/shop-policy
+
+```
+
+### s3 storage for backup
+```sh
+mkdir s3
+cd s3
+vim docker-compose.yaml
+----
+services:
+  silo:
+    image: docker.io/pgsty/silo:RELEASE.2026-11-09T00-00-00Z
+    container_name: silo
+    restart: unless-stopped
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: change-me-long-password
+    volumes:
+      - ./data:/data
+    command: server /data --console-address ":9001"
+    networks:
+      - silo-network
+
+networks:
+  silo-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.12.13.0/24
+----------
+# api works on 9000
+# web-ui works on 9001
+
+
+# create access and secret key
+access key: i8TaBNZl1MwvFfFEBxZd
+secret key: rug1QG2YhD9DLq2tw0xSC7piuSDll4vC0CdWaPrm
+
+
+# create buket
+name: elastic-backups
+
+
+
+# add below config in  /etc/elasticsearch/elasticsearch.yml in all nodes
+
+vim /etc/elasticsearch/elasticsearch.yml
+--------
+s3.client.default.endpoint: "172.16.30.241:9000"
+s3.client.default.protocol: http
+s3.client.default.path_style_access: true
+--------
+
+systemctl restart elasticsearch.service
+
+
+/usr/share/elasticsearch/bin/elasticsearch-keystore add s3.client.default.access_key
+/usr/share/elasticsearch/bin/elasticsearch-keystore add s3.client.default.secret_key
+/usr/share/elasticsearch/bin/elasticsearch-keystore list
+
+
+# load keystore without restart 
+POST _nodes/reload_secure_settings
+
+# create repository
+PUT _snapshot/silo-repo
 {
-  "policy": {
-    "phases": {
-      "hot": {
-        "actions": {
-          "set_priority": { "priority": 100 },
-          "rollover": {
-            "max_age": "2m",
-            "max_docs": 10
-          }
-        }
-      },
-      "warm": {
-        "min_age": "2m",
-        "actions": {
-          "set_priority": { "priority": 50 },
-          "readonly": {},
-          "forcemerge": { "max_num_segments": 1 }
-        }
-      },
-      "cold": {
-        "min_age": "5m",
-        "actions": {
-          "set_priority": { "priority": 0 },
-          "allocate": { "number_of_replicas": 0 }
-        }
-      },
-      "delete": {
-        "min_age": "8m",
-        "actions": { "delete": {} }
-      }
+  "type": "s3",
+  "settings": {
+    "bucket": "elastic-backups",
+    "client": "default",
+    "base_path": "cluster-2",
+    "max_snapshot_bytes_per_sec": "40mb"
+  }
+}
+
+
+# test repository
+POST _snapshot/silo-repo/_verify
+
+
+# test repository connectivity 
+POST _snapshot/silo-repo/_analyze?blob_count=50&max_blob_size=50mb&timeout=300s 
+
+
+# create index
+PUT school-students
+{
+  "settings": {
+    "number_of_shards": 1,
+    "number_of_replicas": 1
+  },
+  "mappings": {
+    "properties": {
+      "seq":        { "type": "long" },
+      "name":       { "type": "keyword" },
+      "city":       { "type": "keyword" },
+      "grade":      { "type": "integer" },
+      "created_at": { "type": "date" }
     }
   }
 }
 
 
-# PUT _cluster/settings
-# {
-#   "persistent": {
-#     "indices.lifecycle.poll_interval": "10s"
-#   }
-# }
+dnf install python3-pip
+export PIP_INDEX_URL=https://package-mirror.liara.ir/repository/pypi/simple
+pip install requests
+vim gen.py
+----------
+import os
+import time
+import random
+from datetime import datetime, timezone
+
+import requests
+
+ES_URL = os.getenv("ES_URL", "https://192.168.85.190:9200")
+ES_USER = os.getenv("ES_USER", "elastic")
+ES_PASS = os.getenv("ES_PASS", "B2_LLhiy7y9jpWYipjao")
+CA_CERT = os.getenv("ES_CA_CERT", "")
+INDEX = "school-students"
+
+session = requests.Session()
+session.auth = (ES_USER, ES_PASS)
+session.verify = CA_CERT if CA_CERT else False
+session.headers["Content-Type"] = "application/json"
+
+NAMES = ["Ali", "Sara", "Reza", "Maryam", "Hossein", "Zahra", "Amir", "Neda"]
+CITIES = ["Tehran", "Shiraz", "Isfahan", "Tabriz", "Mashhad"]
 
 
-i=1
-while true; do
-  echo "{\"time\":\"$(date +%Y-%m-%dT%H:%M:%S)\",\"level\":\"INFO\",\"user\":\"user$((RANDOM % 5))\",\"order_id\":\"B$i\",\"amount\":$((RANDOM * 10)),\"status\":\"paid\"}" >> /var/log/shop/orders.log
-  i=$((i + 1))
-  sleep 5
-done
+def get_last_seq():
+    r = session.post(f"{ES_URL}/{INDEX}/_refresh")
+    if r.status_code == 404:
+        return 0
+    r = session.post(
+        f"{ES_URL}/{INDEX}/_search",
+        json={"size": 0, "aggs": {"max_seq": {"max": {"field": "seq"}}}},
+    )
+    r.raise_for_status()
+    value = r.json()["aggregations"]["max_seq"]["value"]
+    return int(value) if value is not None else 0
 
 
-GET .ds-logs-shop-production-*/_ilm/explain?filter_path=indices.*.phase,indices.*.action,indices.*.step,indices.*.age
+def main():
+    seq = get_last_seq()
+    print(f"Last seq in index: {seq}. Continuing from {seq + 1}")
+    try:
+        while True:
+            seq += 1
+            doc = {
+                "seq": seq,
+                "name": random.choice(NAMES),
+                "city": random.choice(CITIES),
+                "grade": random.randint(1, 12),
+                "created_at": datetime.now(timezone.utc).isoformat(),
+            }
+            r = session.put(f"{ES_URL}/{INDEX}/_doc/{seq}", json=doc)
+            r.raise_for_status()
+            print(f"Indexed seq={seq}")
+            time.sleep(0.2)
+    except KeyboardInterrupt:
+        print(f"\nStopped. Last indexed seq={seq - 1}")
+
+
+if __name__ == "__main__":
+    import urllib3
+    urllib3.disable_warnings()
+    main()
+
+----------
+
+python3 generator.py
+
+GET school-students/_count
+
+POST school-students/_search
+{
+  "size": 0,
+  "aggs": { "max_seq": { "max": { "field": "seq" } } }
+}
+
+
+
+PUT _snapshot/silo-repo/snap-students-1
+{
+  "indices": "school-students",
+  "include_global_state": false
+}
+
+# stop python app
+# ctrl + c
+
+DELETE school-students
+GET _cat/indices/school-students?v
+
+
+POST _snapshot/silo-repo/snap-students-1/_restore
+{
+  "indices": "school-students",
+  "include_global_state": false
+}
+
+
+# run the python application again
+
+
+
+# example 2 - create another snapshot
+PUT _snapshot/silo-repo/snap-students-2
+{
+  "indices": "school-students",
+  "include_global_state": false
+}
+
+
+# we can resotre with another name
+POST _snapshot/silo-repo/snap-students-2/_restore
+{
+  "indices": "school-students",
+  "include_global_state": false,
+  "rename_pattern": "(.+)",
+  "rename_replacement": "restored-$1"
+}
+
+
+
+###################################### example 2 ###########################################
+# SLM (Snapshot lifecycle management)
+PUT _slm/policy/students-test-policy
+{
+  "schedule": "0 */15 * * * ?",
+  "name": "<students-snap-{now/d}>",
+  "repository": "silo-repo",
+  "config": {
+    "indices": ["school-students"],
+    "include_global_state": false
+  },
+  "retention": {
+    "expire_after": "1d",
+    "min_count": 3,
+    "max_count": 10
+  }
+}
+
+```
+
+
+# Cluster MGMT in devtools
+```sh
+
+# reset elastic password
+/usr/share/elasticsearch/bin/elasticsearch-reset-password -u elastic -i      # give password intractively
+/usr/share/elasticsearch/bin/elasticsearch-reset-password -u elastic -a      # auto generate
+
+
+# list all users / roles
+GET _security/user
+GET _security/role
+
+
+# create user
+
+
+
+
+# cluster health
+GET _cluster/health?pretty
+GET _cat/health?v
+
+# see all nodes with ip and uuid and node name
+GET _cat/nodes?v&h=id,name,ip,node.role,uptime&full_id=true
+
+GET _cat/nodes?v&h=id,name,ip,node.role,master,heap.percent,ram.percent,cpu,load_1m,disk.used_percent,uptime&full_id=true
+
+
+# get master node
+GET _cat/master?v
+
+# node info / stats
+GET _nodes?pretty
+GET _nodes/stats?pretty
+GET _nodes/NODE_NAME/stats/jvm,os,fs
+
+
+
+
+
+```
+
+# import index and search on it
+```sh
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
