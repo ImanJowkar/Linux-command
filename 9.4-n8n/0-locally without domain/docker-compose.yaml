@@ -1,0 +1,40 @@
+services:
+  n8n:
+    image: hub.hamdocker.ir/n8nio/n8n:2.32.5
+    container_name: n8n
+    restart: unless-stopped
+    ports:
+      - "${N8N_PORT:-5678}:5678"
+    environment:
+      # --- Host / URL (plain HTTP) ---
+      - N8N_HOST=${N8N_HOST}
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=http
+      - N8N_EDITOR_BASE_URL=${N8N_BASE_URL}
+      # Public URL n8n shows for Webhook / Form / OAuth callback nodes
+      - WEBHOOK_URL=${N8N_BASE_URL}
+
+      # Without HTTPS the browser won't keep "secure" cookies,
+      # so login fails on anything other than localhost unless this is false
+      - N8N_SECURE_COOKIE=false
+
+      # --- Security ---
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
+
+      # --- Timezone (used by Schedule/Cron nodes) ---
+      - GENERIC_TIMEZONE=${TIMEZONE}
+      - TZ=${TIMEZONE}
+
+      # --- Misc ---
+      - N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=true
+      - N8N_RUNNERS_ENABLED=true
+      - N8N_DIAGNOSTICS_ENABLED=false
+      - N8N_PERSONALIZATION_ENABLED=false
+      - EXECUTIONS_DATA_PRUNE=true
+      - EXECUTIONS_DATA_MAX_AGE=168   # hours (7 days)
+    volumes:
+      - n8n_data:/home/node/.n8n        # workflows, credentials, SQLite DB
+      - ./local-files:/files            # shared folder for Read/Write File nodes
+
+volumes:
+  n8n_data:
