@@ -2240,6 +2240,110 @@ EOF
 
 
 
+## seperate partitions (/var/log, /var/log/audi, /var/tmp)
+```sh
+vgcreate vg_data /dev/sde1
+
+lvcreate -L 20G -n lv_log vg_data
+lvcreate -L 10G -n lv_audit vg_data
+lvcreate -L 10G -n lv_tmp vg_data
+
+
+mkfs.xfs /dev/vg_data/lv_log
+mkfs.xfs /dev/vg_data/lv_audit
+mkfs.xfs /dev/vg_data/lv_tmp
+
+
+
+mkdir -p /mnt/{new-log,new-audit,new-tmp}
+mount /dev/vg_data/lv_log /mnt/new-log
+mount /dev/vg_data/lv_audit /mnt/new-audit
+mount /dev/vg_data/lv_tmp /mnt/new-tmp
+
+
+
+cp -a --sparse=always /var/log/lastlog /mnt/new-log/
+
+rsync -aHAXSx --numeric-ids --info=progress2 \
+  --exclude='/audit/' --exclude='/lastlog' \
+  /var/log/ /mnt/new-log/
+
+rsync -aHAXSx --numeric-ids --info=progress2 \
+  /var/log/audit/ /mnt/new-audit/
+
+rsync -aHAXSx --numeric-ids --info=progress2 \
+  /var/tmp/ /mnt/new-tmp/
+
+
+
+lsof +D /var/log
+lsof +D /var/tmp
+findmnt -R /var
+
+
+umount /mnt/new-log
+umount /mnt/new-audit
+umount /mnt/new-tmp
+
+mv /var/log /var/log.old
+mv /var/tmp /var/tmp.old
+
+mkdir -p /var/log /var/tmp
+
+mount /dev/vg_data/lv_log /var/log
+
+mkdir -p /var/log/audit
+
+mount /dev/vg_data/lv_audit /var/log/audit
+mount /dev/vg_data/lv_tmp /var/tmp
+
+chmod 1777 /var/tmp
+
+
+restorecon -RF /var/log /var/tmp
+
+cp -a /etc/fstab /etc/fstab.bak
+vi /etc/fstab
+---
+/dev/vg_data/lv_log    /var/log        xfs defaults,nosuid,nodev,noexec 0 0
+/dev/vg_data/lv_audit  /var/log/audit  xfs defaults,nosuid,nodev,noexec 0 0
+/dev/vg_data/lv_tmp    /var/tmp        xfs defaults,nosuid,nodev,noexec 0 0
+----
+
+
+systemctl daemon-reload
+findmnt --verify --verbose
+mount -a
+
+mount -o remount /var/log
+mount -o remount /var/log/audit
+mount -o remount /var/tmp
+
+
+systemctl restart systemd-journald
+systemctl restart rsyslog
+service auditd restart
+
+
+
+df -hT
+
+findmnt -o TARGET,SOURCE,FSTYPE,OPTIONS
+
+systemctl --failed
+
+lsof +D /var/log.old
+lsof +D /var/tmp.old
+
+logger "Partition migration test"
+
+
+
+
+
+
+```
+
 
 ## how to secure ssh
 ```sh

@@ -1739,14 +1739,7 @@ systemctl enable --now heartbeat-elastic.service
 
 
 
-# Elastic Agent
 
-## Managed by fleet server
-```sh
-
-
-
-```
 
 
 # create dashboard in kibana
@@ -3257,6 +3250,17 @@ curl --cacert /etc/elasticsearch/certs/http_ca.crt -u elastic https://172.16.30.
 
 ```
 
+# Node Roles
+```sh
+vim /etc/elasticsearch/elasticsearch.yml
+----
+node.roles: [master]
+node.roles: [data]
+node.roles: [master, data, data_hot, data_warm]
+
+----
+
+```
 
 
 ## monitor nodes
@@ -3420,8 +3424,179 @@ elasticsearch.hosts: ["https://172.16.30.240:9200", "https://172.16.30.242:9200"
 ```
 
 
-# ILM, Rollover, Index Template and data stream
+# Index Template and data stream
 
+
+### example 0
+**Goal:** All indexes whose names start with `students-` should have the same settings and mappings.
+
+```sh
+
+
+PUT _index_template/students-template
+{
+  "index_patterns": ["students-*"],
+  "priority": 100,
+  "template": {
+    "settings": {
+      "number_of_shards": 1,
+      "number_of_replicas": 1
+    },
+    "mappings": {
+      "properties": {
+        "name": {
+          "type": "keyword"
+        },
+        "age": {
+          "type": "integer"
+        },
+        "course": {
+          "type": "keyword"
+        },
+        "created_at": {
+          "type": "date"
+        }
+      }
+    }
+  }
+}
+
+
+
+GET _index_template/students-template
+
+# create index
+
+PUT students-2026
+
+
+GET students-2026/_settings
+
+GET students-2026/_mapping
+
+
+
+POST students-2026/_doc/1
+{
+  "name": "Ali",
+  "age": 25,
+  "course": "Linux",
+  "created_at": "2026-11-12T10:00:00Z"
+}
+
+POST students-2026/_doc/2
+{
+  "name": "Sara",
+  "age": 30,
+  "course": "Elasticsearch",
+  "created_at": "2026-11-12T11:00:00Z"
+}
+
+
+
+GET students-2026/_search
+{
+  "query": {
+    "term": {
+      "course": "Linux"
+    }
+  }
+}
+
+
+```
+
+### example 1 - Priority in index template
+```sh
+
+
+PUT _index_template/app-default-template
+{
+  "index_patterns": ["app-*"],
+  "priority": 100,
+  "template": {
+    "settings": {
+      "number_of_shards": 1,
+      "number_of_replicas": 0
+    }
+  }
+}
+
+
+
+PUT _index_template/app-production-template
+{
+  "index_patterns": ["app-prod-*"],
+  "priority": 200,
+  "template": {
+    "settings": {
+      "number_of_shards": 3,
+      "number_of_replicas": 1
+    }
+  }
+}
+
+
+
+PUT app-test-001
+
+PUT app-prod-001
+
+GET app-test-001/_settings
+
+GET app-prod-001/_settings
+
+
+```
+
+
+### example 2 
+Changing an index template only affects newly created indexes. Existing indexes will remain unchanged.
+```sh
+
+PUT _index_template/test-template
+{
+  "index_patterns": ["test-app-*"],
+  "template": {
+    "settings": {
+      "number_of_shards": 1,
+      "number_of_replicas": 0
+    }
+  }
+}
+
+
+PUT test-app-001
+
+GET test-app-001/_settings
+
+
+PUT _index_template/test-template
+{
+  "index_patterns": ["test-app-*"],
+  "template": {
+    "settings": {
+      "number_of_shards": 3,
+      "number_of_replicas": 1
+    }
+  }
+}
+
+PUT test-app-002
+
+GET test-app-001/_settings
+
+GET test-app-002/_settings
+
+
+
+```
+
+
+
+
+
+# ILM, Rollover
 ### example - 1
 ```sh
 mkdir -p /var/log/myapp
@@ -3791,9 +3966,147 @@ GET logs-shop-production/_search
 
 
 ### example 3 
-
+By default, Elasticsearch checks the ILM status every 10 minutes.
 ```sh
+# change ILM check to 5 seconds
+PUT _cluster/settings
+{
+  "transient": {
+    "indices.lifecycle.poll_interval": "5s"
+  }
+}
 
+
+PUT _ilm/policy/lab-ilm-policy
+{
+  "policy": {
+    "phases": {
+      "hot": {
+        "actions": {
+          "rollover": {
+            "max_age": "1m"
+          }
+        }
+      },
+      "warm": {
+        "min_age": "1m",
+        "actions": {
+          "migrate": {
+            "enabled": false
+          },
+          "forcemerge": {
+            "max_num_segments": 1
+          }
+        }
+      },
+      "cold": {
+        "min_age": "2m",
+        "actions": {
+          "migrate": {
+            "enabled": false
+          },
+          "set_priority": {
+            "priority": 0
+          }
+        }
+      },
+      "delete": {
+        "min_age": "3m",
+        "actions": {
+          "delete": {}
+        }
+      }
+    }
+  }
+}
+
+
+
+PUT _index_template/lab-ilm-template
+{
+  "index_patterns": ["lab-ilm-*"],
+  "priority": 500,
+  "data_stream": {},
+  "template": {
+    "settings": {
+      "number_of_shards": 1,
+      "number_of_replicas": 0,
+      "index.lifecycle.name": "lab-ilm-policy"
+    },
+    "mappings": {
+      "properties": {
+        "@timestamp": {
+          "type": "date"
+        },
+        "log.level": {
+          "type": "keyword"
+        },
+        "service.name": {
+          "type": "keyword"
+        },
+        "message": {
+          "type": "text"
+        }
+      }
+    }
+  }
+}
+
+PUT _data_stream/lab-ilm-logs
+
+
+# you can see backing index
+GET _data_stream/lab-ilm-logs
+
+
+
+
+POST lab-ilm-logs/_doc
+{
+  "@timestamp": "2026-11-13T10:00:00Z",
+  "log.level": "INFO",
+  "service.name": "nginx",
+  "message": "Nginx started"
+}
+
+POST lab-ilm-logs/_doc
+{
+  "@timestamp": "2026-11-13T10:00:10Z",
+  "log.level": "ERROR",
+  "service.name": "nginx",
+  "message": "Connection failed"
+}
+
+POST lab-ilm-logs/_doc
+{
+  "@timestamp": "2026-11-13T10:00:20Z",
+  "log.level": "WARN",
+  "service.name": "nginx",
+  "message": "High response time"
+}
+
+
+
+GET lab-ilm-logs/_count
+
+
+GET _data_stream/lab-ilm-logs
+
+
+# reset to default
+DELETE _data_stream/lab-ilm-logs
+
+DELETE _index_template/lab-ilm-template
+
+DELETE _ilm/policy/lab-ilm-policy
+
+
+PUT _cluster/settings
+{
+  "transient": {
+    "indices.lifecycle.poll_interval": null
+  }
+}
 
 
 ```
@@ -3810,8 +4123,8 @@ services:
     container_name: silo
     restart: unless-stopped
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - "9000:9000"  # api
+      - "9001:9001"  # web-ui 
     environment:
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: change-me-long-password
@@ -3833,8 +4146,8 @@ networks:
 
 
 # create access and secret key
-access key: i8TaBNZl1MwvFfFEBxZd
-secret key: rug1QG2YhD9DLq2tw0xSC7piuSDll4vC0CdWaPrm
+access key: GjwWKumFUSvef94QJGZK
+secret key: cbb98NW3tZTI6ELodyw2r2ae8kv6o59dUd7pLy0J
 
 
 # create buket
@@ -3981,6 +4294,9 @@ POST school-students/_search
 }
 
 
+# stop python app
+# ctrl + c
+
 
 PUT _snapshot/silo-repo/snap-students-1
 {
@@ -3988,8 +4304,6 @@ PUT _snapshot/silo-repo/snap-students-1
   "include_global_state": false
 }
 
-# stop python app
-# ctrl + c
 
 DELETE school-students
 GET _cat/indices/school-students?v
@@ -4038,10 +4352,544 @@ PUT _slm/policy/students-test-policy
   },
   "retention": {
     "expire_after": "1d",
-    "min_count": 3,
-    "max_count": 10
+    "min_count": 2,
+    "max_count": 4
   }
 }
+
+POST _slm/policy/students-test-policy/_execute
+
+POST _slm/_execute_retention
+
+GET _slm/status
+
+
+```
+
+### ILM and SLM
+```sh
+
+PUT _cluster/settings
+{
+  "transient": {
+    "slm.minimum_interval": "1m"
+  }
+}
+
+PUT _slm/policy/lab-backup-slm
+{
+  "schedule": "0 * * * * ?",
+  "name": "<lab-backup-{now/d}>",
+  "repository": "silo-repo",
+  "config": {
+    "indices": ["lab-backup-logs"],
+    "include_global_state": false
+  },
+  "retention": {
+    "expire_after": "1d",
+    "min_count": 1,
+    "max_count": 100
+  }
+}
+
+
+PUT _ilm/policy/lab-backup-ilm
+{
+  "policy": {
+    "phases": {
+      "hot": {
+        "actions": {
+          "rollover": {
+            "max_age": "1m"
+          }
+        }
+      },
+      "warm": {
+        "min_age": "2m",
+        "actions": {
+          "migrate": {
+            "enabled": false
+          },
+          "forcemerge": {
+            "max_num_segments": 1
+          }
+        }
+      },
+      "cold": {
+        "min_age": "3m",
+        "actions": {
+          "migrate": {
+            "enabled": false
+          },
+          "set_priority": {
+            "priority": 0
+          }
+        }
+      },
+      "delete": {
+        "min_age": "4m",
+        "actions": {
+          "wait_for_snapshot": {
+            "policy": "lab-backup-slm"
+          },
+          "delete": {}
+        }
+      }
+    }
+  }
+}
+
+
+
+PUT _cluster/settings
+{
+  "transient": {
+    "slm.minimum_interval": null
+  }
+}
+```
+
+# Security and RBAC
+```sh
+
+PUT shop-orders
+{
+  "mappings": {
+    "properties": {
+      "order_id": { "type": "keyword" },
+      "customer": { "type": "keyword" },
+      "product": { "type": "keyword" },
+      "amount": { "type": "long" },
+      "status": { "type": "keyword" },
+      "created_at": { "type": "date" }
+    }
+  }
+}
+
+
+PUT shop-orders/_doc/1001
+{
+  "order_id": "1001",
+  "customer": "Ali",
+  "product": "Laptop",
+  "amount": 85000000,
+  "status": "paid",
+  "created_at": "2026-11-13T10:00:00Z"
+}
+
+PUT shop-orders/_doc/1002
+{
+  "order_id": "1002",
+  "customer": "Sara",
+  "product": "Monitor",
+  "amount": 15000000,
+  "status": "pending",
+  "created_at": "2026-11-13T10:05:00Z"
+}
+
+
+# 
+PUT _security/role/sales-read-role
+{
+  "cluster": [],
+  "indices": [
+    {
+      "names": ["shop-orders"],
+      "privileges": [
+        "read",
+        "view_index_metadata"
+      ]
+    }
+  ]
+}
+
+PUT _security/role/order-create-role
+{
+  "cluster": [],
+  "indices": [
+    {
+      "names": ["shop-orders"],
+      "privileges": ["create_doc"]
+    }
+  ]
+}
+
+
+PUT _security/role/sales-manager-role
+{
+  "cluster": [],
+  "indices": [
+    {
+      "names": ["shop-orders"],
+      "privileges": [
+        "read",
+        "write",
+        "view_index_metadata"
+      ]
+    }
+  ]
+}
+
+
+PUT _security/user/sales_reader
+{
+  "password": "SalesReader-2026!",
+  "roles": ["sales-read-role"]
+}
+
+PUT _security/user/order_writer
+{
+  "password": "OrderWriter-2026!",
+  "roles": ["order-create-role"]
+}
+
+PUT _security/user/sales_manager
+{
+  "password": "SalesManager-2026!",
+  "roles": ["sales-manager-role"]
+}
+
+
+
+
+curl --cacert /etc/elasticsearch/certs/http_ca.crt \
+  -u sales_reader \
+  "https://localhost:9200/shop-orders/_search?pretty"
+
+
+curl --cacert /etc/elasticsearch/certs/http_ca.crt \
+  -u sales_reader \
+  -X DELETE \
+  "https://localhost:9200/shop-orders/_doc/1001"
+
+
+
+curl --cacert /etc/elasticsearch/certs/http_ca.crt \
+  -u order_writer \
+  -X PUT \
+  "https://localhost:9200/shop-orders/_create/1003" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "order_id": "1003",
+    "customer": "Reza",
+    "product": "Keyboard",
+    "amount": 2500000,
+    "status": "paid",
+    "created_at": "2026-11-13T11:00:00Z"
+  }'
+
+
+
+
+
+# apikey
+Stack Management → Security → API Keys → Create API key
+
+
+curl --cacert /etc/elasticsearch/certs/http_ca.crt \
+  -H "Authorization: ApiKey T1hxRzRLRUJzUkJNTlFWS2dZbkI6eWxmOGNUSENBUC1pSG5VLXpzUV9SUQ==" \
+  "https://172.16.30.240:9200/training-api-monitoring/_search?pretty"
+
+
+
+
+# copy encoded
+POST _security/api_key
+{
+  "name": "api-monitoring-writer",
+  "expiration": "90d",
+  "role_descriptors": {
+    "log-writer": {
+      "cluster": [],
+      "indices": [
+        {
+          "names": ["training-api-monitoring"],
+          "privileges": ["create_doc"]
+        }
+      ]
+    }
+  }
+}
+
+
+PUT _security/api_key/IHql4KEBsRBMNQVKSdIY
+{
+  "expiration": "360d"
+}
+
+POST _security/api_key/_bulk_update
+{
+  "ids": [
+    "API_KEY_ID_1",
+    "API_KEY_ID_2"
+  ],
+  "expiration": "180d"
+}
+
+
+vim app.py
+-----------
+import os
+from elasticsearch import Elasticsearch
+
+es = Elasticsearch(
+    [
+        "https://172.16.30.240:9200",
+        "https://172.16.30.242:9200",
+        "https://172.16.30.243:9200"
+    ],
+    api_key=os.environ["ES_API_KEY"],
+    ca_certs="/etc/elasticsearch/certs/http_ca.crt"
+)
+
+result = es.search(
+    index="training-api-monitoring",
+    size=5
+)
+
+print(result)
+-------------
+
+
+DELETE _security/api_key
+{
+  "ids": ["API_KEY_ID"]
+}
+
+
+
+```
+
+# index Alias
+```sh
+
+PUT products-v1
+{
+  "mappings": {
+    "properties": {
+      "name": { "type": "text" },
+      "price": { "type": "long" },
+      "category": { "type": "keyword" }
+    }
+  }
+}
+
+
+POST products-v1/_doc/1
+{
+  "name": "Laptop",
+  "price": 75000000,
+  "category": "computer"
+}
+
+POST products-v1/_doc/2
+{
+  "name": "Mouse",
+  "price": 1200000,
+  "category": "accessories"
+}
+
+
+POST _aliases
+{
+  "actions": [
+    {
+      "add": {
+        "index": "products-v1",
+        "alias": "products"
+      }
+    }
+  ]
+}
+
+
+GET products/_search
+
+
+GET _alias/products
+
+GET _cat/aliases/products?v
+
+
+```
+
+
+# Reindex
+```sh
+
+# example 1 - change mapping type from string to long
+PUT orders-v1
+{
+  "mappings": {
+    "properties": {
+      "customer": { "type": "keyword" },
+      "amount": { "type": "keyword" },
+      "status": { "type": "keyword" }
+    }
+  }
+}
+
+PUT orders-v1/_doc/1
+{
+  "customer": "Ali",
+  "amount": "1500000",
+  "status": "paid"
+}
+
+PUT orders-v1/_doc/2
+{
+  "customer": "Sara",
+  "amount": "2500000",
+  "status": "paid"
+}
+
+PUT orders-v1/_doc/3
+{
+  "customer": "Reza",
+  "amount": "500000",
+  "status": "pending"
+}
+
+
+
+POST _aliases
+{
+  "actions": [
+    {
+      "add": {
+        "index": "orders-v1",
+        "alias": "orders"
+      }
+    }
+  ]
+}
+
+
+
+
+GET orders/_search
+
+
+
+# create index with correct mapping
+PUT orders-v2
+{
+  "mappings": {
+    "properties": {
+      "customer": { "type": "keyword" },
+      "amount": { "type": "long" },
+      "status": { "type": "keyword" }
+    }
+  }
+}
+
+GET orders-v2/_search
+
+POST _reindex
+{
+  "source": {
+    "index": "orders-v1"
+  },
+  "dest": {
+    "index": "orders-v2"
+  },
+  "script": {
+    "source": "ctx._source.amount = Long.parseLong(ctx._source.amount)"
+  }
+}
+
+GET orders-v2/_mapping
+
+GET orders-v2/_count
+
+GET orders-v2/_search
+
+
+
+GET orders-v2/_search
+{
+  "size": 0,
+  "query": {
+    "term": {
+      "status": "paid"
+    }
+  },
+  "aggs": {
+    "total_amount": {
+      "sum": {
+        "field": "amount"
+      }
+    }
+  }
+}
+
+
+
+POST _aliases
+{
+  "actions": [
+    {
+      "remove": {
+        "index": "orders-v1",
+        "alias": "orders"
+      }
+    },
+    {
+      "add": {
+        "index": "orders-v2",
+        "alias": "orders"
+      }
+    }
+  ]
+}
+
+GET _alias/orders
+
+GET orders/_search
+
+
+
+###############################################################
+## example copy only paid docs
+PUT paid-orders
+{
+  "mappings": {
+    "properties": {
+      "customer": { "type": "keyword" },
+      "amount": { "type": "long" },
+      "status": { "type": "keyword" }
+    }
+  }
+}
+
+
+POST _reindex
+{
+  "source": {
+    "index": "orders-v2",
+    "query": {
+      "term": {
+        "status": "paid"
+      }
+    }
+  },
+  "dest": {
+    "index": "paid-orders"
+  }
+}
+
+
+
+GET paid-orders/_count
+
+
+```
+
+# jvm heap
+```sh
+
+GET _cat/nodes?v&h=name,ip,heap.current,heap.max,heap.percent,ram.percent,cpu
+
 
 ```
 
@@ -4088,26 +4936,1143 @@ GET _nodes/NODE_NAME/stats/jvm,os,fs
 
 ```
 
-# import index and search on it
+# import data into elastic search
+![alt text](img/18.png)
+```sh
+
+# you can import csv file by (in new index)
+
+GET training-shop-orders-csv/_count
+
+GET training-shop-orders-csv/_mapping
+
+GET training-shop-orders-csv/_search
+
+
+
+# or import in existing index
+PUT shop-orders-manual
+{
+  "mappings": {
+    "properties": {
+      "@timestamp": { "type": "date" },
+      "order_id": { "type": "keyword" },
+      "customer_id": { "type": "keyword" },
+      "city": { "type": "keyword" },
+      "product": { "type": "keyword" },
+      "category": { "type": "keyword" },
+      "quantity": { "type": "long" },
+      "amount": { "type": "long" },
+      "status": { "type": "keyword" },
+      "payment_method": { "type": "keyword" },
+      "channel": { "type": "keyword" },
+      "response_time_ms": { "type": "long" }
+    }
+  }
+}
+
+
+```
+
+# Elastic Agent and Fleet
+
+```sh
+
+# Generate encyption key for kibana
+/usr/share/kibana/bin/kibana-encryption-keys generate
+
+vim /etc/kibana/kibana.yml
+--------
+xpack.encryptedSavedObjects.encryptionKey: 1acf4d30286e8dd176a278fa0f7ab96af9c0a3c20d29ea400fae6cc004cbf3b5
+xpack.reporting.encryptionKey: b2a8946c8d12380e8d2e03a63ddc8c023980959d609454e984cb043a52c538ab
+xpack.security.encryptionKey: 7c4e36f9b0968473aab3b3074e874eb704dc04af370b258501b229ca2055f5c7
+--------
+systemctl restart kibana
+
+```
+![alt text](img/19.png)
+
+```sh
+# add fleet server
+sudo ELASTIC_AGENT_FLAVOR=servers rpm -ivh elastic-agent-9.5.5-x86_64.rpm
+
+# after installation go to kibana and add fleet server
+
+elastic-agent enroll \
+  --fleet-server-es=https://172.16.30.242:9200 \
+  --fleet-server-service-token=AAEAAWVsYXN0aWMvZmxlZXQtc2VydmVyL3Rva2VuLTE3OTQ2NjM3NDQ1NDM6M2wxNzdiRDRSOU9xQVVfcjhmQ0pHZw \
+  --fleet-server-policy=fleet-server-policy \
+  --fleet-server-port=8220 \
+  --fleet-server-es-insecure
+
+
+# go to Fleet → Settings → Outputs → Edit default
+# change elastic search ouput to https
+# add all elastic nodes
+https://172.16.30.240:9200
+https://172.16.30.242:9200
+https://172.16.30.243:9200
+
+# and add in advance yaml setting
+ssl.verification_mode: none
+
+
+firewall-cmd --permanent --add-port=8220/tcp
+
+
+systemctl restart elastic-agent
+elastic-agent status
+
+
+# add integration offline
+vim /etc/kibana/kibana.yml
+--------
+xpack.fleet.isAirGapped: true
+--------
+
+systemctl restart kibana
+
+# add system integrations
+curl -k -X POST \
+  -u elastic \
+  -H 'Content-Type: application/zip' \
+  -H 'kbn-xsrf: true' \
+  http://192.168.85.190:5601/api/fleet/epm/packages \
+  --data-binary @cisco_ios-1.37.0.zip
+
+
+# Integrations → Installed integrations (you can see system integration )
+
+
+# now create new policy named Linux-Servers
+# click on this policy and add integration and select system
+# Fleet → Agents → Add agent
+
+# on server install elastic-agent
+rpm -ivh elastic-agent-9.5.5-x86_64.rpm
+
+
+elastic-agent enroll \
+  --url=https://172.16.30.241:8220   \
+  --enrollment-token=NDR4MjJxRUJIQ2dlY0Vhc0NOUWY6MlVNanROdzVpQjBQcVdNcVNCM2l5dw== \
+  --insecure
+
+
+
+
+systemctl enable --now elastic-agent
+elastic-agent status
+
+# Observability → Infrastructure → Hosts
+# Analytics → Dashboards  (search Metrics System)
+
+```
+## integrations
+### filestream 
+```sh
+# create new policy and join your host to this policy
+
+
+mkdir -p /opt/myapp
+mkdir -p /var/log/myapp
+vim  /opt/myapp/app.py
+---------
+import logging
+import random
+import time
+
+logging.basicConfig(
+    filename="/var/log/myapp/application.log",
+    level=logging.INFO,
+    format="%(asctime)s | %(levelname)s | %(message)s"
+)
+
+while True:
+    event = random.choice([
+        "success", "warning", "error"
+    ])
+
+    if event == "success":
+        logging.info("Request completed successfully")
+
+    elif event == "warning":
+        logging.warning("Request processing is slow")
+
+    else:
+        logging.error("Database connection failed")
+
+    time.sleep(2)
+
+---------
+
+python3 /opt/myapp/app.py
+
+# now assgin filestream integration to this policy
+
+```
+![alt text](img/20.png)
+
+```sh
+
+# search in discover 
+# data_stream.dataset: "myapp"
+# data_stream.dataset: "myapp" and message: "ERROR"
+```
+![alt text](img/21.png)
+
+```sh
+# now create ingest pipeline
+PUT _ingest/pipeline/myapp-pipeline
+{
+  "description": "Parse MyApp application logs",
+  "processors": [
+    {
+      "grok": {
+        "field": "message",
+        "patterns": [
+          "%{TIMESTAMP_ISO8601:log_time} \\| %{LOGLEVEL:log.level} \\| %{GREEDYDATA:message}"
+        ]
+      }
+    },
+    {
+      "date": {
+        "field": "log_time",
+        "formats": ["yyyy-MM-dd HH:mm:ss,SSS"],
+        "timezone": "Asia/Tehran"
+      }
+    },
+    {
+      "remove": {
+        "field": "log_time"
+      }
+    }
+  ]
+}
+
+
+
+# then in policy and filestream integration add your ingest pipeline
+```
+![alt text](img/22.png)
+
+```sh
+# you can search 
+# data_stream.dataset: "myapp" and log.level: "ERROR"
+# data_stream.dataset: "myapp"
+
+
+
+```
+#### alerting
+```sh
+# create index for storing alerts
+PUT custom-alerts
+{
+  "mappings": {
+    "properties": {
+      "rule_id": {
+        "type": "keyword"
+      },
+      "rule_name": {
+        "type": "keyword"
+      },
+      "alert_id": {
+        "type": "keyword"
+      },
+      "alert_uuid": {
+        "type": "keyword"
+      },
+      "alert_status": {
+        "type": "keyword"
+      },
+      "notification_status": {
+        "type": "keyword"
+      },
+      "message": {
+        "type": "text"
+      },
+      "created_at": {
+        "type": "date"
+      },
+      "sent_at": {
+        "type": "date"
+      },
+      "retry_count": {
+        "type": "integer"
+      }
+    }
+  }
+}
+
+# now create index connector
+Stack Management → Connectors → Create connector
+
+# choose index type
+```
+![alt text](img/23.png)
+```sh
+# now create rule
+Stack Management → Rules → Create rule
+
+# type: -> Index threshold
+
+```
+
+![alt text](img/24.png)
+
+![alt text](img/25.png)
+
+
+
+
+```sh
+# define Active Action
+{
+  "rule_id": "{{rule.id}}",
+  "rule_name": "{{rule.name}}",
+  "alert_id": "{{alert.id}}",
+  "alert_uuid": "{{alert.uuid}}",
+  "alert_status": "active",
+  "notification_status": "pending",
+  "message": "{{context.message}}",
+  "created_at": "{{date}}",
+  "retry_count": 0
+}
+
+```
+![alt text](img/26.png)
+
+
+```sh
+# define Recovery Action
+{
+  "rule_id": "{{rule.id}}",
+  "rule_name": "{{rule.name}}",
+  "alert_id": "{{alert.id}}",
+  "alert_uuid": "{{alert.uuid}}",
+  "alert_status": "resolved",
+  "notification_status": "pending",
+  "message": "Alert recovered: {{rule.name}}",
+  "created_at": "{{date}}",
+  "retry_count": 0
+}
+```
+![alt text](img/27.png)
+![alt text](img/28.png)
+![alt text](img/29.png)
+
+
+
+
+
+
+
+### Docker integrations in elastic agent
+```sh
+add docker integration to policy 
+
+```
+![alt text](img/30.png)
+
+
+![alt text](img/31.png)
+
+
+#### Nginx
+```sh
+
+vim /etc/nginx/conf.d/monitoring.conf
+-------
+server {
+    listen 127.0.0.1:8081;
+
+    location /nginx_status {
+        stub_status;
+        access_log off;
+
+        allow 127.0.0.1;
+        deny all;
+    }
+}
+
+-------
+
+nginx -t
+systemctl reload nginx
+
+curl http://127.0.0.1:8081/nginx_status
+
+# Fleet → Agent policies → Nginx-Servers → Add integration → Nginx
+
+```
+
+![alt text](img/32.png)
+
+```sh
+# generate fake traffik
+for i in {1..100}; do
+    curl -s http://localhost/ > /dev/null
+    curl -s http://localhost/notfound > /dev/null
+done
+
+```
+
+![alt text](img/33.png)
+
+#### Elastic Defend
+```sh
+
+
+elastic-agent status --output full
+whoami
+id
+uname -a
+ls -la /tmp
+
+```
+
+
+
+## fleet HA
+```sh
+# this time we use ubuntu server
+# install fleet server in new server
+sudo ELASTIC_AGENT_FLAVOR=servers dpkg -i elastic-agent-9.5.5-amd64.deb
+
+
+elastic-agent enroll \
+  --fleet-server-es=https://172.16.30.242:9200 \
+  --fleet-server-service-token=AAEAAWVsYXN0aWMvZmxlZXQtc2VydmVyL3Rva2VuLTE3OTQ4MTgzNTE5ODM6MHh2OEpxN09TUjJaSHR5a0xwMmdJZw \
+  --fleet-server-policy=fleet-server-policy \
+  --fleet-server-port=8220 \
+  --fleet-server-es-insecure
+
+sudo systemctl enable --now elastic-agent
+
+
+
+```
+![alt text](img/40.png)
+
+
+
+
+
+
+
+
+
+
+# send you data or log into elasticsearch directly using python
+```sh
+vim app.py
+-----
+
+import requests
+import random
+import time
+import urllib3
+from datetime import datetime, timezone
+
+# Disable SSL warnings (Self-Signed)
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+ELASTIC_URL = "https://192.168.1.100:9200"
+USERNAME = "elastic"
+PASSWORD = "YourPassword"
+
+INDEX_NAME = "linux-login-logs"
+
+users = ["admin", "root", "iman", "test", "developer"]
+
+servers = [
+    "linux-web-01",
+    "linux-db-01",
+    "linux-app-01"
+]
+
+ips = [
+    "192.168.1.10",
+    "192.168.1.20",
+    "10.10.10.15",
+    "172.16.1.50"
+]
+
+while True:
+
+    log = {
+        "@timestamp": datetime.now(timezone.utc).isoformat(),
+        "username": random.choice(users),
+        "source_ip": random.choice(ips),
+        "server": random.choice(servers),
+        "event_type": "user_login",
+        "status": random.choice(["success", "success", "failed"])
+    }
+
+    try:
+        response = requests.post(
+            f"{ELASTIC_URL}/{INDEX_NAME}/_doc",
+            json=log,
+            auth=(USERNAME, PASSWORD),
+            verify=False,
+            timeout=10
+        )
+
+        response.raise_for_status()
+
+        print("Sent successfully:", log)
+
+    except requests.exceptions.RequestException as e:
+        print("Elasticsearch Error:", e)
+
+    time.sleep(3)
+
+-----
+
+
+# see 10 last docs
+GET linux-login-logs/_search
+{
+  "size": 10,
+  "sort": [
+    {
+      "@timestamp": "desc"
+    }
+  ]
+}
+
+```
+
+
+# Query DSL, KQL,  ES|QL
+```sh
+
+PUT training-api-monitoring
+{
+  "settings": {
+    "number_of_shards": 1,
+    "number_of_replicas": 1
+  },
+  "mappings": {
+    "properties": {
+      "@timestamp": { "type": "date" },
+      "service.name": { "type": "keyword" },
+      "host.name": { "type": "keyword" },
+      "log.level": { "type": "keyword" },
+      "message": { "type": "text" },
+      "http.request.method": { "type": "keyword" },
+      "http.response.status_code": { "type": "integer" },
+      "url.path": { "type": "keyword" },
+      "client.ip": { "type": "ip" },
+      "user.name": { "type": "keyword" },
+      "duration_ms": { "type": "long" },
+      "event.outcome": { "type": "keyword" },
+      "service.environment": { "type": "keyword" }
+    }
+  }
+}
+
+
+
+mkdir python
+cd python
+python3 -m venv venv
+
+source venv/bin/activate
+
+pip install elasticsearch
+
+vim generate-api-logs.py
+----
+import random
+from datetime import datetime, timedelta, timezone
+from getpass import getpass
+from elasticsearch import Elasticsearch
+from elasticsearch.helpers import bulk
+
+ES_HOSTS = [
+    "https://172.16.30.240:9200",
+    "https://172.16.30.242:9200",
+    "https://172.16.30.243:9200"
+]
+
+INDEX = "training-api-monitoring"
+TOTAL_DOCUMENTS = 10000
+
+password = getpass("Elasticsearch Password: ")
+
+es = Elasticsearch(
+    ES_HOSTS,
+    basic_auth=("elastic", password),
+    ca_certs="/etc/elasticsearch/certs/http_ca.crt"
+)
+
+SERVICES = {
+    "payment-service": ("/api/payment", "POST"),
+    "auth-service": ("/api/login", "POST"),
+    "order-service": ("/api/orders", "POST"),
+    "product-service": ("/api/products", "GET"),
+    "user-service": ("/api/users", "GET")
+}
+
+HOSTS = [
+    "app-server-01",
+    "app-server-02",
+    "app-server-03"
+]
+
+USERS = [
+    "ali", "reza", "sara", "mina",
+    "hamid", "maryam", "admin"
+]
+
+STATUS_CODES = [200, 201, 400, 401, 403, 404, 500, 503]
+WEIGHTS = [55, 15, 5, 5, 3, 5, 8, 4]
+
+MESSAGES = {
+    200: "Request completed successfully",
+    201: "Resource created successfully",
+    400: "Invalid request parameters",
+    401: "Authentication failed",
+    403: "Access denied",
+    404: "Resource not found",
+    500: "Database connection failed",
+    503: "Service temporarily unavailable"
+}
+
+def generate_documents():
+
+    now = datetime.now(timezone.utc)
+
+    for i in range(TOTAL_DOCUMENTS):
+
+        service = random.choice(list(SERVICES))
+        path, method = SERVICES[service]
+
+        status = random.choices(
+            STATUS_CODES,
+            weights=WEIGHTS,
+            k=1
+        )[0]
+
+        if status >= 500:
+            level = "ERROR"
+            duration = random.randint(1000, 5000)
+
+        elif status >= 400:
+            level = "WARN"
+            duration = random.randint(100, 1500)
+
+        else:
+            level = "INFO"
+            duration = random.randint(20, 800)
+
+        timestamp = now - timedelta(
+            seconds=random.randint(0, 7 * 24 * 60 * 60)
+        )
+
+        yield {
+            "_index": INDEX,
+            "_source": {
+                "@timestamp": timestamp.isoformat(),
+                "service": {
+                    "name": service,
+                    "environment": random.choice(
+                        ["production", "production", "test"]
+                    )
+                },
+                "host": {
+                    "name": random.choice(HOSTS)
+                },
+                "log": {
+                    "level": level
+                },
+                "message": MESSAGES[status],
+                "http": {
+                    "request": {
+                        "method": method
+                    },
+                    "response": {
+                        "status_code": status
+                    }
+                },
+                "url": {
+                    "path": path
+                },
+                "client": {
+                    "ip": f"192.168.10.{random.randint(10, 30)}"
+                },
+                "user": {
+                    "name": random.choice(USERS)
+                },
+                "duration_ms": duration,
+                "event": {
+                    "outcome": (
+                        "failure" if status >= 400
+                        else "success"
+                    )
+                }
+            }
+        }
+
+success, errors = bulk(
+    es,
+    generate_documents(),
+    chunk_size=500,
+    refresh=True
+)
+
+print(f"Inserted documents: {success}")
+
+----
+
+
+
+GET training-api-monitoring/_count
+GET training-api-monitoring/_mapping
+
+# create dataview called  API Monitoring Lab
+
+
+
+
+```
+
+## Query DSL
+```sh
+# go to dev-tools and run 
+
+
+# list all docs
+GET training-api-monitoring/_search
+{
+  "query": {
+    "match_all": {}
+  }
+}
+
+# limit only 10 document
+GET training-api-monitoring/_search
+{
+  "size": 10,
+  "query": {
+    "match_all": {}
+  }
+}
+
+
+# exact search
+# term (find exect value fo a specific feild)
+GET training-api-monitoring/_search
+{
+  "query": {
+    "term": {
+      "log.level": "ERROR"
+    }
+  }
+}
+
+
+# you can limit
+# 
+GET training-api-monitoring/_search
+{  
+  "size": 2,
+  "query": {
+    "term": {
+      "log.level": "ERROR"
+    }
+  }
+}
+
+# log.level: ERROR or WARN
+GET training-api-monitoring/_search
+{
+  "query": {
+    "terms": {
+      "log.level": ["ERROR", "WARN"]
+    }
+  }
+}
+
+
+
+
+
+# find a pattern in a feild using match
+# match 
+GET training-api-monitoring/_search
+{
+  "query": {
+    "match": {
+      "message": "database connection"
+    }
+  }
+}
+
+
+
+GET training-api-monitoring/_search
+{
+  "query": {
+    "range": {
+      "duration_ms": {
+        "gt": 1000
+      }
+    }
+  }
+}
+
+
+
+GET training-api-monitoring/_search
+{
+  "query": {
+    "range": {
+      "duration_ms": {
+        "gte": 500,
+        "lte": 2000
+      }
+    }
+  }
+}
+
+
+
+GET training-api-monitoring/_search
+{
+  "query": {
+    "bool": {
+      "must": [
+        {
+          "term": {
+            "service.name": "payment-service"
+          }
+        },
+        {
+          "term": {
+            "log.level": "ERROR"
+          }
+        }
+      ]
+    }
+  }
+}
+
+
+
+
+
+
+
+
+GET training-api-monitoring/_search
+{
+  "query": {
+    "bool": {
+      "filter": [
+        {
+          "term": {
+            "service.environment": "production"
+          }
+        },
+        {
+          "range": {
+            "duration_ms": {
+              "gt": 1000
+            }
+          }
+        }
+      ]
+    }
+  }
+}
+
+
+# at least one rule must pass
+GET training-api-monitoring/_search
+{
+  "query": {
+    "bool": {
+      "should": [
+        {
+          "term": {
+            "service.name": "payment-service"
+          }
+        },
+        {
+          "term": {
+            "service.name": "auth-service"
+          }
+        }
+      ],
+      "minimum_should_match": 1
+    }
+  }
+}
+
+
+GET training-api-monitoring/_search
+{
+  "query": {
+    "bool": {
+      "must_not": [
+        {
+          "term": {
+            "log.level": "INFO"
+          }
+        }
+      ]
+    }
+  }
+}
+################
+
+GET training-api-monitoring/_search
+{
+  "query": {
+    "bool": {
+      "filter": [
+        {
+          "term": {
+            "service.environment": "production"
+          }
+        },
+        {
+          "range": {
+            "duration_ms": {
+              "gt": 1000
+            }
+          }
+        }
+      ],
+      "should": [
+        {
+          "term": {
+            "service.name": "payment-service"
+          }
+        },
+        {
+          "term": {
+            "service.name": "order-service"
+          }
+        }
+      ],
+      "minimum_should_match": 1,
+      "must_not": [
+        {
+          "term": {
+            "log.level": "INFO"
+          }
+        }
+      ]
+    }
+  }
+}
+
+
+
+
+# select only some feild
+
+GET training-api-monitoring/_search
+{
+  "_source": [
+    "service.name",
+    "log.level",
+    "duration_ms"
+  ],
+  "size": 10
+}
+
+
+# find error in last 24 hours
+GET training-api-monitoring/_search
+{
+  "query": {
+    "bool": {
+      "filter": [
+        {
+          "term": {
+            "log.level": "ERROR"
+          }
+        },
+        {
+          "range": {
+            "@timestamp": {
+              "gte": "now-24h",
+              "lte": "now"
+            }
+          }
+        }
+      ]
+    }
+  }
+}
+
+
+
+```
+
+## KQL (Kibana Query Language)
+```sh
+
+# go to discover and in search field 
+
+field_name: value
+# example
+log.level: "ERROR"
+service.name: "payment-service"
+http.response.status_code: 500
+http.response.status_code: 401
+http.response.status_code: 403
+
+client.ip: "192.168.10.15"
+
+# AND OR
+service.name: "payment-service" AND log.level: "ERROR"
+log.level: "ERROR" OR log.level: "WARN"
+log.level: (ERROR OR WARN)
+# show all log.level except INFO
+NOT log.level: "INFO"
+
+
+service.environment: "production" AND (log.level: "ERROR" OR log.level: "WARN")
+duration_ms > 1000
+http.response.status_code >= 500
+
+
+message: database
+message: "Database connection"
+
+database
+
+host.name: app-server*
+url.path: /api/*
+service.name: payment*
+
+
+# show docs which have client.ip feild
+# نمایش داکیومنت هایی که فیلد زیر را دارند
+client.ip: *
+
+NOT client.ip: *
+
+
+# نمایش لاگهایی که در 30ساعت گذشته است
+@timestamp >= now-30h
+
+# نمایش خطاهایی که در ۲۴ ساعت گذشته است
+log.level: "ERROR" AND @timestamp >= now-24h
+
+
+
+
+service.name: "payment-service" AND
+service.environment: "production" AND
+http.response.status_code >= 500 AND
+duration_ms > 1000
+
+```
+
+## ES|QL (Elasticsearch Query Language)
+```sh
+# in kibana discover change query type to ESQL
+FROM training-api-monitoring | LIMIT 10
+
+
+
+FROM training-api-monitoring | WHERE http.response.status_code >= 500 | LIMIT 100
+
+
+
+FROM training-api-monitoring | WHERE service.name == "payment-service" AND log.level == "ERROR" | LIMIT 100
+
+FROM training-api-monitoring | WHERE log.level IN ("ERROR", "WARN") | LIMIT 100
+
+
+
+FROM training-api-monitoring | KEEP @timestamp, service.name, log.level, message | LIMIT 100
+
+FROM training-api-monitoring | SORT duration_ms DESC | KEEP service.name, url.path, duration_ms | LIMIT 10
+
+FROM training-api-monitoring | SORT duration_ms ASC | KEEP service.name, url.path, duration_ms | LIMIT 10
+
+
+FROM training-api-monitoring | STATS total_requests = COUNT(*)
+
+FROM training-api-monitoring | STATS avg_duration = AVG(duration_ms)
+
+FROM training-api-monitoring |  WHERE http.response.status_code <= 300 | STATS avg_duration = AVG(duration_ms)
+
+FROM training-api-monitoring | STATS total_requests = COUNT(*) BY service.name | SORT total_requests DESC
+
+
+FROM training-api-monitoring
+| STATS
+    total_requests = COUNT(*),
+    avg_duration = AVG(duration_ms),
+    max_duration = MAX(duration_ms),
+    min_duration = MIN(duration_ms)
+  BY service.name
+| SORT avg_duration DESC
+
+
+
+
+FROM training-api-monitoring
+| EVAL duration_seconds = duration_ms / 1000.0
+| KEEP service.name, duration_ms, duration_seconds
+| LIMIT 10
+
+
+
+FROM training-api-monitoring
+| STATS
+    total = COUNT(*),
+    errors = COUNT(*) WHERE http.response.status_code >= 500
+  BY service.name
+| EVAL error_rate = ROUND(errors * 100.0 / total, 2)
+| SORT error_rate DESC
+| KEEP service.name, error_rate, errors, total
+
+
+```
+
+# kibana spaces
+
+![alt text](img/34.png)
+![alt text](img/35.png)
+![alt text](img/36.png)
+![alt text](img/37.png)
+![alt text](img/38.png)
+![alt text](img/39.png)
+
+
+
+
 ```sh
 
 
 
+PUT _security/user/devops_user
+{
+  "password": "asdfadsf",
+  "roles": ["devops-viewer"],
+  "full_name": "DevOps User",
+  "enabled": true
+}
+
+```
+
+## chnage between spaces
+![alt text](img/39.png)
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
+# map in kibana
+```
 
 
 

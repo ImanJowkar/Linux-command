@@ -1,0 +1,403 @@
+{
+  "name": "Elastic Alert Notification Service",
+  "nodes": [
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "7d846bcb-6a66-45e2-9d6e-73172515b663",
+              "name": "=subject:",
+              "value": "={{ '🔴 ALERT: ' + $json.rule_name }}",
+              "type": "string"
+            },
+            {
+              "id": "2e38e6be-5ac4-4d4e-8301-72b70ada5f81",
+              "name": "notification_message:",
+              "value": "={{ '🔴 Problem detected\\n' + $json.message }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        464,
+        -320
+      ],
+      "id": "b8343f83-6d42-403b-bab4-a55cb760e438",
+      "name": "Prepare Active Message"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "7d846bcb-6a66-45e2-9d6e-73172515b663",
+              "name": "=subject:",
+              "value": "={{ '🟢 RECOVERED: ' + $json.rule_name }}",
+              "type": "string"
+            },
+            {
+              "id": "2e38e6be-5ac4-4d4e-8301-72b70ada5f81",
+              "name": "notification_message:",
+              "value": "={{ '🟢 Problem resolved\\n' + $json.message }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        464,
+        -128
+      ],
+      "id": "063e59d1-830a-46cb-8e0c-715cd207a4e3",
+      "name": "Prepare Recovery Message"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "seconds"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -432,
+        -144
+      ],
+      "id": "90382a53-83ba-4fe8-a1be-f323544bd19f",
+      "name": "Alert Polling Scheduler"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "indexId": "custom-alerts",
+        "limit": 100,
+        "options": {
+          "query": "{\n  \"query\": {\n    \"bool\": {\n      \"filter\": [\n        {\n          \"terms\": {\n            \"notification_status\": [\"pending\", \"failed\"]\n          }\n        },\n        {\n          \"range\": {\n            \"retry_count\": {\n              \"lt\": 5\n            }\n          }\n        }\n      ]\n    }\n  },\n  \"sort\": [\n    {\n      \"created_at\": \"asc\"\n    }\n  ]\n}"
+        }
+      },
+      "type": "n8n-nodes-base.elasticsearch",
+      "typeVersion": 1,
+      "position": [
+        -208,
+        -144
+      ],
+      "id": "2060d0a7-835c-468c-a6e3-0b5c22d40f8c",
+      "name": "Get Pending Notifications",
+      "credentials": {
+        "elasticsearchApi": {
+          "id": "kcBAp1vlOEXrty3Y",
+          "name": "Elasticsearch account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "batchSize": "=1",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        16,
+        -144
+      ],
+      "id": "db741649-3eb1-4bd8-b2d5-c68553a48897",
+      "name": "Process Notifications"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 4
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.alert_status }}",
+                    "rightValue": "active",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "47e89571-a54f-4536-adbb-df05156e9db7"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "active"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 4
+                },
+                "conditions": [
+                  {
+                    "id": "f4af2c65-1725-4218-8988-b10877f44897",
+                    "leftValue": "={{ $json.alert_status }}",
+                    "rightValue": "resolved",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "resolved"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.5,
+      "position": [
+        256,
+        -128
+      ],
+      "id": "fac3ed06-1981-4c2d-b65c-a8899510f481",
+      "name": "Route Alert Status"
+    },
+    {
+      "parameters": {
+        "chatId": "5562363614",
+        "text": "={{ $json[\"notification_message:\"] }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        688,
+        -224
+      ],
+      "id": "2f89556a-e166-4ebd-9a9a-b7ee4888401e",
+      "name": "Send Bale Notification",
+      "webhookId": "d9bbbf62-234b-4fc6-a50b-52fc73b30080",
+      "retryOnFail": true,
+      "waitBetweenTries": 5000,
+      "notesInFlow": false,
+      "credentials": {
+        "telegramApi": {
+          "id": "TgSxsiaxi41sYQBN",
+          "name": "Telegram account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "indexId": "custom-alerts",
+        "documentId": "={{ $('Process Notifications').item.json._id }}",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "notification_status",
+              "fieldValue": "sent"
+            },
+            {
+              "fieldId": "sent_at",
+              "fieldValue": "={{ $now.toISO() }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.elasticsearch",
+      "typeVersion": 1,
+      "position": [
+        912,
+        -32
+      ],
+      "id": "9b5f2705-0bf8-48cb-adc0-0dc58cc3abb2",
+      "name": "Mark Notification as Sent",
+      "credentials": {
+        "elasticsearchApi": {
+          "id": "kcBAp1vlOEXrty3Y",
+          "name": "Elasticsearch account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "indexId": "custom-alerts",
+        "documentId": "={{ $('Process Notifications').item.json._id }}",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "notification_status",
+              "fieldValue": "failed"
+            },
+            {
+              "fieldId": "retry_count",
+              "fieldValue": "={{ $('Process Notifications').item.json.retry_count  + 1 }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.elasticsearch",
+      "typeVersion": 1,
+      "position": [
+        912,
+        -272
+      ],
+      "id": "4543a445-845c-4f24-bea1-d5fa199520f1",
+      "name": "Mark Notification as Failed",
+      "retryOnFail": false,
+      "credentials": {
+        "elasticsearchApi": {
+          "id": "kcBAp1vlOEXrty3Y",
+          "name": "Elasticsearch account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Prepare Active Message": {
+      "main": [
+        [
+          {
+            "node": "Send Bale Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Recovery Message": {
+      "main": [
+        [
+          {
+            "node": "Send Bale Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Alert Polling Scheduler": {
+      "main": [
+        [
+          {
+            "node": "Get Pending Notifications",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Pending Notifications": {
+      "main": [
+        [
+          {
+            "node": "Process Notifications",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Notifications": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Route Alert Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route Alert Status": {
+      "main": [
+        [
+          {
+            "node": "Prepare Active Message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Recovery Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Bale Notification": {
+      "main": [
+        [
+          {
+            "node": "Mark Notification as Sent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mark Notification as Failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Notification as Sent": {
+      "main": [
+        [
+          {
+            "node": "Process Notifications",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "f4edbf19-8e6a-4bd7-a997-382fdb1307fe",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "182e58595f4db0d8e28223b8a535eb5f2be810490c88b7f500d7a68cd70a3480"
+  },
+  "nodeGroups": [],
+  "id": "fF0K0ml4OmQhLIdN",
+  "tags": []
+}
