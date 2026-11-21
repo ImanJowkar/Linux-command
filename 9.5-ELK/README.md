@@ -936,6 +936,8 @@ GET /pos-transactions/_search
 
 # Beats
 ## filebeats
+
+[filebeat input types](https://www.elastic.co/docs/reference/beats/filebeat/configuration-filebeat-options)
 ```sh
 rpm -i filebeat-9.5.5-x86_64.rpm
 
@@ -964,7 +966,7 @@ filebeat test config -e
 filebeat test output
 
 
-
+# load dashboard
 filebeat setup -e
 systemctl enable filebeat.service --now
 
@@ -976,7 +978,7 @@ systemctl enable filebeat.service --now
 ```sh
 filebeat modules list
 filebeat modules enable nginx
-filebeat modules disable system
+filebeat modules disable nginx
 
 vim /etc/filebeat/modules.d/nginx.yml
 ------
@@ -988,11 +990,13 @@ vim /etc/filebeat/modules.d/nginx.yml
   error:
     enabled: true
 -------
-
+dnf install nginx
 systemctl restart filebeat.service
-```
 
-![img](img/1.png)
+
+```
+http.response.status_code: 404
+source.ip: 192.168.1.10
 
 ```sh
 
