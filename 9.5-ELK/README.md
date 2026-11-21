@@ -316,6 +316,48 @@ wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-9.5.5-x8
 wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-9.5.5-x86_64.rpm.sha512
 shasum -a 512 -c elasticsearch-9.5.5-x86_64.rpm.sha512
 sudo rpm --install elasticsearch-9.5.5-x86_64.rpm
+# output
+--------------
+warning: elasticsearch-9.5.5-x86_64.rpm: Header V4 RSA/SHA512 Signature, key ID d88e42b4: NOKEY
+Creating elasticsearch group... OK
+Creating elasticsearch user... OK
+--------------------------- Security autoconfiguration information ------------------------------
+
+Authentication and authorization are enabled.
+TLS for the transport and HTTP layers is enabled and configured.
+
+The generated password for the elastic built-in superuser is : cl-L2iyW1H4kdiI7HqxG
+
+If this node should join an existing cluster, you can reconfigure this with
+'/usr/share/elasticsearch/bin/elasticsearch-reconfigure-node --enrollment-token <token-here>'
+after creating an enrollment token on your existing cluster.
+
+You can complete the following actions at any time:
+
+Reset the password of the elastic built-in superuser with
+'/usr/share/elasticsearch/bin/elasticsearch-reset-password -u elastic'.
+
+Generate an enrollment token for Kibana instances with
+ '/usr/share/elasticsearch/bin/elasticsearch-create-enrollment-token -s kibana'.
+
+Generate an enrollment token for Elasticsearch nodes with
+'/usr/share/elasticsearch/bin/elasticsearch-create-enrollment-token -s node'.
+
+-------------------------------------------------------------------------------------------------
+### NOT starting on installation, please execute the following statements to configure elasticsearch service to start automatically using systemd
+ sudo systemctl daemon-reload
+ sudo systemctl enable elasticsearch.service
+### You can start elasticsearch service by executing
+ sudo systemctl start elasticsearch.service
+
+-----------------
+
+
+
+
+
+
+
 
 
 
@@ -351,38 +393,39 @@ elasticsearch-reset-password -u elastic
 # Check Elasticsearch cluster health
 curl -k -u elastic https://localhost:9200/_cluster/health?pretty
 
-curl -k -u elastic:QJMqrf9u56nPHR=H6mRn https://localhost:9200/_cluster/health?pretty
+curl -k -u elastic:cl-L2iyW1H4kdiI7HqxG https://localhost:9200/_cluster/health?pretty
 
-curl  --cacert /etc/elasticsearch/certs/http_ca.crt -u elastic:QJMqrf9u56nPHR=H6mRn https://localhost:9200/_cluster/health?pretty
+curl  --cacert /etc/elasticsearch/certs/http_ca.crt -u elastic:cl-L2iyW1H4kdiI7HqxG https://localhost:9200/_cluster/health?pretty
+
 
 
 # ?v --> verbose
 # List all nodes in the cluster
-curl -k -u elastic:QJMqrf9u56nPHR=H6mRn https://localhost:9200/_cat/nodes?v
+curl -k -u elastic:cl-L2iyW1H4kdiI7HqxG https://localhost:9200/_cat/nodes?v
 
 # List all Elasticsearch indices
 curl -k -u elastic https://localhost:9200/_cat/indices?v
 
 # List all indices, including hidden and system indices
-curl -k -u elastic "https://localhost:9200/_cat/indices?v&expand_wildcards=all"
+curl -k -u elastic:cl-L2iyW1H4kdiI7HqxG "https://localhost:9200/_cat/indices?v&expand_wildcards=all"
 
 
 
 # work with index
 # Create a new index named students
-curl -k -u elastic:QJMqrf9u56nPHR=H6mRn -X PUT "https://localhost:9200/students"
+curl -k -u elastic:cl-L2iyW1H4kdiI7HqxG -X PUT "https://localhost:9200/students"
 
 
 
 
 
 # Display the students index information
-curl -k -u elastic:QJMqrf9u56nPHR=H6mRn "https://localhost:9200/_cat/indices/students?v"
+curl -k -u elastic:cl-L2iyW1H4kdiI7HqxG "https://localhost:9200/_cat/indices/students?v"
 
 
 
 # Insert a student document with ID 1
-curl -k -u elastic:QJMqrf9u56nPHR=H6mRn -X PUT "https://localhost:9200/students/_doc/1" \
+curl -k -u elastic:cl-L2iyW1H4kdiI7HqxG -X PUT "https://localhost:9200/students/_doc/1" \
 -H "Content-Type: application/json" \
 -d '{
   "name": "Ali",
@@ -393,17 +436,17 @@ curl -k -u elastic:QJMqrf9u56nPHR=H6mRn -X PUT "https://localhost:9200/students/
 
 
 # Retrieve the student document by ID
-curl -k -u elastic:QJMqrf9u56nPHR=H6mRn "https://localhost:9200/students/_doc/1?pretty"
+curl -k -u elastic:cl-L2iyW1H4kdiI7HqxG "https://localhost:9200/students/_doc/1?pretty"
 
 
 # Count documents in the students index
-curl -k -u elastic:QJMqrf9u56nPHR=H6mRn "https://localhost:9200/students/_count?pretty"
+curl -k -u elastic:cl-L2iyW1H4kdiI7HqxG "https://localhost:9200/students/_count?pretty"
 
 
 
 
 # Create a new student document with ID 2
-curl -k -u elastic:QJMqrf9u56nPHR=H6mRn -X PUT "https://localhost:9200/students/_create/2" \
+curl -k -u elastic:cl-L2iyW1H4kdiI7HqxG -X PUT "https://localhost:9200/students/_create/2" \
 -H "Content-Type: application/json" \
 -d '{
   "name": "Sara",
@@ -412,7 +455,7 @@ curl -k -u elastic:QJMqrf9u56nPHR=H6mRn -X PUT "https://localhost:9200/students/
 }'
 
 
-curl -k -u elastic:QJMqrf9u56nPHR=H6mRn -X PUT "https://localhost:9200/students/_create/3" \
+curl -k -u elastic:cl-L2iyW1H4kdiI7HqxG -X PUT "https://localhost:9200/students/_create/3" \
 -H "Content-Type: application/json" \
 -d '{
   "name": "ali",
@@ -421,7 +464,7 @@ curl -k -u elastic:QJMqrf9u56nPHR=H6mRn -X PUT "https://localhost:9200/students/
   "city": "shiraz"
 }'
 
-curl -k -u elastic:QJMqrf9u56nPHR=H6mRn -X PUT "https://localhost:9200/students/_create/11" \
+curl -k -u elastic:cl-L2iyW1H4kdiI7HqxG -X PUT "https://localhost:9200/students/_create/11" \
 -H "Content-Type: application/json" \
 -d '{
   "name": "mohammad",
@@ -432,11 +475,11 @@ curl -k -u elastic:QJMqrf9u56nPHR=H6mRn -X PUT "https://localhost:9200/students/
 
 
 # Retrieve student document with ID 2
-curl -k -u elastic:QJMqrf9u56nPHR=H6mRn "https://localhost:9200/students/_doc/2?pretty"
+curl -k -u elastic:cl-L2iyW1H4kdiI7HqxG "https://localhost:9200/students/_doc/2?pretty"
 
 
 # Update the age of student with ID 2
-curl -k -u elastic:QJMqrf9u56nPHR=H6mRn -X POST "https://localhost:9200/students/_update/2" \
+curl -k -u elastic:cl-L2iyW1H4kdiI7HqxG -X POST "https://localhost:9200/students/_update/2" \
 -H "Content-Type: application/json" \
 -d '{
   "doc": {
@@ -447,16 +490,16 @@ curl -k -u elastic:QJMqrf9u56nPHR=H6mRn -X POST "https://localhost:9200/students
 
 
 # Delete student document with ID 2
-curl -k -u elastic:QJMqrf9u56nPHR=H6mRn -X DELETE "https://localhost:9200/students/_doc/2"
+curl -k -u elastic:cl-L2iyW1H4kdiI7HqxG -X DELETE "https://localhost:9200/students/_doc/2"
 
 
 # Count all documents in the students index
-curl -k -u elastic:QJMqrf9u56nPHR=H6mRn "https://localhost:9200/students/_count?pretty"
+curl -k -u elastic:cl-L2iyW1H4kdiI7HqxG "https://localhost:9200/students/_count?pretty"
 
 
 
 # Retrieve all documents from the students index
-curl -k -u elastic:QJMqrf9u56nPHR=H6mRn -X GET "https://localhost:9200/students/_search?pretty" \
+curl -k -u elastic:cl-L2iyW1H4kdiI7HqxG -X GET "https://localhost:9200/students/_search?pretty" \
 -H "Content-Type: application/json" \
 -d '{
   "query": {
@@ -467,7 +510,7 @@ curl -k -u elastic:QJMqrf9u56nPHR=H6mRn -X GET "https://localhost:9200/students/
 
 
 # Search for students named Ali
-curl -k -u elastic:QJMqrf9u56nPHR=H6mRn -X GET "https://localhost:9200/students/_search?pretty" \
+curl -k -u elastic:cl-L2iyW1H4kdiI7HqxG -X GET "https://localhost:9200/students/_search?pretty" \
 -H "Content-Type: application/json" \
 -d '{
   "query": {
@@ -479,7 +522,7 @@ curl -k -u elastic:QJMqrf9u56nPHR=H6mRn -X GET "https://localhost:9200/students/
 
 
 # Find students between 20 and 30 years old
-curl -k -u elastic:QJMqrf9u56nPHR=H6mRn -X GET "https://localhost:9200/students/_search?pretty" \
+curl -k -u elastic:cl-L2iyW1H4kdiI7HqxG -X GET "https://localhost:9200/students/_search?pretty" \
 -H "Content-Type: application/json" \
 -d '{
   "query": {
@@ -552,7 +595,11 @@ ss -nlpt
 
 
 
+## setup with enrollment token
+/usr/share/elasticsearch/bin/elasticsearch-create-enrollment-token -s kibana
 
+# verification code
+/usr/share/kibana/bin/kibana-verification-code
 
 # login with elastic user, 
 
@@ -716,7 +763,6 @@ GET /students_v4/_search
 
 
 
-
 # setup ssl/tls for kibana web interface
 mkdir -p /etc/kibana/cert
 cd /etc/kibana/cert
@@ -726,11 +772,11 @@ openssl req -x509 -nodes -days 365 \
   -keyout kibana.key \
   -out kibana.crt \
   -subj "/CN=localhost" \
-  -addext "subjectAltName=DNS:localhost,IP:127.0.0.1,IP:172.16.30.241"
+  -addext "subjectAltName=DNS:localhost,IP:127.0.0.1,IP:192.168.132.2"
 
 # openssl pkey -in kibana.key -pubout -out kibana.pub
 
-chown -R  kibana: cert/
+chown -R  kibana: /etc/kibana/cert
 
 vim /etc/kibana/kibana.yml
 ----
@@ -742,12 +788,154 @@ server.ssl.key: /etc/kibana/cert/kibana.key
 systemctl restart  kibana.service
 
 
+```
 
+## example using python
+```sh
+# mapping
+{
+  "transaction_id": "TX-100012",
+  "terminal_id": "98830456",
+  "bank": "Tejarat",
+  "city": "Tehran",
+  "amount": 2500000,
+  "status": "Failed",
+  "response_code": "91",
+  "response_time_ms": 2800,
+  "@timestamp": "2026-11-21T10:30:00Z"
+}
+
+
+
+# Create a Python virtual environment
+python3 -m venv .venv
+
+# Activate the virtual environment
+source .venv/bin/activate
+
+# Install the HTTP client library
+export PIP_INDEX_URL=https://package-mirror.liara.ir/repository/pypi/simple
+pip install requests
+
+
+# create index in elastic
+PUT /pos-transactions
+{
+  "mappings": {
+    "properties": {
+      "transaction_id": { "type": "keyword" },
+      "terminal_id": { "type": "keyword" },
+      "bank": { "type": "keyword" },
+      "city": { "type": "keyword" },
+      "amount": { "type": "long" },
+      "status": { "type": "keyword" },
+      "response_code": { "type": "keyword" },
+      "response_time_ms": { "type": "integer" },
+      "@timestamp": { "type": "date" }
+    }
+  }
+}
+
+
+vim app.py
+----------
+import requests
+import random
+from datetime import datetime, timezone
+
+# Elasticsearch server address
+url = "https://192.168.132.2:9200/pos-transactions/_doc"
+
+# Sample banks and cities
+banks = ["Tejarat", "Mellat", "Melli"]
+cities = ["Tehran", "Shiraz", "Mashhad"]
+
+# Generate 100 transactions
+for i in range(100):
+
+    # Select random values
+    bank = random.choice(banks)
+    city = random.choice(cities)
+    amount = random.randint(10000, 5000000)
+    response_time = random.randint(100, 3000)
+
+    # Generate transaction status
+    status = random.choice(["Success", "Success", "Success", "Failed"])
+
+    # Create transaction document
+    transaction = {
+        "transaction_id": "TX-" + str(i),
+        "terminal_id": str(random.randint(10000000, 99999999)),
+        "bank": bank,
+        "city": city,
+        "amount": amount,
+        "status": status,
+        "response_code": "00" if status == "Success" else "91",
+        "response_time_ms": response_time,
+        "@timestamp": datetime.now(timezone.utc).isoformat()
+    }
+
+    # Send transaction to Elasticsearch
+    response = requests.post(
+        url,
+        json=transaction,
+        auth=("elastic", "cl-L2iyW1H4kdiI7HqxG"),
+        timeout=10,
+        verify=False
+)
+    # Print result
+    print(i, bank, city, status, response.status_code)
+
+---------
+
+python app.py
+
+GET /pos-transactions/_count
+GET /pos-transactions/_search
+{
+  "size": 10,
+  "sort": [
+    {
+      "@timestamp": "desc"
+    }
+  ]
+}
+
+# failed transaction for tejarat bank
+GET /pos-transactions/_search
+{
+  "query": {
+    "bool": {
+      "filter": [
+        { "term": { "bank": "Tejarat" } },
+        { "term": { "status": "Failed" } }
+      ]
+    }
+  }
+}
+
+
+# find failed transaction in shiraz for tejarat bank
+GET /pos-transactions/_search
+{
+  "query": {
+    "bool": {
+      "filter": [
+        { "term": { "bank": "Tejarat" } },
+        { "term": { "city": "Shiraz" } },
+        { "term": { "status": "Failed" } }
+      ]
+    }
+  }
+}
+
+
+
+# to see your data create dataview and create some dashboard
 ```
 
 # Beats
 ## filebeats
-
 ```sh
 rpm -i filebeat-9.5.5-x86_64.rpm
 
@@ -765,7 +953,7 @@ output.elasticsearch:
 setup.kibana:
   host: "http://172.16.30.241:5601"
   username: "elastic"
-  password: "QJMqrf9u56nPHR=H6mRn"
+  password: "cl-L2iyW1H4kdiI7HqxG"
 
 ----
 
@@ -1649,7 +1837,7 @@ output.elasticsearch:
 setup.kibana:
   host: "http://172.16.30.241:5601"
   username: "elastic"
-  password: "QJMqrf9u56nPHR=H6mRn"
+  password: "cl-L2iyW1H4kdiI7HqxG"
 
 ----
 
@@ -1920,7 +2108,7 @@ output.elasticsearch:
 setup.kibana:
   host: "http://172.16.30.241:5601"
   username: "elastic"
-  password: "QJMqrf9u56nPHR=H6mRn"
+  password: "cl-L2iyW1H4kdiI7HqxG"
 
 ---
 packetbeat test config
@@ -1945,13 +2133,13 @@ output.elasticsearch:
   protocol: "https"
 
   username: "elastic"
-  password: "QJMqrf9u56nPHR=H6mRn"
+  password: "cl-L2iyW1H4kdiI7HqxG"
   ssl.verification_mode: none
 
 setup.kibana:
   host: "http://172.16.30.241:5601"
   username: "elastic"
-  password: "QJMqrf9u56nPHR=H6mRn"
+  password: "cl-L2iyW1H4kdiI7HqxG"
 
 
 
@@ -2020,7 +2208,7 @@ output.elasticsearch:
 setup.kibana:
   host: "https://172.16.30.241:5601"
   username: "elastic"
-  password: "QJMqrf9u56nPHR=H6mRn"
+  password: "cl-L2iyW1H4kdiI7HqxG"
   ssl.verification_mode: none
 --------
 
@@ -3082,7 +3270,7 @@ output {
   elasticsearch {
     hosts => ["https://172.16.30.240:9200"]
     user => "elastic"
-    password => "QJMqrf9u56nPHR=H6mRn"
+    password => "cl-L2iyW1H4kdiI7HqxG"
 
     ssl_certificate_authorities => [
       "/etc/logstash/certs/http_ca.crt"
@@ -4094,7 +4282,7 @@ vim /etc/metricbeat/modules.d/elasticsearch.yml
   scope: node
   hosts: ["https://172.16.30.240:9200"]
   username: "elastic"
-  password: "QJMqrf9u56nPHR=H6mRn"
+  password: "cl-L2iyW1H4kdiI7HqxG"
   ssl.certificate_authorities:
     - "/etc/elasticsearch/certs/http_ca.crt"
   ssl.verification_mode: certificate
@@ -4116,7 +4304,7 @@ vim /etc/metricbeat/metricbeat.yml
 setup.kibana:
   host: "http://172.16.30.241:5601"
   username: "elastic"
-  password: "QJMqrf9u56nPHR=H6mRn"
+  password: "cl-L2iyW1H4kdiI7HqxG"
 
 
 output.elasticsearch:
@@ -4128,7 +4316,7 @@ output.elasticsearch:
   protocol: "https"
 
   username: "elastic"
-  password: "QJMqrf9u56nPHR=H6mRn"
+  password: "cl-L2iyW1H4kdiI7HqxG"
   ssl.verification_mode: none
 --------
 
@@ -4142,7 +4330,7 @@ vim /etc/metricbeat/modules.d/elasticsearch.yml
   scope: node
   hosts: ["https://172.16.30.242:9200"] # specify metric collect from which node
   username: "elastic"
-  password: "QJMqrf9u56nPHR=H6mRn"
+  password: "cl-L2iyW1H4kdiI7HqxG"
   ssl.certificate_authorities:
     - "/etc/elasticsearch/certs/http_ca.crt"
   ssl.verification_mode: certificate
@@ -4170,7 +4358,7 @@ vim /etc/metricbeat/metricbeat.yml
 setup.kibana:
   host: "http://172.16.30.241:5601"
   username: "elastic"
-  password: "QJMqrf9u56nPHR=H6mRn"
+  password: "cl-L2iyW1H4kdiI7HqxG"
 
 
 output.elasticsearch:
@@ -4182,7 +4370,7 @@ output.elasticsearch:
   protocol: "https"
 
   username: "elastic"
-  password: "QJMqrf9u56nPHR=H6mRn"
+  password: "cl-L2iyW1H4kdiI7HqxG"
   ssl.verification_mode: none
 --------
 
@@ -4196,7 +4384,7 @@ vim /etc/metricbeat/modules.d/elasticsearch.yml
   scope: node
   hosts: ["https://172.16.30.243:9200"] # specify metric collect from which node
   username: "elastic"
-  password: "QJMqrf9u56nPHR=H6mRn"
+  password: "cl-L2iyW1H4kdiI7HqxG"
   ssl.certificate_authorities:
     - "/etc/elasticsearch/certs/http_ca.crt"
   ssl.verification_mode: certificate
@@ -4546,7 +4734,7 @@ setup.kibana:
   #space.id:
   host: "https://172.16.30.241:5601"
   username: "elastic"
-  password: "QJMqrf9u56nPHR=H6mRn"
+  password: "cl-L2iyW1H4kdiI7HqxG"
   ssl.verification_mode: none
 
 
@@ -4566,7 +4754,7 @@ output.elasticsearch:
   # Authentication credentials - either API key or username/password.
   #api_key: "id:api_key"
   username: "elastic"
-  password: "QJMqrf9u56nPHR=H6mRn"
+  password: "cl-L2iyW1H4kdiI7HqxG"
   ssl.verification_mode: none
 
 
