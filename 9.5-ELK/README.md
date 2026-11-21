@@ -1,6 +1,270 @@
-# ElasticSearch
+# Linux Basic
 ```sh
 
+# Change the server hostname
+sudo hostnamectl set-hostname elastic-lab
+
+# Display system uptime and load average
+uptime
+
+# Display CPU architecture and processor information
+lscpu
+
+# Display the number of available CPU cores
+nproc
+
+# Display memory and swap usage
+free -h
+
+# Display block devices and disk partitions
+lsblk
+
+
+############################################
+# Display configured repositories
+dnf repolist
+
+# Refresh repository metadata
+sudo dnf makecache
+
+# Search for a package
+dnf search nginx
+
+# Display package information
+dnf info nginx
+
+# Install a package
+sudo dnf install -y nginx
+
+# Display installed packages
+dnf list installed
+
+# Check whether a package is installed
+rpm -q nginx
+
+# Display files installed by a package
+rpm -ql nginx
+
+# Install a local RPM package
+sudo dnf install ./elasticsearch-VERSION-x86_64.rpm
+
+# Remove an installed package
+sudo dnf remove nginx
+
+
+
+# Refresh repository metadata
+sudo apt update
+
+# Search for a package
+apt search nginx
+
+# Display package information
+apt show nginx
+
+# Install a package
+sudo apt install -y nginx
+
+# Display installed packages
+dpkg -l
+
+# Display files installed by a package
+dpkg -L nginx
+
+# Install a local DEB package
+sudo apt install ./elasticsearch-VERSION-amd64.deb
+
+# Remove an installed package
+sudo apt remove nginx
+
+
+
+####################################################
+
+# Display all running services
+systemctl list-units --type=service --state=running
+
+# Display installed service unit files
+systemctl list-unit-files --type=service
+
+# Display failed services
+systemctl --failed
+
+# Display service status
+systemctl status nginx
+
+# Start a service
+sudo systemctl start nginx
+
+# Stop a service
+sudo systemctl stop nginx
+
+# Restart a service
+sudo systemctl restart nginx
+
+# Reload the service configuration without a full restart
+sudo systemctl reload nginx
+
+# Enable a service at system startup
+sudo systemctl enable nginx
+
+# Disable automatic service startup
+sudo systemctl disable nginx
+
+# Enable and start a service
+sudo systemctl enable --now nginx
+
+# Disable and stop a service
+sudo systemctl disable --now nginx
+
+# Check whether a service is running
+systemctl is-active nginx
+
+# Check whether a service is enabled
+systemctl is-enabled nginx
+
+# Display the systemd unit configuration
+systemctl cat nginx
+
+# Reload systemd unit definitions after modifying unit files
+sudo systemctl daemon-reload
+
+##################################
+# Test connectivity using ICMP
+ping -c 4 172.16.30.240
+
+# Display the network path to a destination
+traceroute 172.16.30.240
+
+# -w => timeout
+# Test TCP connectivity to Elasticsearch
+nc -vz -w 3 172.16.30.240 9200
+
+# Test TCP connectivity to Kibana
+nc -vz -w 3 172.16.30.241 5601
+
+# Test TCP connectivity to Logstash
+nc -vz -w 3 172.16.30.242 5044
+
+# Test TCP connectivity to Fleet Server
+nc -vz -w 3 172.16.30.241 8220
+
+# Test TCP connectivity to Redis
+nc -vz -w 3 172.16.30.79 6379
+
+
+# Listen for incoming UDP messages on port 9000
+nc -ul 9000
+
+# Connect to the destination server using UDP
+nc -u 172.16.30.242 9000
+
+
+# Display all listening TCP and UDP sockets
+sudo ss -lntup
+
+# Display active TCP connections
+ss -ntp
+
+# Display established TCP connections
+ss -nt state established
+
+# Display configured DNS resolvers
+cat /etc/resolv.conf
+
+# Display static hostname mappings
+cat /etc/hosts
+
+# Resolve a domain name
+nslookup example.com
+
+# Query DNS records
+dig example.com
+
+# Display only the DNS answer
+dig +short example.com
+
+# Query a specific DNS server
+dig @172.16.30.1 example.com
+
+# Query an IPv4 address record
+dig example.com A
+
+# Query an IPv6 address record
+dig example.com AAAA
+
+
+# Display available packet capture interfaces
+sudo tcpdump -D
+ 
+# Capture ten packets from a specific interface
+sudo tcpdump -i ens33 -nn -c 10
+
+# Capture traffic on Elasticsearch port
+sudo tcpdump -i any -nn port 9200
+
+# Capture traffic on Fleet Server port
+sudo tcpdump -i any -nn port 8220
+
+# Capture traffic related to a specific host
+sudo tcpdump -i any -nn host 172.16.30.240
+
+# Capture DNS traffic
+sudo tcpdump -i any -nn port 53
+
+# Save captured packets to a PCAP file
+sudo tcpdump -i any -w capture.pcap
+
+# Read a PCAP file
+sudo tcpdump -nn -r capture.pcap
+
+
+# Capture UDP packets on port 9000
+sudo tcpdump -i any -nn udp port 9000
+
+# Capture NTP traffic
+sudo tcpdump -i any -nn udp port 123
+
+# Capture outgoing UDP traffic to a specific destination
+sudo tcpdump -i any -nn udp and dst host 172.16.30.242
+
+# Capture incoming UDP traffic from a specific source
+sudo tcpdump -i any -nn udp and src host 172.16.30.243
+
+
+
+# Simulate Syslog Traffic Using UDP
+# Listen for incoming syslog messages on UDP port 514
+sudo nc -ul 514
+
+
+# Send a test syslog message using Netcat
+echo "<14>INFO Application started" | nc -u -w 1 172.16.30.242 514
+
+# Send an error message using Netcat
+echo "<11>ERROR Database connection failed" | nc -u -w 1 172.16.30.242 514
+
+# Send a syslog message using the logger utility
+logger -n 172.16.30.242 -P 514 -d "Test syslog message"
+
+
+
+```
+
+## install docker
+```sh
+dnf install podman podman-compose
+
+
+
+
+```
+
+
+
+
+# ElasticSearch
+```sh
 # setup repository in rocky linux
 # use below repository
 ---
@@ -77,6 +341,11 @@ path.logs: /var/log/elasticsearch
 systemctl enable --now elasticsearch.service 
 systemctl restart elasticsearch.service
 
+
+# 
+cd /usr/share/elasticsearch/bin/
+ls
+elasticsearch-reset-password -u elastic
 
 
 # Check Elasticsearch cluster health
@@ -519,6 +788,8 @@ systemctl enable filebeat.service --now
 ```sh
 filebeat modules list
 filebeat modules enable nginx
+filebeat modules disable system
+
 vim /etc/filebeat/modules.d/nginx.yml
 ------
 - module: nginx
@@ -1625,11 +1896,6 @@ systemctl restart metricbeat
 
 ```
 
-### enable mongodb module
-```sh
-
-
-```
 
 
 
@@ -1733,21 +1999,46 @@ heartbeat setup -e
 systemctl enable --now heartbeat-elastic.service
 
 
-
-
 ```
 
 
-
-
-
-
-# create dashboard in kibana
+## AuditBeat
 ```sh
+rpm -i auditbeat-9.5.5-x86_64.rpm
 
+vim /etc/auditbeat/auditbeat.yml
+--------
+
+output.elasticsearch:
+  hosts: ["https://172.16.30.240:9200"]
+  protocol: "https"
+
+  username: "elastic"
+  password: "YOUR_ELASTIC_PASSWORD"
+  ssl.verification_mode: none
+
+setup.kibana:
+  host: "https://172.16.30.241:5601"
+  username: "elastic"
+  password: "QJMqrf9u56nPHR=H6mRn"
+  ssl.verification_mode: none
+--------
+
+auditbeat test config
+auditbeat test output
+auditbeat setup -e
+
+systemctl enable --now auditbeat
+systemctl restart auditbeat
+
+
+systemctl enable --now auditbeat
+systemctl restart auditbeat
 
 
 ```
+
+
 
 
 # Sending notification 
@@ -1764,8 +2055,6 @@ vim /etc/kibana/kibana.yml
 xpack.encryptedSavedObjects.encryptionKey: "YOUR_GENERATED_KEY"
 ----
 systemctl restart kibana
-
-
 
 ```
 
@@ -1795,12 +2084,12 @@ sudo /usr/share/logstash/bin/logstash-keystore --path.settings /etc/logstash add
 
 vim /etc/logstash/conf.d/beats.conf
 ----------
-
 input {
   beats {
     port => 5044
   }
 }
+
 
 output {
   elasticsearch {
@@ -1881,6 +2170,7 @@ sudo systemctl restart logstash
 
 
 ## grok
+https://grokdebugger.com/
 ```sh
 #log
 192.168.1.10 admin 200
@@ -2321,15 +2611,521 @@ curl -k -u elastic "https://localhost:9200/_cat/indices/nginx-*?v&s=index&h=inde
 
 ```
 
-
-
-## connect beats to redis
+## example - 4 - csv to json
 ```sh
-# install redis
+
+sudo mkdir -p /var/lib/logstash/lab/input
+sudo mkdir -p /var/lib/logstash/lab/output
+
+sudo chown -R logstash:logstash /var/lib/logstash/lab
+sudo chmod -R 750 /var/lib/logstash/lab
+
+
+
+vim /var/lib/logstash/lab/input/employees.csv
+------------
+id,name,department,salary
+101,Ali,Network,35000000
+102,Reza,Software,45000000
+103,Sara,Security,60000000
+------------
+
+
+
+
+vim /etc/logstash/pipelines.yml
+----------
+- pipeline.id: employees-csv
+  path.config: "/etc/logstash/conf.d/employees.conf"
+  pipeline.workers: 1
+
+- pipeline.id: application-logs
+  path.config: "/etc/logstash/conf.d/application.conf"
+  pipeline.workers: 4
+
+- pipeline.id: network-syslog
+  path.config: "/etc/logstash/conf.d/syslog.conf"
+  pipeline.workers: 2
+-------------
+
+
+
+vim /etc/logstash/conf.d/employees.conf
+-------------
+input {
+  file {
+    path => "/var/lib/logstash/lab/input/employees.csv"
+    mode => "read"
+    sincedb_path => "/dev/null"
+    file_completed_action => "log"
+    file_completed_log_path => "/var/lib/logstash/lab/output/completed-files.log"
+
+  }
+}
+
+filter {
+  csv {
+    separator => ","
+    skip_header => true
+    columns => ["id", "name", "department", "salary"]
+  }
+
+  mutate {
+    convert => {
+      "id" => "integer"
+      "salary" => "integer"
+    }
+
+    uppercase => ["department"]
+
+    add_field => {
+      "company" => "MyCompany"
+    }
+
+    remove_field => [
+      "message",
+      "@version",
+      "host",
+      "log",
+      "event"
+    ]
+  }
+}
+
+output {
+  file {
+    path => "/var/lib/logstash/lab/output/employees.json"
+    codec => json_lines
+  }
+
+  stdout {
+    codec => rubydebug
+  }
+}
+
+-------------
+
+```
+## example - 5 - read from tcp 
+```sh
+
+vim /etc/logstash/pipelines.yml
+-------------
+- pipeline.id: application-logs
+  path.config: "/etc/logstash/conf.d/application.conf"
+  pipeline.workers: 4
+
+-------------
+
+vim /etc/logstash/conf.d/application.conf
+----------
+input {
+  tcp {
+    port => 5000
+    codec => line
+  }
+}
+
+filter {
+  grok {
+    match => {
+      "message" => "%{TIMESTAMP_ISO8601:log_time} %{LOGLEVEL:level} %{WORD:service} %{GREEDYDATA:description}"
+    }
+  }
+
+  date {
+    match => ["log_time", "ISO8601"]
+  }
+}
+
+output {
+  if "_grokparsefailure" in [tags] {
+    file {
+      path => "/var/lib/logstash/lab/output/invalid.log"
+      codec => json_lines
+    }
+  } else if [level] == "ERROR" {
+    file {
+      path => "/var/lib/logstash/lab/output/errors.log"
+      codec => json_lines
+    }
+  } else {
+    file {
+      path => "/var/lib/logstash/lab/output/application.log"
+      codec => json_lines
+    }
+  }
+
+  stdout {
+    codec => rubydebug
+  }
+}
+---------
+
+
+
+echo "2026-11-20T10:30:00Z INFO PaymentService Payment successful" | nc -N 192.168.132.2 5000
+echo "2026-11-20T10:31:00Z ERROR PaymentService Database unavailable" | nc -N 192.168.132.2 5000
+echo "Invalid log message" | nc -N 192.168.132.2 5000
+
 
 
 
 ```
+
+## example 6 - read from http and call a webhook
+```sh
+vim /etc/logstash/pipelines.yml
+---------
+- pipeline.id: employees-csv
+  path.config: "/etc/logstash/conf.d/employees.conf"
+  pipeline.workers: 1
+
+- pipeline.id: application-logs
+  path.config: "/etc/logstash/conf.d/application.conf"
+  pipeline.workers: 4
+
+- pipeline.id: http-n8n
+  path.config: "/etc/logstash/conf.d/http-n8n.conf"
+  pipeline.workers: 2
+
+---------
+
+
+
+
+
+
+vim /etc/logstash/conf.d/http-n8n.conf
+----------
+
+input {
+  http {
+    port => 8080
+    codec => json
+  }
+}
+
+filter {
+  mutate {
+    add_field => {
+      "source" => "logstash"
+    }
+  }
+}
+
+output {
+  if [level] == "ERROR" {
+    http {
+      url => "http://192.168.132.3:5678/webhook-test/log-alert"
+      http_method => "post"
+      format => "json"
+    }
+  } else {
+    file {
+      path => "/var/lib/logstash/lab/output/application-http.json"
+      codec => json_lines
+    }
+  }
+
+  stdout {
+    codec => rubydebug
+  }
+}
+----------
+systemctl restart logstash
+
+curl -X POST http://localhost:8080 \
+  -H "Content-Type: application/json" \
+  -d '{
+    "service": "PaymentService",
+    "level": "INFO",
+    "message": "Payment completed"
+  }'
+
+
+curl -X POST http://localhost:8080 \
+  -H "Content-Type: application/json" \
+  -d '{
+    "service": "PaymentService",
+    "level": "ERROR",
+    "message": "Database connection failed"
+  }'
+
+
+
+curl -X POST http://localhost:8080 \
+  -H "Content-Type: application/json" \
+  -d '{
+    "service": "shopservice",
+    "level": "ERROR",
+    "message": "shop api not found"
+  }'
+
+
+curl -X POST http://localhost:8080 \
+  -H "Content-Type: application/json" \
+  -d '{
+    "service": "PaymentService",
+    "level": "INFO",
+    "message": "Payment completed successfully"
+  }'
+
+curl -X POST http://localhost:8080 \
+  -H "Content-Type: application/json" \
+  -d '{
+    "service": "ApiGateway",
+    "level": "WARN",
+    "message": "API response time exceeded 3000ms",
+    "response_time": 3500
+  }'
+
+curl -X POST http://localhost:8080 \
+  -H "Content-Type: application/json" \
+  -d '{
+    "service": "AuthService",
+    "level": "ERROR",
+    "message": "Invalid authentication token",
+    "status_code": 401
+  }'
+```
+
+## example - 7 - syslog
+
+```sh
+vim /etc/logstash/pipelines.yml
+-------
+- pipeline.id: employees-csv
+  path.config: "/etc/logstash/conf.d/employees.conf"
+  pipeline.workers: 1
+
+- pipeline.id: application-logs
+  path.config: "/etc/logstash/conf.d/application.conf"
+  pipeline.workers: 4
+
+- pipeline.id: http-n8n
+  path.config: "/etc/logstash/conf.d/http-n8n.conf"
+  pipeline.workers: 2
+
+
+- pipeline.id: network-syslog
+  path.config: "/etc/logstash/conf.d/syslog.conf"
+  pipeline.workers: 2
+
+-------
+
+
+vim /etc/logstash/conf.d/syslog.conf
+----------
+input {
+  syslog {
+    port => 5514
+    ecs_compatibility => "disabled"
+  }
+}
+
+output {
+  file {
+    path => "/var/lib/logstash/lab/output/syslog-disabled.json"
+    codec => json_lines
+  }
+
+  stdout {
+    codec => rubydebug
+  }
+}
+----------
+
+firewall-cmd --add-port=5514/tcp --per
+firewall-cmd --add-port=5514/udp --per
+
+firewall-cmd --reload
+setenforce 0
+
+
+# config cisco router
+---------
+enable
+configure terminal
+
+! Enable timestamp for log messages
+service timestamps log datetime msec localtime show-timezone
+
+! Enable remote syslog
+logging on
+
+! Set Logstash server and UDP port
+logging host 192.168.132.2 transport udp port 5514
+
+! Send informational messages and higher severity
+logging trap informational
+
+configure terminal
+interface GigabitEthernet0/1
+ logging event link-status
+end
+
+end
+write memory
+
+---------
+
+```
+
+
+## connect beats to redis
+![alt text](img/41.png)
+
+```sh
+# install redis
+vim docker-compose.yaml
+-----
+services:
+  redis:
+    image: hub.hamdocker.ir/redis:7.4-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    command: redis-server --requirepass MyRedis123
+-----
+
+docker compose up -d
+
+docker ps
+docker logs redis
+ss -lntp | grep 6379
+
+docker exec -it redis redis-cli --askpass
+PING
+keys *
+TYPE mylogs
+LLEN mylogs
+LRANGE mylogs 0 4
+
+
+
+
+#############################################################
+# config filebeat
+mkdir -p /var/log/redis-test
+
+vim app.py
+--------
+import time
+from datetime import datetime
+
+counter = 1
+
+while True:
+    log = f"{datetime.now()} INFO Log number {counter}"
+
+    with open("/var/log/redis-test/app.log", "a") as f:
+        f.write(log + "\n")
+
+    print(log)
+
+    counter += 1
+    time.sleep(1)
+
+--------
+python3 app.py
+
+
+
+vim /etc/filebeat/filebeat.yml
+-------
+filebeat.inputs:
+  - type: filestream
+    id: redis-test
+    enabled: true
+    paths:
+      - /var/log/redis-test/app.log
+
+output.redis:
+  hosts: ["172.16.30.79:6379"]
+  password: "MyRedis123"
+  key: "mylogs"
+  datatype: list
+------
+
+systemctl enable --now filebeat
+systemctl restart filebeat
+
+journalctl -u filebeat -f
+
+
+
+docker exec -it redis redis-cli --askpass
+KEYS *
+TYPE mylogs
+LLEN mylogs
+LRANGE mylogs 0 4
+
+
+# on logstash server
+/usr/share/logstash/bin/logstash-plugin list --verbose | grep logstash-input-redis
+
+vim /etc/logstash/pipelines.d/redis.conf
+----------
+input {
+  redis {
+    host => "172.16.30.79"
+    port => 6379
+    password => "MyRedis123"
+    key => "mylogs"
+    data_type => "list"
+    codec => json
+  }
+}
+
+output {
+  elasticsearch {
+    hosts => ["https://172.16.30.240:9200"]
+    user => "elastic"
+    password => "QJMqrf9u56nPHR=H6mRn"
+
+    ssl_certificate_authorities => [
+      "/etc/logstash/certs/http_ca.crt"
+    ]
+
+    index => "redis-test"
+    ilm_enabled => false
+    data_stream => false
+  }
+
+  stdout {
+    codec => rubydebug
+  }
+}
+----------
+
+vim /etc/logstash/pipelines.yml
+-------
+- pipeline.id: redis-test
+  path.config: "/etc/logstash/pipelines.d/redis.conf"
+-------
+
+sudo -u logstash /usr/share/logstash/bin/logstash \
+  --path.settings /etc/logstash -t
+
+systemctl restart logstash
+
+
+```
+GET redis-test/_count
+
+GET redis-test/_search
+{
+  "size": 10,
+  "sort": [
+    {
+      "@timestamp": "desc"
+    }
+  ]
+}
+
+
+
 
 
 
@@ -4119,7 +4915,7 @@ vim docker-compose.yaml
 ----
 services:
   silo:
-    image: docker.io/pgsty/silo:RELEASE.2026-11-09T00-00-00Z
+    image: hub.hamdocker.ir/pgsty/silo:RELEASE.2026-11-09T00-00-00Z
     container_name: silo
     restart: unless-stopped
     ports:
@@ -4881,14 +5677,6 @@ POST _reindex
 
 
 GET paid-orders/_count
-
-
-```
-
-# jvm heap
-```sh
-
-GET _cat/nodes?v&h=name,ip,heap.current,heap.max,heap.percent,ram.percent,cpu
 
 
 ```
@@ -6071,9 +6859,14 @@ PUT _security/user/devops_user
 
 
 
-# map in kibana
+#  kibana dashboarding
+
+```sh
+# import visitor-interests
 ```
+![alt text](img/42.png)
+![alt text](img/43.png)
 
 
 
-```
+
