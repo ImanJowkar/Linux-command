@@ -1084,8 +1084,8 @@ flow record NETFLOW-RECORD
  exit
 
 flow exporter NETFLOW-EXPORTER
- destination 192.168.1.100
- source GigabitEthernet0/0
+ destination 192.168.132.3
+ source ethernet 0/0
  transport udp 2055
  export-protocol netflow-v9
  exit
@@ -1097,11 +1097,15 @@ flow monitor NETFLOW-MONITOR
  cache timeout inactive 15
  exit
 
-interface GigabitEthernet0/0
+interface ethernet 0/0
  ip flow monitor NETFLOW-MONITOR input
  exit
 
 end
+
+
+
+sudo tcpdump -i any -nn port 2055
 
 ```
 
@@ -1115,7 +1119,7 @@ vim /etc/filebeat/modules.d/cisco.yml
 - module: cisco
   ios:
     enabled: true
-    var.syslog_host: 172.16.30.241
+    var.syslog_host: 192.168.132.3
     var.syslog_port: 9002
 --------
 
@@ -1130,7 +1134,7 @@ systemctl restart filebeat.service
 # config syslog cisco IOS/IOS-XE
 conf t
 service timestamps log datetime msec show-timezone
-logging host 172.16.30.241 transport udp port 9002
+logging host 192.168.132.3 transport udp port 9002
 logging trap informational
 logging origin-id hostname
 exit
@@ -1138,6 +1142,7 @@ exit
 # create user and enable ssh
 username iman privilege 15 secret iman
 hostname router.iman.test
+ip domain-name iman.local
 crypto key generate rsa modulus 2048
 ip ssh version 2
 line vty 0 2
@@ -1155,6 +1160,45 @@ send log 7 TEST_DEBUG
 
 # filetr in kibana
 event.module: "cisco" 
+```
+### syslog input
+```sh
+vim /etc/filebeat/filebeat.yml
+------
+- type: syslog
+  enabled: true
+  format: rfc3164
+
+  protocol.udp:
+    host: "0.0.0.0:5514"
+
+  tags: ["syslog", "lab"]
+------
+systemctl restart filebeat.service
+
+# set ip address in fortigate
+config system interface
+edit port1
+set mode dhcp
+set allowaccess ping https http ssh
+end
+
+
+# set syslog in fortigate
+config log syslogd setting
+    set status enable
+    set server "192.168.132.3"
+    set mode udp
+    set port 5514
+    set format default
+    set facility local7
+end
+
+
+# Capture FortiGate Syslog packets
+sudo tcpdump -ni any udp port 5514 -A
+
+# now login or logout on fortigate
 ```
 
 [filebeat input type](https://www.elastic.co/docs/reference/beats/filebeat/configuration-filebeat-options)
@@ -1569,20 +1613,37 @@ TZ=Asia/Tehran date -d '2026-11-05T07:34:00.663Z' '+%Y-%m-%d %H:%M:%S.%3N %Z'
 
 count(kql='http.response.status_code >= 500') / count()
 
-#### example 4 - mqtt
+#### example 4 - mqtt(Message Queuing Telemetry Transport)
 
 ```sh
+
 mkdir mqtt
 
 sudo dnf install -y mosquitto
 
-mkdir config data logs
+mkdir config data log
 vim config/mosquitto.conf
 -----
 listener 1883
 allow_anonymous true
+
+
+
+
+# Persistence Configuration
 persistence true
 persistence_location /mosquitto/data/
+persistence_file mosquitto.db
+autosave_interval 60
+autosave_on_changes false
+
+# Logging Configuration
+log_dest file /mosquitto/log/mosquitto.log
+log_type all
+connection_messages true
+log_timestamp true
+
+
 -----
 
 vim docker-compose.yml
@@ -1590,7 +1651,7 @@ vim docker-compose.yml
 version: "3"
 services:
   mosquitto:
-    image: eclipse-mosquitto
+    image: hub.hamdocker.ir/eclipse-mosquitto
     container_name: mosquitto
     restart: always
     ports:
@@ -1735,7 +1796,7 @@ if __name__ == "__main__":
 
 -----
 
-python3 mqtt_sensors.py --interval 0.5 --count 1000
+python3 mqtt_sensors.py --interval 0.5 --count 1000 --host 192.168.132.3 --port 1883
 
 PUT _ingest/pipeline/mqtt-iot-pipeline
 {
@@ -1789,6 +1850,7 @@ vim /etc/filebeat/filebeat.yml
   qos: 1
   client_id: filebeat-iot-lab
   pipeline: mqtt-iot-pipeline
+  clean_session: false
 
 -----
 
@@ -1818,7 +1880,6 @@ GET filebeat-*/_search
 
 event.dataset:"mqtt.sensors" 
 
-
 ```
 
 
@@ -1842,6 +1903,7 @@ setup.kibana:
   host: "http://172.16.30.241:5601"
   username: "elastic"
   password: "cl-L2iyW1H4kdiI7HqxG"
+  ssl.verification_mode: none
 
 ----
 
@@ -1889,6 +1951,8 @@ vim /etc/nginx/nginx.conf
     }
 
 ---
+nginx -t
+nginx -s reload
 
 curl http://127.0.0.1/nginx_status
 
@@ -1973,6 +2037,7 @@ vim /etc/metricbeat/modules.d/postgresql.yml
 metricbeat test modules postgresql
 systemctl restart metricbeat
 
+# go to dashboard and see the postgresql dashboard
 
 # create test db
 sudo -u postgres createdb shopdb
@@ -2028,8 +2093,7 @@ shared_preload_libraries = 'pg_stat_statements'
 pg_stat_statements.track = all
 ----
 
-sudo systemctl restart postgresql
-
+sudo systemctl restart postgresql-18.service
 sudo -u postgres psql -d postgres -c "CREATE EXTENSION IF NOT EXISTS pg_stat_statements;"
 
 # enable statement in metricbeat
@@ -2059,6 +2123,10 @@ sudo dnf install docker-ce docker-ce-cli containerd.io docker-buildx-plugin dock
 
 sudo systemctl enable --now docker
 
+# when you use podman
+sudo systemctl enable --now podman.socket
+sudo ls -l /run/podman/podman.sock
+
 
 metricbeat modules enable docker
 vim /etc/metricbeat/modules.d/docker.yml
@@ -2085,8 +2153,8 @@ docker run -d \
 metricbeat test modules docker
 systemctl restart metricbeat
 
-
 ```
+
 
 
 
@@ -2113,6 +2181,7 @@ setup.kibana:
   host: "http://172.16.30.241:5601"
   username: "elastic"
   password: "cl-L2iyW1H4kdiI7HqxG"
+  ssl.verification_mode: none
 
 ---
 packetbeat test config
@@ -2121,8 +2190,15 @@ packetbeat setup -e
 
 systemctl enable --now packetbeat
 
+# see the dns dashboard
+ping google.com
+ping yahoo.com
+ping faradars.org
 
 ```
+
+
+
 
 
 ## Heartbeat
@@ -2144,7 +2220,7 @@ setup.kibana:
   host: "http://172.16.30.241:5601"
   username: "elastic"
   password: "cl-L2iyW1H4kdiI7HqxG"
-
+  ssl.verification_mode: none
 
 
 heartbeat.monitors:
@@ -2190,6 +2266,7 @@ heartbeat setup -e
 
 systemctl enable --now heartbeat-elastic.service
 
+# there is no dashboard for heartbeat
 
 ```
 
