@@ -2267,6 +2267,20 @@ heartbeat setup -e
 systemctl enable --now heartbeat-elastic.service
 
 # there is no dashboard for heartbeat
+# you can create dashboard
+# use this filter
+monitor.id :"nginx-http" 
+monitor.id :"postgres-check"  
+monitor.type: *
+
+----
+monitor.type :"http" 
+monitor.type :"icmp" 
+monitor.type :"udp" 
+
+
+
+
 
 ```
 
@@ -7138,4 +7152,144 @@ PUT _security/user/devops_user
 
 
 
+## renew cluster certificate
+```sh
 
+# http ca and certificate
+# you can see the expire date for http 
+sudo /usr/share/elasticsearch/bin/elasticsearch-keystore show xpack.security.http.ssl.keystore.secure_password
+
+# see the expire date for http certificate
+openssl s_client -connect 172.16.30.240:9200 -servername localhost </dev/null 2>/dev/null | openssl x509 -noout -subject -issuer -dates
+
+# see the expire date for http ca certificate
+openssl x509 -in http_ca.crt -noout -dates -subject -issuer
+
+
+
+
+
+# transport certificate
+# you can see the expire date for transport 
+sudo /usr/share/elasticsearch/bin/elasticsearch-keystore show xpack.security.transport.ssl.keystore.secure_password
+
+
+# transport certificate expiry date
+openssl pkcs12 -in transport.p12 -clcerts -nokeys | openssl x509 -noout -subject -issuer -dates
+
+
+# transport CA certificate expiry date
+openssl pkcs12 -in transport.p12 -cacerts -nokeys | openssl x509 -noout -subject -issuer -dates
+
+
+
+
+
+
+
+
+
+# renew certificate for http
+
+## backup
+
+# Create backup directory
+mkdir -p /root/elasticsearch-backup
+
+# Backup Elasticsearch configuration
+cp -a /etc/elasticsearch/elasticsearch.yml /root/elasticsearch-backup/
+
+# Backup Elasticsearch Keystore
+cp -a /etc/elasticsearch/elasticsearch.keystore /root/elasticsearch-backup/
+
+# backup Certificate
+cp -a /etc/elasticsearch/certs /root/elasticsearch-certs-backup
+
+
+
+mkdir -p /root/elastic-renew
+cd /root/elastic-renew
+
+# 18250 --> 50 year
+/usr/share/elasticsearch/bin/elasticsearch-certutil ca --pem --days 182500  # when ask the output name enter: http-ca-new.zip
+
+cp /usr/share/elasticsearch/http-ca-new.zip .
+
+unzip http-ca-new.zip
+
+ca/
+├── ca.crt
+└── ca.key
+
+openssl x509 -in ca/ca.crt -noout -subject -issuer -dates
+
+# create certificate for http nodes
+/usr/share/elasticsearch/bin/elasticsearch-certutil http
+# answer
+Generate CSR?                           n
+Use an existing CA?                     y
+CA certificate                          /root/elastic-renew/ca/ca.crt
+CA private key                          /root/elastic-renew/ca/ca.key
+Certificate validity                    40y
+Generate one certificate per node?      y
+
+
+# give the password: asdfASDflkjhasdf
+# give the output file name: 
+cp /usr/share/elasticsearch/elasticsearch-ssl-http.zip .
+
+unzip elasticsearch-ssl-http.zip -d output
+
+tree  output/
+
+cd output/elasticsearch
+openssl pkcs12 -in  http.p12 -clcerts -nokeys | openssl x509 -noout -subject -issuer -dates
+
+# replica new certificate in elastic 
+
+cp /root/elastic-renew/ca/ca.crt /etc/elasticsearch/certs/http_ca_new.crt
+cp /root/elastic-renew/output/elasticsearch/http.p12 /etc/elasticsearch/certs/http_new.p12
+
+cd /etc/elasticsearch/certs
+ls -lah 
+
+-rw-rw----. 1 root elasticsearch 1.9K Oct 28 08:45 http_ca.crt
+-rw-r--r--. 1 root root          1.2K Nov 23 22:27 http_ca_new.crt
+-rw-r--r--. 1 root root          3.6K Nov 23 22:27 http_new.p12
+-rw-rw----. 1 root elasticsearch 9.9K Oct 28 08:45 http.p12
+-rw-rw----. 1 root elasticsearch 5.8K Oct 28 08:45 transport.p12
+
+
+
+
+chown -R root:elasticsearch /etc/elasticsearch/certs
+
+chmod 640 /etc/elasticsearch/certs/http_new.p12 /etc/elasticsearch/certs/http_ca_new.crt
+
+ls -lah 
+-rw-rw----. 1 root elasticsearch  1935 Oct 28 08:45 http_ca.crt
+-rw-r-----. 1 root elasticsearch  1224 Nov 23 22:27 http_ca_new.crt
+-rw-r-----. 1 root elasticsearch  3668 Nov 23 22:27 http_new.p12
+-rw-rw----. 1 root elasticsearch 10077 Oct 28 08:45 http.p12
+-rw-rw----. 1 root elasticsearch  5838 Oct 28 08:45 transport.p12
+
+
+
+vim  /etc/elasticsearch/elasticsearch.yml
+--------
+xpack.security.http.ssl:
+  enabled: true
+  keystore.path: certs/http_new.p12
+--------
+
+
+/usr/share/elasticsearch/bin/elasticsearch-keystore add xpack.security.http.ssl.keystore.secure_password
+
+# restart the nodes
+systemctl restart elasticsearch
+
+openssl s_client -connect 172.16.30.240:9200 -servername localhost </dev/null 2>/dev/null | openssl x509 -noout -subject -issuer -dates
+
+
+
+```
