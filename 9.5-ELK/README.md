@@ -956,7 +956,6 @@ setup.kibana:
   host: "http://172.16.30.241:5601"
   username: "elastic"
   password: "cl-L2iyW1H4kdiI7HqxG"
-
 ----
 
 # Validate Filebeat configuration
@@ -1130,12 +1129,21 @@ firewall-cmd --list-all
 
 systemctl restart filebeat.service
 
+tcpdump -ni any -s0 -A 'udp port 9002'
+
+
+# eve-ng
+int eth 0/0
+no sh
+ip addr 192.168.135.10 255.255.255.0
+exit
+ip route 0.0.0.0 0.0.0.0 192.168.135.254
 
 # config syslog cisco IOS/IOS-XE
 conf t
 service timestamps log datetime msec show-timezone
-logging host 192.168.132.3 transport udp port 9002
-logging trap informational
+logging host 192.168.132.2 transport udp port 9002
+logging trap informational   # Severity 0-6 
 logging origin-id hostname
 exit
 
@@ -1150,6 +1158,15 @@ transport input ssh
 login local
 do wr
 
+# enable logging for authentication
+conf t
+login on-failure log
+login on-success log
+logging trap informational
+logging buffered informational
+end
+write memory
+
 # generate test log in cisco
 send log 3 TEST_ERROR
 send log 4 TEST_WARNING
@@ -1160,7 +1177,172 @@ send log 7 TEST_DEBUG
 
 # filetr in kibana
 event.module: "cisco" 
+event.dataset: "cisco.ios" and event.severity: 4
+event.dataset :"cisco.ios"  and event.code :"LOGIN_FAILED" 
+
+
+
+# introduction to  ES|QL
+
+FROM filebeat-*
+| WHERE event.dataset == "cisco.ios"
+| LIMIT 20
+
+FROM filebeat-*
+| WHERE event.severity == 4
+| LIMIT 20
+
+
+
+FROM filebeat-*
+| WHERE event.dataset == "cisco.ios" and event.severity == 4
+| LIMIT 20
+
+
+
+FROM filebeat-*
+| WHERE event.dataset == "cisco.ios"
+  AND event.code == "LOGIN_FAILED"
+| LIMIT 20
+
+
+FROM filebeat-* | WHERE  event.code == "LOGIN_SUCCESS" | LIMIT 20
+
+FROM filebeat-*
+| WHERE event.code == "LOGIN_FAILED"
+  OR event.code == "LOGIN_SUCCESS"
+| LIMIT 20
+
+# KEEP
+FROM filebeat-*
+| WHERE event.code == "LOGIN_FAILED"
+| KEEP @timestamp, event.code, message
+| LIMIT 20
+
+
+FROM filebeat-*
+| WHERE event.code == "LOGIN_FAILED"
+| KEEP @timestamp, event.code, message
+| SORT @timestamp DESC
+| LIMIT 10
+
+
+FROM filebeat-*
+| WHERE event.code == "LOGIN_FAILED"
+| KEEP @timestamp, event.code, message
+| SORT @timestamp ASC
+| LIMIT 10
+
+
+Login failed [user: iman] [Source: 10.212.134.11] [localport: 22] [Reason: Login Authentication Failed] at 04:55:24 UTC Wed Nov 25 2026
+
+# The problem is that all the data is stored in the `Message` field. We want to extract the individual values into separate fields.
+
+
+
+# simple example
+ROW message = "user=iman ip=10.212.134.11"
+| DISSECT message "user=%{username} ip=%{ip}"
+| KEEP username, ip
+
+
+# extrace from message when login failed
+FROM filebeat-*
+| WHERE event.code == "LOGIN_FAILED"
+| DISSECT message "Login failed [user: %{username}] [Source: %{src_ip}] [localport: %{port}] [Reason: %{reason}] at %{log_time}"
+| KEEP @timestamp, username, src_ip, port, reason
+| LIMIT 20
+
+
+ROW price = 50000, quantity = 3
+| EVAL total = price * quantity
+| KEEP price, quantity, total
+
+
+# convert filed type using EVAL
+FROM filebeat-*
+| WHERE event.code == "LOGIN_FAILED"
+| DISSECT message "Login failed [user: %{username}] [Source: %{src_ip}] [localport: %{port}] [Reason: %{reason}] at %{log_time}"
+| EVAL source_ip = TO_IP(src_ip), local_port = TO_INTEGER(port)
+| KEEP @timestamp, username, source_ip, local_port, reason
+| LIMIT 100
+
+
+
+# find most client ip with login failed
+"Login failed [user: asdf] [Source: 10.212.134.11] [localport: 22] [Reason: Login Authentication Failed] at 05:06:06 UTC Wed Nov 25 2026"
+
+
+# total failed login failed 
+FROM filebeat-*
+| WHERE event.code == "LOGIN_FAILED"
+| STATS failed_count = COUNT(*)
+
+
+# group by source ip 
+FROM filebeat-*
+| WHERE event.code == "LOGIN_FAILED"
+| DISSECT message "Login failed [user: %{username}] [Source: %{src_ip}] [localport: %{port}] [Reason: %{reason}] at %{log_time}"
+| EVAL source_ip = TO_IP(src_ip)
+| STATS failed_count = COUNT(*) BY source_ip
+| SORT failed_count DESC
+
+# group by username
+FROM filebeat-*
+| WHERE event.code == "LOGIN_FAILED"
+| DISSECT message "Login failed [user: %{username}] [Source: %{src_ip}] [localport: %{port}] [Reason: %{reason}] at %{log_time}"
+| STATS failed_count = COUNT(*) BY username
+| SORT failed_count DESC
+
+
+FROM filebeat-*
+| WHERE event.dataset == "cisco.ios" AND event.code == "LOGIN_FAILED"
+| DISSECT message "Login failed [user: %{username}] [Source: %{src_ip}] [localport: %{port}] [Reason: %{reason}] at %{log_time}"
+| EVAL source_ip = TO_IP(src_ip)
+| STATS failed_count = COUNT(*) BY username
+| WHERE failed_count >= 3
+| SORT failed_count DESC
+| LIMIT 10
+
+
+# using grok
+User iman connected from 10.212.134.11 port 22
+
+ROW message = "User iman connected from 10.212.134.11 port 22"
+| GROK message "User %{WORD:username} connected from %{IP:source_ip} port %{INT:port}"
+| KEEP username, source_ip, port
+
+# create some dashboard
+## Failed Login Attempts by Source IP
+FROM filebeat-*
+| WHERE event.dataset == "cisco.ios" AND event.code == "LOGIN_FAILED"
+| DISSECT message "Login failed [user: %{username}] [Source: %{src_ip}] [localport: %{port}] [Reason: %{reason}] at %{log_time}"
+| STATS failed_count = COUNT(*) BY src_ip
+| SORT failed_count DESC
+| LIMIT 10
+
 ```
+![dash1](image.png)
+
+
+
+
+
+```sh
+# Failed Login Attempts by Username
+FROM filebeat-*
+| WHERE event.dataset == "cisco.ios" AND event.code == "LOGIN_FAILED"
+| DISSECT message "Login failed [user: %{username}] [Source: %{src_ip}] [localport: %{port}] [Reason: %{reason}] at %{log_time}"
+| STATS failed_count = COUNT(*) BY username
+| SORT failed_count DESC
+| LIMIT 10
+
+
+
+
+```
+
+
 ### syslog input
 ```sh
 vim /etc/filebeat/filebeat.yml
@@ -1178,10 +1360,30 @@ systemctl restart filebeat.service
 
 # set ip address in fortigate
 config system interface
-edit port1
-set mode dhcp
-set allowaccess ping https http ssh
+    edit "wan2"
+        set mode static
+        set ip 192.168.10.2 255.255.255.0
+        set allowaccess ping https ssh
+    next
 end
+
+
+# add default gateway
+config router static
+    edit 0
+        set dst 0.0.0.0 0.0.0.0
+        set gateway 192.168.10.1
+        set device "wan2"
+    next
+end
+
+
+show system interface wan2
+
+get router info routing-table all
+
+
+execute ping 192.168.10.1
 
 
 # set syslog in fortigate
@@ -1193,6 +1395,8 @@ config log syslogd setting
     set format default
     set facility local7
 end
+
+
 
 
 # Capture FortiGate Syslog packets
@@ -7202,7 +7406,8 @@ cp -a /etc/elasticsearch/elasticsearch.yml /root/elasticsearch-backup/
 # Backup Elasticsearch Keystore
 cp -a /etc/elasticsearch/elasticsearch.keystore /root/elasticsearch-backup/
 
-# backup Certificate
+# backup Certificroot/elasticsearch-certs-backupate
+mkdir /root/elasticsearch-certs-backup
 cp -a /etc/elasticsearch/certs /root/elasticsearch-certs-backup
 
 
@@ -7211,7 +7416,8 @@ mkdir -p /root/elastic-renew
 cd /root/elastic-renew
 
 # 18250 --> 50 year
-/usr/share/elasticsearch/bin/elasticsearch-certutil ca --pem --days 182500  # when ask the output name enter: http-ca-new.zip
+# 2920 ----> 8 year
+/usr/share/elasticsearch/bin/elasticsearch-certutil ca --pem --days 2920  # when ask the output name enter: http-ca-new.zip
 
 cp /usr/share/elasticsearch/http-ca-new.zip .
 
@@ -7230,7 +7436,7 @@ Generate CSR?                           n
 Use an existing CA?                     y
 CA certificate                          /root/elastic-renew/ca/ca.crt
 CA private key                          /root/elastic-renew/ca/ca.key
-Certificate validity                    40y
+Certificate validity                    7y
 Generate one certificate per node?      y
 
 
@@ -7245,7 +7451,7 @@ tree  output/
 cd output/elasticsearch
 openssl pkcs12 -in  http.p12 -clcerts -nokeys | openssl x509 -noout -subject -issuer -dates
 
-# replica new certificate in elastic 
+# replace new certificate in elastic 
 
 cp /root/elastic-renew/ca/ca.crt /etc/elasticsearch/certs/http_ca_new.crt
 cp /root/elastic-renew/output/elasticsearch/http.p12 /etc/elasticsearch/certs/http_new.p12
@@ -7262,7 +7468,8 @@ ls -lah
 
 
 
-chown -R root:elasticsearch /etc/elasticsearch/certs
+chown  root:elasticsearch /etc/elasticsearch/certs/http_ca_new.crt
+chown  root:elasticsearch /etc/elasticsearch/certs/http_new.p12
 
 chmod 640 /etc/elasticsearch/certs/http_new.p12 /etc/elasticsearch/certs/http_ca_new.crt
 
