@@ -633,15 +633,6 @@ PUT /students_v2
   }
 }
 
-# show index setting
-GET /students_v2/_settings?pretty
-
-# show mapping in index
-GET /students_v2/_mapping?pretty
-
-# show both of them in one
-GET /students_v2?pretty
-
 
 
 # create index
@@ -661,6 +652,11 @@ PUT /students_v4/_doc/1
 
 # retrive document
 GET students_v4/_doc/1
+
+# go to discover and search
+course : linux
+course : el*
+
 
 # Count documents in the students index
 GEt /students_v4/_count
@@ -744,8 +740,6 @@ GET /students_v4/_search
 }
 
 
-
-
 # Find students between 20 and 30 years old
 GET /students_v4/_search
 {
@@ -758,7 +752,6 @@ GET /students_v4/_search
     }
   }
 }
-
 
 
 
@@ -932,8 +925,8 @@ GET /pos-transactions/_search
 
 
 # to see your data create dataview and create some dashboard
-```
 
+```
 # Beats
 ## filebeats
 
@@ -969,9 +962,50 @@ filebeat test output
 filebeat setup -e
 systemctl enable filebeat.service --now
 
+```
+
+### read /var/log/app/app.log
+```sh
+mkdir -p /var/log/app
+
+cat > /var/log/app/app.log <<'EOF'
+2026-11-25 10:00:00 INFO Application started
+2026-11-25 10:01:00 ERROR Database connection failed
+2026-11-25 10:02:00 WARN High memory usage
+EOF
+
+vim /etc/filebeat/filebeat.yml
+----
+filebeat.inputs:
+- type: filestream
+  id: app-logs
+  enabled: true
+  paths:
+    - /var/log/app/app.log
+
+  fields:
+    app_name: myapp
+  fields_under_root: true
+
+----
+filebeat test config -c /etc/filebeat/filebeat.yml
+filebeat test output -c /etc/filebeat/filebeat.yml
+
+systemctl restart filebeat
+journalctl -u filebeat -f
+
+
+# query
+app_name: myapp
+
+echo "2027-11-25 10:00:00 INFO test1 " >> /var/log/app/app.log
+echo "2027-11-25 10:00:00 INFO  test2" >> /var/log/app/app.log
 
 
 ```
+
+
+
 
 ### enable nginx module
 ```sh
@@ -1056,7 +1090,6 @@ vim /etc/filebeat/modules.d/netflow.yml
       internal_networks:
         - private
 
-
 ----
 
 firewall-cmd --add-port=2055/udp --permanent
@@ -1067,6 +1100,8 @@ systemctl restart filebeat.service
 ss -lunp | grep 2055
 
 
+# config netflow in cisco ios
+-----------
 conf t
 
 flow record NETFLOW-RECORD
@@ -1101,10 +1136,42 @@ interface ethernet 0/0
  exit
 
 end
+-----------------------
+
+
 
 
 
 sudo tcpdump -i any -nn port 2055
+
+## config netflow in fortigate
+-----------
+# set ip address in fortigate
+config system interface
+    edit "port1"
+        set mode static
+        set ip 192.168.135.11 255.255.255.0
+        set allowaccess ping https ssh
+    next
+end
+
+
+# add default gateway
+config router static
+    edit 0
+        set dst 0.0.0.0 0.0.0.0
+        set gateway 192.168.135.254
+        set device "port1"
+    next
+end
+
+-----------
+
+
+
+
+
+
 
 ```
 

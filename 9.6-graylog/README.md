@@ -31,8 +31,23 @@ docker pull hub.hamdocker.ir/graylog/graylog-datanode:7.2
 docker compose config --quiet
 docker compose up -d
 
-```
 
+# obtain basic authentication using
+docker compose logs graylog | grep -i "initial configuration"
+
+# now open browser and go to port 
+http://192.168.85.74:9000
+
+# generate CA for your datanodes 
+
+
+# configure to recive logs from devices
+
+
+```
+![alt text](img/1.png)
+![alt text](img/2.png)
+![alt text](img/3.png)
 
 # config cisco router
 ```sh
