@@ -792,7 +792,7 @@ systemctl restart  kibana.service
 python3 -m venv .venv
 
 # Activate the virtual environment
-source .venv/bin/activate
+source venv/bin/activate
 
 # Install the HTTP client library
 export PIP_INDEX_URL=https://package-mirror.liara.ir/repository/pypi/simple
@@ -868,8 +868,10 @@ for i in range(100):
     print(i, bank, city, status, response.status_code)
 
 ---------
-
 python app.py
+
+
+
 
 GET /pos-transactions/_count
 GET /pos-transactions/_search
@@ -911,10 +913,34 @@ GET /pos-transactions/_search
 }
 
 
+curl -k -X GET "https://192.168.132.2:9200/pos-transactions/_search" \
+  -u "elastic:elastic" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": {
+      "bool": {
+        "filter": [
+          { "term": { "bank": "Tejarat" } },
+          { "term": { "city": "Shiraz" } },
+          { "term": { "status": "Failed" } }
+        ]
+      }
+    }
+  }'
+
+
 
 # to see your data create dataview and create some dashboard
+# create afew dashboard and some kql
+
+# kql
+city :"Tehran"  and status :"Failed"  
+response_code :"91" 
+response_time_ms > 2500 and status :"Failed" 
 
 ```
+
+
 # Beats
 ## filebeats
 
@@ -982,6 +1008,9 @@ filebeat test output -c /etc/filebeat/filebeat.yml
 systemctl restart filebeat
 journalctl -u filebeat -f
 
+# list enable or disable modules
+filebeat modules list
+
 
 # query
 app_name: myapp
@@ -989,6 +1018,11 @@ app_name: myapp
 echo "2027-11-25 10:00:00 INFO test1 " >> /var/log/app/app.log
 echo "2027-11-25 10:00:00 INFO  test2" >> /var/log/app/app.log
 
+
+# query
+test*
+error
+high
 
 ```
 
@@ -1032,7 +1066,12 @@ server {
     }
 }
 ----
+
+nginx -t
+nginx -s reload
 curl web.test.local:8080
+wget web.test.local:8080
+wget web.test.local:8080
 
 ```
 
@@ -1057,109 +1096,6 @@ filebeat test config -e
 filebeat test output
 
 systemctl restart filebeat.service
-
-```
-
-### enable netflow module
-```sh
-filebeat modules enable netflow
-
-vim /etc/filebeat/modules.d/netflow.yml
-----
-- module: netflow
-  log:
-    enabled: true
-    var:
-      netflow_host: 0.0.0.0
-      netflow_port: 2055
-      # internal_networks specifies which networks are considered internal or private
-      # you can specify either a CIDR block or any of the special named ranges listed
-      # at: https://www.elastic.co/guide/en/beats/filebeat/current/defining-processors.html#condition-network
-      internal_networks:
-        - private
-
-----
-
-firewall-cmd --add-port=2055/udp --permanent
-firewall-cmd --reload
-
-systemctl restart filebeat.service
-
-ss -lunp | grep 2055
-
-
-# config netflow in cisco ios
------------
-conf t
-
-flow record NETFLOW-RECORD
- match ipv4 source address
- match ipv4 destination address
- match ipv4 protocol
- match transport source-port
- match transport destination-port
- match interface input
- collect counter bytes long
- collect counter packets long
- collect timestamp sys-uptime first
- collect timestamp sys-uptime last
- exit
-
-flow exporter NETFLOW-EXPORTER
- destination 192.168.132.3
- source ethernet 0/0
- transport udp 2055
- export-protocol netflow-v9
- exit
-
-flow monitor NETFLOW-MONITOR
- record NETFLOW-RECORD
- exporter NETFLOW-EXPORTER
- cache timeout active 60
- cache timeout inactive 15
- exit
-
-interface ethernet 0/0
- ip flow monitor NETFLOW-MONITOR input
- exit
-
-end
------------------------
-
-
-
-
-
-sudo tcpdump -i any -nn port 2055
-
-## config netflow in fortigate
------------
-# set ip address in fortigate
-config system interface
-    edit "port1"
-        set mode static
-        set ip 192.168.135.11 255.255.255.0
-        set allowaccess ping https ssh
-    next
-end
-
-
-# add default gateway
-config router static
-    edit 0
-        set dst 0.0.0.0 0.0.0.0
-        set gateway 192.168.135.254
-        set device "port1"
-    next
-end
-
------------
-
-
-
-
-
-
 
 ```
 
@@ -1193,11 +1129,30 @@ no sh
 ip addr 192.168.135.10 255.255.255.0
 exit
 ip route 0.0.0.0 0.0.0.0 192.168.135.254
+# test tcp connection check from cisco router
+telnet 192.168.132.200 80
+
+# test udp check from cisco router
+
+# on the syslog server
+nc -ul 514 # udp
+nc -lv 514 # tcp
+
+
+# Capture UDP Syslog packets
+sudo tcpdump -ni any 'udp port 514'
+
+
+logging host 192.168.132.2 transport udp port 9002
+
+
+
 
 # config syslog cisco IOS/IOS-XE
 conf t
 service timestamps log datetime msec show-timezone
-logging host 192.168.132.2 transport udp port 9002
+logging host 192.168.132.2 transport tcp port 9002
+logging host 192.168.132.3 transport tcp port 9002
 logging trap informational   # Severity 0-6 
 logging origin-id hostname
 exit
@@ -1228,6 +1183,14 @@ send log 4 TEST_WARNING
 send log 5 TEST_NOTICE
 send log 6 TEST_INFORMATIONAL
 send log 7 TEST_DEBUG
+
+ssh \
+  -o KexAlgorithms=+diffie-hellman-group14-sha1 \
+  -o HostKeyAlgorithms=+ssh-rsa \
+  -o PreferredAuthentications=password \
+  -o PubkeyAuthentication=no \
+  jack22@192.168.10.10
+
 
 
 # filetr in kibana
@@ -1342,6 +1305,7 @@ FROM filebeat-*
 | STATS failed_count = COUNT(*) BY source_ip
 | SORT failed_count DESC
 
+
 # group by username
 FROM filebeat-*
 | WHERE event.code == "LOGIN_FAILED"
@@ -1391,9 +1355,6 @@ FROM filebeat-*
 | STATS failed_count = COUNT(*) BY username
 | SORT failed_count DESC
 | LIMIT 10
-
-
-
 
 ```
 
@@ -1459,6 +1420,108 @@ sudo tcpdump -ni any udp port 5514 -A
 
 # now login or logout on fortigate
 ```
+
+
+
+### enable netflow module
+```sh
+filebeat modules enable netflow
+
+vim /etc/filebeat/modules.d/netflow.yml
+----
+- module: netflow
+  log:
+    enabled: true
+    var:
+      netflow_host: 0.0.0.0
+      netflow_port: 2055
+      # internal_networks specifies which networks are considered internal or private
+      # you can specify either a CIDR block or any of the special named ranges listed
+      # at: https://www.elastic.co/guide/en/beats/filebeat/current/defining-processors.html#condition-network
+      internal_networks:
+        - private
+
+----
+
+firewall-cmd --add-port=2055/udp --permanent
+firewall-cmd --reload
+
+systemctl restart filebeat.service
+
+ss -lunp | grep 2055
+
+
+# config netflow in cisco ios
+-----------
+conf t
+
+flow record NETFLOW-RECORD
+ match ipv4 source address
+ match ipv4 destination address
+ match ipv4 protocol
+ match transport source-port
+ match transport destination-port
+ match interface input
+ collect counter bytes long
+ collect counter packets long
+ collect timestamp sys-uptime first
+ collect timestamp sys-uptime last
+ exit
+
+flow exporter NETFLOW-EXPORTER
+ destination 192.168.132.3
+ source ethernet 0/0
+ transport udp 2055
+ export-protocol netflow-v9
+ exit
+
+flow monitor NETFLOW-MONITOR
+ record NETFLOW-RECORD
+ exporter NETFLOW-EXPORTER
+ cache timeout active 60
+ cache timeout inactive 15
+ exit
+
+interface ethernet 0/0
+ ip flow monitor NETFLOW-MONITOR input
+ exit
+
+end
+-----------------------
+
+
+
+
+
+sudo tcpdump -i any -nn port 2055
+
+## config netflow in fortigate
+-----------
+# set ip address in fortigate
+config system interface
+    edit "port1"
+        set mode static
+        set ip 192.168.135.11 255.255.255.0
+        set allowaccess ping https ssh
+    next
+end
+
+
+# add default gateway
+config router static
+    edit 0
+        set dst 0.0.0.0 0.0.0.0
+        set gateway 192.168.135.254
+        set device "port1"
+    next
+end
+
+-----------
+
+
+```
+
+
 
 [filebeat input type](https://www.elastic.co/docs/reference/beats/filebeat/configuration-filebeat-options)
 ### read custom log and add property
