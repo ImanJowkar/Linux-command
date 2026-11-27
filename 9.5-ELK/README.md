@@ -789,7 +789,7 @@ systemctl restart  kibana.service
 
 
 # Create a Python virtual environment
-python3 -m venv .venv
+python3 -m venv venv
 
 # Activate the virtual environment
 source venv/bin/activate
@@ -950,7 +950,6 @@ rpm -i filebeat-9.5.5-x86_64.rpm
 
 vim /etc/filebeat/filebeat.yml
 ----
-
 output.elasticsearch:
   hosts: ["https://172.16.30.240:9200"]
   protocol: "https"
@@ -1151,9 +1150,9 @@ logging host 192.168.132.2 transport udp port 9002
 # config syslog cisco IOS/IOS-XE
 conf t
 service timestamps log datetime msec show-timezone
-logging host 192.168.132.2 transport tcp port 9002
-logging host 192.168.132.3 transport tcp port 9002
-logging trap informational   # Severity 0-6 
+logging host 192.168.85.190 transport tcp port 9002
+!logging host 192.168.132.3 transport tcp port 9002
+logging trap informational  
 logging origin-id hostname
 exit
 
@@ -1189,7 +1188,7 @@ ssh \
   -o HostKeyAlgorithms=+ssh-rsa \
   -o PreferredAuthentications=password \
   -o PubkeyAuthentication=no \
-  jack22@192.168.10.10
+  jack22@192.168.85.158
 
 
 
@@ -1365,16 +1364,27 @@ vim /etc/filebeat/filebeat.yml
 ------
 - type: syslog
   enabled: true
-  format: rfc3164
+  format: auto
 
   protocol.udp:
     host: "0.0.0.0:5514"
 
   tags: ["syslog", "lab"]
+
+  fields:
+    app_name: custom-syslog
+  fields_under_root: true
+
 ------
 systemctl restart filebeat.service
 
+
+# -d : udp
+# -T : tcp
+logger -n 192.168.85.190 -P 5514 -d "This is a test syslog message"
+
 # set ip address in fortigate
+-------------------
 config system interface
     edit "wan2"
         set mode static
@@ -1412,7 +1422,17 @@ config log syslogd setting
     set facility local7
 end
 
+-------------------
 
+# config syslog cisco
+------------
+conf t
+service timestamps log datetime msec show-timezone
+logging host 192.168.85.190 transport udp port 5514
+logging trap informational  
+logging origin-id hostname
+exit
+------------
 
 
 # Capture FortiGate Syslog packets
@@ -1490,34 +1510,7 @@ end
 -----------------------
 
 
-
-
-
 sudo tcpdump -i any -nn port 2055
-
-## config netflow in fortigate
------------
-# set ip address in fortigate
-config system interface
-    edit "port1"
-        set mode static
-        set ip 192.168.135.11 255.255.255.0
-        set allowaccess ping https ssh
-    next
-end
-
-
-# add default gateway
-config router static
-    edit 0
-        set dst 0.0.0.0 0.0.0.0
-        set gateway 192.168.135.254
-        set device "port1"
-    next
-end
-
------------
-
 
 ```
 
@@ -3716,7 +3709,9 @@ sudo -u logstash /usr/share/logstash/bin/logstash \
 systemctl restart logstash
 
 
-```
+
+
+
 GET redis-test/_count
 
 GET redis-test/_search
@@ -3730,53 +3725,8 @@ GET redis-test/_search
 }
 
 
-
-
-
-
-
-
-
-
-
-
-## example sneding custom data to elastic directly using python
-```sh
-
-
-
 ```
 
-
-# 
-
-
-# KQL
-
-```sh
-agent.type: "heartbeat"
-agent.type: "heartbeat" AND monitor.status: "up" 
-
-```
-
-
-
-# n8n integration
-
-```sh
-docker volume create n8n_data
-docker pull  hub.hamdocker.ir/n8nio/n8n:2.32.5
-docker run -d \
- --name n8n \
- -p 5678:5678 \
- -e GENERIC_TIMEZONE="Asia/Tehran" \
- -e TZ="Asia/Tehran" \
- -e N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=true \
- -e N8N_SECURE_COOKIE=false \
- -v n8n_data:/home/node/.n8n \
- hub.hamdocker.ir/n8nio/n8n:2.32.5
-
-```
 
 # Examples
 ## Example - 1 - Read Bind9 log and sending logs to elastic without extracting date
@@ -4462,11 +4412,7 @@ GET api-monitoring/_count
 
 
 
-## Example 3 - 
-
-
-
-## Example - 4 - Global Security Event Monitoring & Alerting
+## Example - 3 - Global Security Event Monitoring & Alerting
 ```sh
 # create index in elastic
 PUT geo-security-events
@@ -6556,6 +6502,10 @@ PUT _ingest/pipeline/myapp-pipeline
 
 
 ```
+
+
+
+
 #### alerting
 ```sh
 # create index for storing alerts
@@ -7616,5 +7566,25 @@ systemctl restart elasticsearch
 openssl s_client -connect 172.16.30.240:9200 -servername localhost </dev/null 2>/dev/null | openssl x509 -noout -subject -issuer -dates
 
 
+
+```
+
+
+
+
+# n8n integration
+
+```sh
+docker volume create n8n_data
+docker pull  hub.hamdocker.ir/n8nio/n8n:2.32.5
+docker run -d \
+ --name n8n \
+ -p 5678:5678 \
+ -e GENERIC_TIMEZONE="Asia/Tehran" \
+ -e TZ="Asia/Tehran" \
+ -e N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=true \
+ -e N8N_SECURE_COOKIE=false \
+ -v n8n_data:/home/node/.n8n \
+ hub.hamdocker.ir/n8nio/n8n:2.32.5
 
 ```
